@@ -1,0 +1,201 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Core">
+      <UniqueIdentifier>{5451e5d0-65dd-45a7-97b0-8c1c47408481}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Systems">
+      <UniqueIdentifier>{b3222c33-b409-45cc-830b-a2b197bc4873}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Scanner">
+      <UniqueIdentifier>{a4ba31c2-9a32-4895-9c5f-d4ecc2885114}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Threads">
+      <UniqueIdentifier>{b1c15104-2fec-44f5-9633-73b57f77e41b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hooks">
+      <UniqueIdentifier>{e321b691-32f2-4951-a478-d1d9e6d9b84f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hooks\Data">
+      <UniqueIdentifier>{90612870-55b2-4f70-b05e-508fdb0773be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hooks\Lifecycle">
+      <UniqueIdentifier>{b869ddd3-cd8b-4eb4-b7b7-eb0afa97ccb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hooks\MovReader">
+      <UniqueIdentifier>{f28f7099-5825-44af-9bde-4159cdb66c4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hooks\Telemetry">
+      <UniqueIdentifier>{2957f341-d990-4c04-a175-2e87d414366c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Proxy">
+      <UniqueIdentifier>{b39b8137-507d-42c6-a0bb-e92d9839472c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{33dfcac7-1902-4bb8-be8e-7270d072312a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{35c61b1a-bb5a-4f20-a1a1-fa3d130e5794}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\minhook">
+      <UniqueIdentifier>{c2d9b282-f103-48be-aeb2-23d37af92617}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\DllMain.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Director.h">
+      <Filter>Core\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\RawTypes.h">
+      <Filter>Core\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Theater.h">
+      <Filter>Core\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Timeline.h">
+      <Filter>Core\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Scanner\Scanner.h">
+      <Filter>Core\Scanner</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Scanner\Signatures.h">
+      <Filter>Core\Scanner</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\DirectorThread.h">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\InputThread.h">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\MainThread.h">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\TheaterThread.h">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\Data\SpectatorHandleInput_Hook.h">
+      <Filter>Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\Data\UIBuildDynamicMessage_Hook.h">
+      <Filter>Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\Data\UpdateTelemetryTimer_Hook.h">
+      <Filter>Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\Lifecycle\DestroySubsystems_Hook.h">
+      <Filter>Hooks\Lifecycle</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\Lifecycle\EngineInitialize_Hook.h">
+      <Filter>Hooks\Lifecycle</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\MovReader\BlamOpenFile_Hook.h">
+      <Filter>Hooks\MovReader</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\MovReader\FilmInitializeState_Hook.h">
+      <Filter>Hooks\MovReader</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\MovReader\MovParser.h">
+      <Filter>Hooks\MovReader</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\MovReader\MovTypes.h">
+      <Filter>Hooks\MovReader</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\Telemetry\Telemetry.h">
+      <Filter>Hooks\Telemetry</Filter>
+    </ClInclude>
+    <ClInclude Include="Proxy\ProxyExports.h">
+      <Filter>Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\Formatting.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\Logger.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Ignore\BaseHook.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Core\DllMain.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Director.cpp">
+      <Filter>Core\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Theater.cpp">
+      <Filter>Core\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Timeline.cpp">
+      <Filter>Core\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Scanner\Scanner.cpp">
+      <Filter>Core\Scanner</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\DirectorThread.cpp">
+      <Filter>Core\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\InputThread.cpp">
+      <Filter>Core\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\MainThread.cpp">
+      <Filter>Core\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\TheaterThread.cpp">
+      <Filter>Core\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\Data\SpectatorHandleInput_Hook.cpp">
+      <Filter>Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\Data\UIBuildDynamicMessage.cpp">
+      <Filter>Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\Data\UpdateTelemetryTimer_Hook.cpp">
+      <Filter>Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\Lifecycle\DestroySubsystems_Hook.cpp">
+      <Filter>Hooks\Lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\Lifecycle\EngineInitialize_Hook.cpp">
+      <Filter>Hooks\Lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\MovReader\BlamOpenFile_Hook.cpp">
+      <Filter>Hooks\MovReader</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\MovReader\FilmInitializeState_Hook.cpp">
+      <Filter>Hooks\MovReader</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\MovReader\MovParser.cpp">
+      <Filter>Hooks\MovReader</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\Telemetry\Telemetry.cpp">
+      <Filter>Hooks\Telemetry</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Formatting.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Logger.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="External\minhook\src\buffer.c">
+      <Filter>External\minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="External\minhook\src\trampoline.c">
+      <Filter>External\minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="External\minhook\src\hde\hde32.c">
+      <Filter>External\minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="External\minhook\src\hde\hde64.c">
+      <Filter>External\minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="External\minhook\src\hook.c">
+      <Filter>External\minhook</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Ignore\BaseHook.cpp" />
+    <ClCompile Include="Ignore\todos.cpp" />
+  </ItemGroup>
+</Project>
