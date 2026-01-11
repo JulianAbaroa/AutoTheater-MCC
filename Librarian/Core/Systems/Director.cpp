@@ -28,6 +28,8 @@ void PrioritizeEvents()
 
 void FixOrphanedEvents()
 {
+	if (g_Timeline.empty()) return;
+
 	const float MAX_GROUP_TIME_DIFF = 0.5f;
 
 	for (int i = 0; i < g_Timeline.size(); i++)

@@ -24,4 +24,15 @@ namespace Main
     inline HMODULE GetHaloReachModuleBaseAddress() {
         return GetModuleHandle(L"haloreach.dll");
     }
+
+    inline bool IsGameFocused()
+    {
+        HWND foregroundWnd = GetForegroundWindow();
+        if (foregroundWnd == NULL) return false;
+
+        DWORD foregroundPID = 0;
+        GetWindowThreadProcessId(foregroundWnd, &foregroundPID);
+
+        return (foregroundPID == g_GamePID);
+    }
 }

@@ -51,6 +51,9 @@ BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpRese
         Logger::LogAppend("=== Current Phase: Start ===");
 
         g_MainThread = std::thread(MainThread::Run);
+
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
         g_InputThread = std::thread(InputThread::Run);
         g_TheaterThread = std::thread(TheaterThread::Run);
         g_DirectorThread = std::thread(DirectorThread::Run);

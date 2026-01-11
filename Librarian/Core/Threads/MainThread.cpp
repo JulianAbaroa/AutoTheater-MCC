@@ -72,6 +72,7 @@ void MainThread::Run() {
         {
             Logger::LogAppend("Game engine destruction detected, resetting lifecycle...");
             std::this_thread::sleep_for(std::chrono::seconds(1));
+               
 
             if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
             {
@@ -84,7 +85,11 @@ void MainThread::Run() {
                 Logger::LogAppend("=== Current Phase: BuildTimeline ===");
 
                 g_DirectorInitialized = false;
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
                 g_IsLastEvent = false;
+
                 g_Timeline.clear();
                 g_Script.clear();
             }

@@ -35,20 +35,9 @@ void InputThread::Run()
     Logger::LogAppend("=== Input Thread Stopped ===");
 }
 
-bool IsGameFocused()
-{
-    HWND foregroundWnd = GetForegroundWindow();
-    if (!foregroundWnd) return false;
-
-    DWORD foregroundPID;
-    GetWindowThreadProcessId(foregroundWnd, &foregroundPID);
-
-    return (foregroundPID == g_GamePID);
-}
-
 static void PressKey(WORD vKey, int delayMs = 20)
 {
-    if (!IsGameFocused()) return;
+    if (!Main::IsGameFocused()) return;
 
     INPUT input = { 0 };
     input.type = INPUT_KEYBOARD;
@@ -79,7 +68,7 @@ void InputThread::JumpForward() { PressKey(VK_RIGHT); }
 void InputThread::JumpBack() { PressKey(VK_LEFT); }
 
 void InputThread::ResetCamera() {
-    if (!IsGameFocused()) return;
+    if (!Main::IsGameFocused()) return;
 
     INPUT input = { 0 };
     input.type = INPUT_MOUSE;
