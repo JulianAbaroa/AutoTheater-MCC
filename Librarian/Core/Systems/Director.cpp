@@ -386,7 +386,7 @@ void Director::Initialize()
 	g_DirectorInitialized = true;
 }
 
-void GoToPlayer(uint8_t targetIdx)
+void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 {
 	if (targetIdx >= 16) return;
 
@@ -396,6 +396,16 @@ void GoToPlayer(uint8_t targetIdx)
 
 	while (g_FollowedPlayerIdx != targetIdx)
 	{
+		float currentTime = *g_pReplayTime;
+		if (currentTime >= nextCommandTimestamp)
+		{
+			ss.str("");
+			ss << "[Director] Next command deadline reached: ("
+				<< std::to_string(nextCommandTimestamp) << "s)";
+			Logger::LogAppend(ss.str().c_str());
+			return;
+		}
+
 		uint8_t current = g_FollowedPlayerIdx;
 		int forwardSteps = (targetIdx - current + 16) % 16;
 		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
@@ -490,7 +500,13 @@ void Director::Update()
 		{
 			if (command.TargetPlayerIdx != g_FollowedPlayerIdx)
 			{
-				GoToPlayer(command.TargetPlayerIdx);
+				int nextCommandIndex = g_CurrentCommandIndex + 1;
+				float deadline =
+					(nextCommandIndex < g_Script.size()) ?
+					g_Script[nextCommandIndex].Timestamp - 1.0f :
+					(currentTime + 36000.0f);
+
+				GoToPlayer(command.TargetPlayerIdx, deadline);
 
 				std::stringstream ss;
 				ss << "Execute: Cut to " << (int)command.TargetPlayerIdx << " Reason [" << command.Reason << "]";

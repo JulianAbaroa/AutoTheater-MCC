@@ -79,9 +79,17 @@ void BlamOpenFile_Hook::Uninstall()
 {
 	if (!g_BlamOpenFile_Hook_Installed.load()) return;
 
-	MH_DisableHook(g_BlamOpenFile_Address);
-	MH_RemoveHook(g_BlamOpenFile_Address);
+	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
+	if (hMod != nullptr && g_BlamOpenFile_Address != 0)
+	{
+		MH_DisableHook(g_BlamOpenFile_Address);
+		MH_RemoveHook(g_BlamOpenFile_Address);
+		Logger::LogAppend("BlamOpenFile hook uninstalled safely");
+	}
+	else
+	{
+		Logger::LogAppend("BlamOpenFile hook skipped uninstall (module already gone)");
+	}
 
 	g_BlamOpenFile_Hook_Installed.store(false);
-	Logger::LogAppend("BlamOpenFile hook uninstalled");
 }

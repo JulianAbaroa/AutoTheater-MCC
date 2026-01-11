@@ -197,7 +197,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Hooks\Data\SpectatorHandleInput_Hook.cpp" />
-    <ClCompile Include="Hooks\Data\UIBuildDynamicMessage.cpp" />
+    <ClCompile Include="Hooks\Data\UIBuildDynamicMessage_Hook.cpp" />
     <ClCompile Include="Hooks\Data\UpdateTelemetryTimer_Hook.cpp" />
     <ClCompile Include="Hooks\Lifecycle\DestroySubsystems_Hook.cpp" />
     <ClCompile Include="Hooks\Lifecycle\EngineInitialize_Hook.cpp" />

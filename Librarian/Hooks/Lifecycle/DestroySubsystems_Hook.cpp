@@ -62,9 +62,17 @@ void DestroySubsystems_Hook::Uninstall()
 {
 	if (!g_DestroySubsystems_Hook_Installed.load()) return;
 
-	MH_DisableHook(g_DestroySubsystems_Address);
-	MH_RemoveHook(g_DestroySubsystems_Address);
+	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
+	if (hMod != nullptr && g_DestroySubsystems_Address != 0)
+	{
+		MH_DisableHook(g_DestroySubsystems_Address);
+		MH_RemoveHook(g_DestroySubsystems_Address);
+		Logger::LogAppend("DestroySubsystems hook uninstalled safely");
+	}
+	else
+	{
+		Logger::LogAppend("DestroySubsystems hook skipped uninstall (module already gone)");
+	}
 
 	g_DestroySubsystems_Hook_Installed.store(false);
-	Logger::LogAppend("DestroySubsystems hook uninstalled");
 }

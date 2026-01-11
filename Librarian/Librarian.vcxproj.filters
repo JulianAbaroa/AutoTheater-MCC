@@ -149,7 +149,7 @@
     <ClCompile Include="Hooks\Data\SpectatorHandleInput_Hook.cpp">
       <Filter>Hooks\Data</Filter>
     </ClCompile>
-    <ClCompile Include="Hooks\Data\UIBuildDynamicMessage.cpp">
+    <ClCompile Include="Hooks\Data\UIBuildDynamicMessage_Hook.cpp">
       <Filter>Hooks\Data</Filter>
     </ClCompile>
     <ClCompile Include="Hooks\Data\UpdateTelemetryTimer_Hook.cpp">

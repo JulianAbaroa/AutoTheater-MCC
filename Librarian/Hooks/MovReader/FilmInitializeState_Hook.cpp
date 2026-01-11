@@ -115,9 +115,17 @@ void FilmInitializeState_Hook::Uninstall()
 {
 	if (!g_FilmInitializeState_Hook_Installed.load()) return;
 
-	MH_DisableHook(g_FilmInitializeState_Address);
-	MH_RemoveHook(g_FilmInitializeState_Address);
+	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
+	if (hMod != nullptr && g_FilmInitializeState_Address != 0)
+	{
+		MH_DisableHook(g_FilmInitializeState_Address);
+		MH_RemoveHook(g_FilmInitializeState_Address);
+		Logger::LogAppend("FilmInitializeState hook uninstalled safely");
+	}
+	else
+	{
+		Logger::LogAppend("FilmInitializeState hook skipped uninstall (module already gone)");
+	}
 
 	g_FilmInitializeState_Hook_Installed.store(false);
-	Logger::LogAppend("FilmInitializeState hook uninstalled");
 }

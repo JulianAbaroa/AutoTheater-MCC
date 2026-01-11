@@ -67,9 +67,17 @@ void UpdateTelemetryTimer_Hook::Uninstall()
 {
 	if (!g_UpdateTelemetryTimer_Hook_Installed.load()) return;
 
-	MH_DisableHook(g_UpdateTelemetryTimer_Address);
-	MH_RemoveHook(g_UpdateTelemetryTimer_Address);
+	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
+	if (hMod != nullptr && g_UpdateTelemetryTimer_Address != 0)
+	{
+		MH_DisableHook(g_UpdateTelemetryTimer_Address);
+		MH_RemoveHook(g_UpdateTelemetryTimer_Address);
+		Logger::LogAppend("UpdateTelemetryTimer hook uninstalled safely");
+	}
+	else
+	{
+		Logger::LogAppend("UpdateTelemetryTimer hook skipped uninstall (module already gone)");
+	}
 
 	g_UpdateTelemetryTimer_Hook_Installed.store(false);
-	Logger::LogAppend("UpdateTelemetryTimer hook uninstalled");
 }

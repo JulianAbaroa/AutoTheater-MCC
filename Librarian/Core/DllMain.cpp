@@ -12,10 +12,11 @@
 // Project name: AutoTheater for MCC (Halo Reach)
 
 LibrarianPhase g_CurrentPhase = LibrarianPhase::Start;
-static HMODULE g_HandleModule = nullptr;
 std::atomic<bool> g_Running{ false };
 uintptr_t g_BaseModuleAddress = 0;
+HMODULE g_HandleModule = nullptr;
 std::string g_BaseDirectory = "";
+DWORD g_GamePID = 0;
 
 BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpReserved) {
     switch (ulReasonForCall) {
@@ -40,6 +41,12 @@ BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpRese
         Logger::LogAppend("MinHook initialized successfully");
 
         g_Running.store(true);
+
+        g_GamePID = GetCurrentProcessId();
+
+        std::stringstream ss;
+        ss << "AutoTheater PID: " << std::to_string(g_GamePID);
+        Logger::LogAppend(ss.str().c_str());
 
         Logger::LogAppend("=== Current Phase: Start ===");
 

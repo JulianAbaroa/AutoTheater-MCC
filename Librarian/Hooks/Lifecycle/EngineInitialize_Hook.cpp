@@ -77,9 +77,17 @@ void EngineInitialize_Hook::Uninstall()
 {
 	if (!g_EngineInitialize_Hook_Installed.load()) return;
 
-	MH_DisableHook(g_EngineInitialize_Address);
-	MH_RemoveHook(g_EngineInitialize_Address);
+	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
+	if (hMod != nullptr && g_EngineInitialize_Address != 0)
+	{
+		MH_DisableHook(g_EngineInitialize_Address);
+		MH_RemoveHook(g_EngineInitialize_Address);
+		Logger::LogAppend("EngineInitialize hook uninstalled safely");
+	}
+	else
+	{
+		Logger::LogAppend("EngineInitialize hook skipped uninstall (module already gone)");
+	}
 
 	g_EngineInitialize_Hook_Installed.store(false);
-	Logger::LogAppend("EngineInitialize hook uninstalled");
 }

@@ -14,64 +14,95 @@
 
 std::thread g_MainThread;
 
+static void ShutdownAndEject()
+{
+    g_Running.store(false);
+
+    std::thread([=]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        FreeLibraryAndExitThread(g_HandleModule, 0);
+    }).detach();
+}
+
 void MainThread::Run() {
     Logger::LogAppend("=== Main Thread Started ===");
 
-    int attempts = 0;
     const int MAX_ATTEMPTS = 120;
+    auto TryInstallLifecycleHooks = [&](const char* context) -> bool {
+        std::stringstream ss;
+        int attempts = 0;
 
-    while (g_Running.load() && attempts < MAX_ATTEMPTS)
-    {
-        if (GetModuleHandle(L"haloreach.dll") != nullptr)
+        while (g_Running.load() && attempts < MAX_ATTEMPTS)
         {
-
-            if (EngineInitialize_Hook::Install() && DestroySubsystems_Hook::Install())
+            if (GetModuleHandle(L"haloreach.dll") != nullptr)
             {
-                Logger::LogAppend("All initial hooks installed successfully");
-                break;
+                if (EngineInitialize_Hook::Install() && DestroySubsystems_Hook::Install())
+                {
+                    ss << "All initial hooks installed successfully [" << context << "]";
+                    Logger::LogAppend(ss.str().c_str());
+                    ss.str("");
+                    return true;
+                }
             }
+
+            attempts++;
+            ss << "Waiting for hooks... (Attempt " << std::to_string(attempts) << ") [" << context << "]";
+            Logger::LogAppend(ss.str().c_str());
+            ss.str("");
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
 
-        attempts++;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
+        return false;
+    };
 
-    if (attempts > MAX_ATTEMPTS)
+    if (!TryInstallLifecycleHooks("Initial Boot"))
     {
         Logger::LogAppend("ERROR: Timeout waiting for game modules or signatures");
+        ShutdownAndEject();
+        return;
     }
 
     g_BaseModuleAddress = (uintptr_t)Main::GetHaloReachModuleBaseAddress();
     g_CurrentPhase = LibrarianPhase::BuildTimeline;
     Logger::LogAppend("=== Current Phase: BuildTimeline ===");
 
-    while (g_Running.load()) {
+    while (g_Running.load())
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(20));
+
+        ShutdownAndEject();
+
         if (g_GameEngineDestroyed)
         {
+            Logger::LogAppend("Game engine destruction detected, resetting lifecycle...");
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+
             if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
             {
                 g_CurrentPhase = LibrarianPhase::ExecuteDirector;
                 Logger::LogAppend("=== Current Phase: ExecuteDirector ===");
             }
-            else if (g_CurrentPhase == LibrarianPhase::ExecuteDirector)
+            else
             {
                 g_CurrentPhase = LibrarianPhase::BuildTimeline;
                 Logger::LogAppend("=== Current Phase: BuildTimeline ===");
 
                 g_DirectorInitialized = false;
+                g_IsLastEvent = false;
                 g_Timeline.clear();
                 g_Script.clear();
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
             EngineInitialize_Hook::Uninstall();
             DestroySubsystems_Hook::Uninstall();
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
 
-            EngineInitialize_Hook::Install();
-            DestroySubsystems_Hook::Install();
+            if (!TryInstallLifecycleHooks("Engine Reset Cycle")) {
+                Logger::LogAppend("ERROR: Failed to re-install hooks after engine reset!");
+                ShutdownAndEject();
+                return;
+            }
 
             g_GameEngineDestroyed = false;
         }
@@ -84,7 +115,6 @@ void MainThread::Run() {
 
     EngineInitialize_Hook::Uninstall();
     DestroySubsystems_Hook::Uninstall();
-
     BlamOpenFile_Hook::Uninstall();
     FilmInitializeState_Hook::Uninstall();
     UpdateTelemetryTimer_Hook::Uninstall();

@@ -13,9 +13,11 @@ enum LibrarianPhase
 };
 
 extern LibrarianPhase g_CurrentPhase;
+extern uintptr_t g_BaseModuleAddress;
 extern std::atomic<bool> g_Running;
 extern std::string g_BaseDirectory;
-extern uintptr_t g_BaseModuleAddress;
+extern HMODULE g_HandleModule;
+extern DWORD g_GamePID;
 
 namespace Main
 {

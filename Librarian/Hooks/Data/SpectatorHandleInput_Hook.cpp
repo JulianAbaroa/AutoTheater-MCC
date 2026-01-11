@@ -76,9 +76,17 @@ void SpectatorHandleInput_Hook::Uninstall()
 {
 	if (!g_SpectatorHandleInput_Hook_Installed.load()) return;
 
-	MH_DisableHook(g_SpectatorHandleInput_Address);
-	MH_RemoveHook(g_SpectatorHandleInput_Address);
+	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
+	if (hMod != nullptr && g_SpectatorHandleInput_Address != 0)
+	{
+		MH_DisableHook(g_SpectatorHandleInput_Address);
+		MH_RemoveHook(g_SpectatorHandleInput_Address);
+		Logger::LogAppend("SpectatorHandleInput hook uninstalled safely");
+	}
+	else
+	{
+		Logger::LogAppend("SpectatorHandleInput hook skipped uninstall (module already gone)");
+	}
 
 	g_SpectatorHandleInput_Hook_Installed.store(false);
-	Logger::LogAppend("SpectatorHandleInput hook uninstalled");
 }
