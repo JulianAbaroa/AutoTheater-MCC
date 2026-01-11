@@ -26,7 +26,7 @@ The project is organized into several modular layers, each responsible for a spe
 
     - **Director:** The primary logic controller. It interprets the timeline data to execute camera transitions and pacing adjustments.
 
-- Threads:
+- **Threads:**
 
     - **MainThread:** Controls the global state machine (Start, BuildTimeline, ExecuteDirector, End).
 
@@ -74,11 +74,13 @@ Hooks are categorized by their functional purpose within the engine:
 
 - **MinHook:** Used for reliable function hooking.
 
-- **Halo Modding Community:** Contributions to the understanding of the Blam! Engine structures.
+- **Halo Modding Community:** Contributions to the understanding of the Blam! Engine.
 
 ## Disclaimer
 
-This project is intended for educational and content creation purposes. AutoTheater-MCC is designed to work exclusively with Easy Anti-Cheat (EAC) disabled. The developer does not condone or support the use of this tool in a manner that violates software terms of service.
+**This project is intended for educational and content creation purposes.** AutoTheater-MCC is designed to work exclusively with **Easy Anti-Cheat (EAC) disabled**. The developer does not condone or support the use of this tool in a manner that violates software terms of service. 
+
+*Note: AutoTheater is in its early stages of development and may cause unexpected game crashes.*
 
 **Legal:** Halo: The Master Chief Collection © Microsoft Corporation. AutoTheater-MCC was created under Microsoft's ["Game Content Usage Rules"](https://www.xbox.com/en-US/developers/rules) using game data and code structures from Halo: Reach, and it is not endorsed by or affiliated with Microsoft.
 
