@@ -68,10 +68,6 @@ void MainThread::Run() {
 
     while (g_Running.load())
     {
-        std::this_thread::sleep_for(std::chrono::seconds(20));
-
-        ShutdownAndEject();
-
         if (g_GameEngineDestroyed)
         {
             Logger::LogAppend("Game engine destruction detected, resetting lifecycle...");
