@@ -2,6 +2,7 @@
 #include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Core/Scanner/Scanner.h"
+#include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
 
 #include "Hooks/MovReader/BlamOpenFile_Hook.h"
@@ -18,11 +19,12 @@ void* g_DestroySubsystems_Address = nullptr;
 
 void __fastcall hkDestroySubsystems(void)
 {
-	BlamOpenFile_Hook::Uninstall();
-	FilmInitializeState_Hook::Uninstall();
-	UpdateTelemetryTimer_Hook::Uninstall();
 	UIBuildDynamicMessage_Hook::Uninstall();
+	UpdateTelemetryTimer_Hook::Uninstall();
 	SpectatorHandleInput_Hook::Uninstall();
+	FilmInitializeState_Hook::Uninstall();
+	GetButtonState_Hook::Uninstall();
+	BlamOpenFile_Hook::Uninstall();
 
 	g_GameEngineDestroyed = true;
 	original_DestroySubsystems();
@@ -32,7 +34,7 @@ bool DestroySubsystems_Hook::Install()
 {
 	if (g_DestroySubsystems_Hook_Installed.load()) return true;
 
-	void* methodAddress = (void*)Scanner::FindPattern(Sig_DestroySubsystems);
+	void* methodAddress = (void*)Scanner::FindPattern(Signatures::DestroySubsystems);
 	if (!methodAddress)
 	{
 		Logger::LogAppend("Failed to obtain the address of DestroySubsystems()");
@@ -62,17 +64,9 @@ void DestroySubsystems_Hook::Uninstall()
 {
 	if (!g_DestroySubsystems_Hook_Installed.load()) return;
 
-	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
-	if (hMod != nullptr && g_DestroySubsystems_Address != 0)
-	{
-		MH_DisableHook(g_DestroySubsystems_Address);
-		MH_RemoveHook(g_DestroySubsystems_Address);
-		Logger::LogAppend("DestroySubsystems hook uninstalled safely");
-	}
-	else
-	{
-		Logger::LogAppend("DestroySubsystems hook skipped uninstall (module already gone)");
-	}
+	MH_DisableHook(g_DestroySubsystems_Address);
+	MH_RemoveHook(g_DestroySubsystems_Address);
 
 	g_DestroySubsystems_Hook_Installed.store(false);
+	Logger::LogAppend("DestroySubsystems hook uninstalled");
 }

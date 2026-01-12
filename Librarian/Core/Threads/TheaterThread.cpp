@@ -8,6 +8,7 @@
 #include "Core/Threads/TheaterThread.h"
 
 std::thread g_TheaterThread;
+bool g_LogGameEvents = false;
 
 std::string TheaterThread::EventTypeToString(EventType type) {
     switch (type) {
@@ -86,7 +87,7 @@ void TheaterThread::Run()
 
     while (g_Running)
     {
-        if (g_DirectorInitialized) continue;
+        if (!g_LogGameEvents) continue;
 
         while (processedCount < g_Timeline.size())
         {

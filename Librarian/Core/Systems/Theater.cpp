@@ -6,8 +6,8 @@
 #include "Core/Systems/Theater.h"
 #include "Hooks/Telemetry/Telemetry.h"
 
+volatile uint8_t g_FollowedPlayerIdx = 255;
 std::vector<PlayerInfo> g_PlayerList(16);
-uint8_t g_FollowedPlayerIdx = 255;
 uintptr_t g_pReplayModule = 0;
 std::string g_FilmPath = "";
 
@@ -18,7 +18,7 @@ void Theater::SetReplaySpeed(float speed)
 {
 	if (g_pReplayTimeScale == nullptr)
 	{
-		uintptr_t match = Scanner::FindPattern(Sig_TimeScaleModifier);
+		uintptr_t match = Scanner::FindPattern(Signatures::TimeScaleModifier);
 
 		if (match)
 		{
@@ -120,15 +120,15 @@ void Theater::RebuildPlayerListFromMemory()
 	uintptr_t objectTable = Telemetry::GetTelemetryObjectTable();
 	if (!playerTable || !objectTable) return;
 
-	static bool isFirst = true;
-
-	if (isFirst)
-	{
-		char buf[512];
-		sprintf_s(buf, "DEBUG: PlayerTable: %llx | ObjectTable: %llx", playerTable, objectTable);
-		Logger::LogAppend(buf);
-		isFirst = false;
-	}
+	//static bool isFirst = true;
+	//
+	//if (isFirst)
+	//{
+	//	char buf[512];
+	//	sprintf_s(buf, "DEBUG: PlayerTable: %llx | ObjectTable: %llx", playerTable, objectTable);
+	//	Logger::LogAppend(buf);
+	//	isFirst = false;
+	//}
 
 	for (uint8_t i = 0; i < 16; i++)	
 	{

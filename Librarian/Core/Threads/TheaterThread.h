@@ -4,6 +4,7 @@
 #include <thread>
 
 extern std::thread g_TheaterThread;
+extern bool g_LogGameEvents;
 
 namespace TheaterThread
 {

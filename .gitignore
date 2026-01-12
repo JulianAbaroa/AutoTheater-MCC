@@ -1,6 +1,7 @@
 Librarian/todos.cpp
 Librarian/Ignore/
 build/
+bin/
 
 .vs/
 *.user

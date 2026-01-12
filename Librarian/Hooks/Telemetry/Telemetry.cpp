@@ -10,7 +10,7 @@ uintptr_t Telemetry::GetTelemetryPlayerTable()
 	{
 		uintptr_t tlsArray = (uintptr_t)__readgsqword(0x58);
 
-        uintptr_t match = Scanner::FindPattern(Sig_TelemetryIdModifier);
+        uintptr_t match = Scanner::FindPattern(Signatures::TelemetryIdModifier);
 
         if (match)
         {
@@ -47,7 +47,7 @@ uintptr_t Telemetry::GetTelemetryObjectTable()
     {
         uintptr_t tlsArray = (uintptr_t)__readgsqword(0x58);
 
-        uintptr_t match = Scanner::FindPattern(Sig_TelemetryIdModifier);
+        uintptr_t match = Scanner::FindPattern(Signatures::TelemetryIdModifier);
 
         if (match)
         {

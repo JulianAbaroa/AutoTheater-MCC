@@ -17,10 +17,7 @@ void DirectorThread::Run()
     {
         if (g_DirectorInitialized && !g_GameEngineDestroyed)
         {
-            if (Main::IsGameFocused())
-            {
-                Director::Update();
-            }
+            Director::Update();
         }
 
         std::this_thread::sleep_for(16ms);

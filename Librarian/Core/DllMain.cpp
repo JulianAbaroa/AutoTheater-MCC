@@ -9,14 +9,11 @@
 #include <shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
 
-// Project name: AutoTheater for MCC (Halo Reach)
-
-LibrarianPhase g_CurrentPhase = LibrarianPhase::Start;
+LibrarianPhase g_CurrentPhase;
 std::atomic<bool> g_Running{ false };
 uintptr_t g_BaseModuleAddress = 0;
 HMODULE g_HandleModule = nullptr;
 std::string g_BaseDirectory = "";
-DWORD g_GamePID = 0;
 
 BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpReserved) {
     switch (ulReasonForCall) {
@@ -42,18 +39,10 @@ BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpRese
 
         g_Running.store(true);
 
-        g_GamePID = GetCurrentProcessId();
-
-        std::stringstream ss;
-        ss << "AutoTheater PID: " << std::to_string(g_GamePID);
-        Logger::LogAppend(ss.str().c_str());
-
+        g_CurrentPhase = LibrarianPhase::Start;
         Logger::LogAppend("=== Current Phase: Start ===");
 
         g_MainThread = std::thread(MainThread::Run);
-
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-
         g_InputThread = std::thread(InputThread::Run);
         g_TheaterThread = std::thread(TheaterThread::Run);
         g_DirectorThread = std::thread(DirectorThread::Run);
@@ -68,6 +57,8 @@ BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpRese
 
         if (lpReserved == NULL)
         {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
             if (g_MainThread.joinable()) g_MainThread.detach();
             if (g_InputThread.joinable()) g_InputThread.detach();
             if (g_TheaterThread.joinable()) g_TheaterThread.detach();

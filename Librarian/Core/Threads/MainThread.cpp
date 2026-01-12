@@ -3,6 +3,7 @@
 #include "Utils/Logger.h"
 #include "Core/Systems/Director.h"
 #include "Core/Threads/MainThread.h"
+#include "Core/Threads//TheaterThread.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
 
@@ -25,6 +26,8 @@ static void ShutdownAndEject()
 }
 
 void MainThread::Run() {
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+
     Logger::LogAppend("=== Main Thread Started ===");
 
     const int MAX_ATTEMPTS = 120;
@@ -64,7 +67,7 @@ void MainThread::Run() {
 
     g_BaseModuleAddress = (uintptr_t)Main::GetHaloReachModuleBaseAddress();
     g_CurrentPhase = LibrarianPhase::BuildTimeline;
-    Logger::LogAppend("=== Current Phase: BuildTimeline ===");
+    g_LogGameEvents = true;
 
     while (g_Running.load())
     {
@@ -77,13 +80,11 @@ void MainThread::Run() {
             if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
             {
                 g_CurrentPhase = LibrarianPhase::ExecuteDirector;
-                Logger::LogAppend("=== Current Phase: ExecuteDirector ===");
+                g_LogGameEvents = false;
             }
             else
             {
                 g_CurrentPhase = LibrarianPhase::BuildTimeline;
-                Logger::LogAppend("=== Current Phase: BuildTimeline ===");
-
                 g_DirectorInitialized = false;
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -92,6 +93,8 @@ void MainThread::Run() {
 
                 g_Timeline.clear();
                 g_Script.clear();
+
+                g_LogGameEvents = true;
             }
 
             EngineInitialize_Hook::Uninstall();

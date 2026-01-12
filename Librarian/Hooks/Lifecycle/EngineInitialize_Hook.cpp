@@ -3,14 +3,15 @@
 #include "Utils/Logger.h"
 #include "Core/Scanner/Scanner.h"
 #include "Core/Systems/Director.h"
+#include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
-#include <thread>
 
 #include "Hooks/MovReader/BlamOpenFile_Hook.h"
 #include "Hooks/MovReader/FilmInitializeState_Hook.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
 #include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
 #include "Hooks/Data/UIBuildDynamicMessage_Hook.h"
+#include <thread>
 
 EngineInitialize_t original_EngineInitialize = nullptr;
 std::atomic<bool> g_EngineInitialize_Hook_Installed = false;
@@ -39,6 +40,7 @@ void __fastcall hkEngineInitialize(void)
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		UpdateTelemetryTimer_Hook::Install();
 		SpectatorHandleInput_Hook::Install();
+		GetButtonState_Hook::Install();
 		Director::Initialize();
 	}
 }
@@ -47,7 +49,7 @@ bool EngineInitialize_Hook::Install()
 {
 	if (g_EngineInitialize_Hook_Installed.load()) return true;
 
-	void* methodAddress = (void*)Scanner::FindPattern(Sig_EngineInitialize);
+	void* methodAddress = (void*)Scanner::FindPattern(Signatures::EngineInitialize);
 	if (!methodAddress)
 	{
 		Logger::LogAppend("Failed to obtain the address of EngineInitialize()");
@@ -77,17 +79,9 @@ void EngineInitialize_Hook::Uninstall()
 {
 	if (!g_EngineInitialize_Hook_Installed.load()) return;
 
-	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
-	if (hMod != nullptr && g_EngineInitialize_Address != 0)
-	{
-		MH_DisableHook(g_EngineInitialize_Address);
-		MH_RemoveHook(g_EngineInitialize_Address);
-		Logger::LogAppend("EngineInitialize hook uninstalled safely");
-	}
-	else
-	{
-		Logger::LogAppend("EngineInitialize hook skipped uninstall (module already gone)");
-	}
+	MH_DisableHook(g_EngineInitialize_Address);
+	MH_RemoveHook(g_EngineInitialize_Address);
 
 	g_EngineInitialize_Hook_Installed.store(false);
+	Logger::LogAppend("EngineInitialize hook uninstalled");
 }

@@ -153,6 +153,7 @@
     <ClInclude Include="Core\Threads\MainThread.h" />
     <ClInclude Include="Core\Threads\TheaterThread.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="Hooks\Data\GetButtonState_Hook.h" />
     <ClInclude Include="Hooks\Data\SpectatorHandleInput_Hook.h" />
     <ClInclude Include="Hooks\Data\UIBuildDynamicMessage_Hook.h" />
     <ClInclude Include="Hooks\Data\UpdateTelemetryTimer_Hook.h" />
@@ -196,6 +197,7 @@
     <ClCompile Include="External\minhook\src\trampoline.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Hooks\Data\GetButtonState_Hook.cpp" />
     <ClCompile Include="Hooks\Data\SpectatorHandleInput_Hook.cpp" />
     <ClCompile Include="Hooks\Data\UIBuildDynamicMessage_Hook.cpp" />
     <ClCompile Include="Hooks\Data\UpdateTelemetryTimer_Hook.cpp" />

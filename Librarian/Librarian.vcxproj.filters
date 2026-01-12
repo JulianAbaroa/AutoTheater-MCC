@@ -117,6 +117,9 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Ignore\BaseHook.h" />
+    <ClInclude Include="Hooks\Data\GetButtonState_Hook.h">
+      <Filter>Hooks\Data</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\DllMain.cpp">
@@ -197,5 +200,8 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Ignore\BaseHook.cpp" />
     <ClCompile Include="Ignore\todos.cpp" />
+    <ClCompile Include="Hooks\Data\GetButtonState_Hook.cpp">
+      <Filter>Hooks\Data</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

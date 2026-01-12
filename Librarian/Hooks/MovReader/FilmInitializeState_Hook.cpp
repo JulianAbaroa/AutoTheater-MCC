@@ -86,7 +86,7 @@ void FilmInitializeState_Hook::Install()
 {
 	if (g_FilmInitializeState_Hook_Installed.load()) return;
 
-	void* methodAddress = (void*)Scanner::FindPattern(Sig_FilmInitializeState);
+	void* methodAddress = (void*)Scanner::FindPattern(Signatures::FilmInitializeState);
 	if (!methodAddress)
 	{
 		Logger::LogAppend("Failed to obtain the address of FilmInitializeState()");
@@ -115,17 +115,9 @@ void FilmInitializeState_Hook::Uninstall()
 {
 	if (!g_FilmInitializeState_Hook_Installed.load()) return;
 
-	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
-	if (hMod != nullptr && g_FilmInitializeState_Address != 0)
-	{
-		MH_DisableHook(g_FilmInitializeState_Address);
-		MH_RemoveHook(g_FilmInitializeState_Address);
-		Logger::LogAppend("FilmInitializeState hook uninstalled safely");
-	}
-	else
-	{
-		Logger::LogAppend("FilmInitializeState hook skipped uninstall (module already gone)");
-	}
+	MH_DisableHook(g_FilmInitializeState_Address);
+	MH_RemoveHook(g_FilmInitializeState_Address);
 
 	g_FilmInitializeState_Hook_Installed.store(false);
+	Logger::LogAppend("FilmInitializeState hook uninstalled");
 }

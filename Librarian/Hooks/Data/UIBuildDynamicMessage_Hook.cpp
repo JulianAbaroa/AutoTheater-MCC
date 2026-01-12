@@ -75,10 +75,10 @@ unsigned char hkUIBuildDynamicMessage(
 			Timeline::AddGameEvent(totalTime, message, playerHandle);
 
 			// To find new GameEvents
-			char finalMsg[512];
-			std::string timeStr = Formatting::ToTimestamp(totalTime);
-			snprintf(finalMsg, sizeof(finalMsg), "[%s] %ls", timeStr.c_str(), pOutBuffer);
-			Logger::LogAppend(finalMsg);
+			//char finalMsg[512];
+			//std::string timeStr = Formatting::ToTimestamp(totalTime);
+			//snprintf(finalMsg, sizeof(finalMsg), "[%s] %ls", timeStr.c_str(), pOutBuffer);
+			//Logger::LogAppend(finalMsg);
 		}
 	}
 
@@ -89,7 +89,7 @@ void UIBuildDynamicMessage_Hook::Install()
 {
 	if (g_UIBuildDynamicMessage_Hook_Installed.load()) return;
 
-	void* methodAddress = (void*)Scanner::FindPattern(Sig_UIBuildDynamicMessage);
+	void* methodAddress = (void*)Scanner::FindPattern(Signatures::UIBuildDynamicMessage);
 	if (!methodAddress)
 	{
 		Logger::LogAppend("Failed to obtain the address of UIBuildDynamicMessage()");
@@ -118,17 +118,9 @@ void UIBuildDynamicMessage_Hook::Uninstall()
 {
 	if (!g_UIBuildDynamicMessage_Hook_Installed.load()) return;
 
-	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
-	if (hMod != nullptr && g_UIBuildDynamicMessage_Address != 0)
-	{
-		MH_DisableHook(g_UIBuildDynamicMessage_Address);
-		MH_RemoveHook(g_UIBuildDynamicMessage_Address);
-		Logger::LogAppend("UIBuildDynamicMessage hook uninstalled safely");
-	}
-	else
-	{
-		Logger::LogAppend("UIBuildDynamicMessage hook skipped uninstall (module already gone)");
-	}
+	MH_DisableHook(g_UIBuildDynamicMessage_Address);
+	MH_RemoveHook(g_UIBuildDynamicMessage_Address);
 
 	g_UIBuildDynamicMessage_Hook_Installed.store(false);
+	Logger::LogAppend("UIBuildDynamicMessage hook uninstalled");
 }

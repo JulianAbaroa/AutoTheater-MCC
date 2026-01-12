@@ -14,7 +14,7 @@ struct PlayerInfo {
 };
 
 extern std::vector<PlayerInfo> g_PlayerList;
-extern uint8_t g_FollowedPlayerIdx;
+extern volatile uint8_t g_FollowedPlayerIdx;
 extern uintptr_t g_pReplayModule;
 extern std::string g_FilmPath;
 

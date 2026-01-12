@@ -3,6 +3,7 @@
 #include "Core/Systems/Director.h"
 #include "Core/Threads/InputThread.h"
 #include "Core/Threads/TheaterThread.h"
+#include "Hooks/Data/GetButtonState_Hook.h"
 #include <algorithm>
 #include <iomanip>
 #include <chrono>   
@@ -412,12 +413,7 @@ void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 		int forwardSteps = (targetIdx - current + 16) % 16;
 		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
 
-		if (movingForward) {
-			InputThread::NextPlayer();
-		}
-		else {
-			InputThread::PrevPlayer();
-		}
+		g_NextInput.InputAction = movingForward ? InputAction::NextPlayer : InputAction::PreviousPlayer;
 
 		auto startWait = std::chrono::steady_clock::now();
 		bool changed = false;
@@ -430,37 +426,27 @@ void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 				break;
 			}
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(20));
+			std::this_thread::yield;
 		}
+
+		g_NextInput.InputAction = InputAction::Unknown;
 
 		if (changed)
 		{
-			bool skipped = false;
+			std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
 			int newForwardSteps = (targetIdx - g_FollowedPlayerIdx + 16) % 16;
+			bool skipped = movingForward ? (newForwardSteps > 8) : (newForwardSteps <= 8 && newForwardSteps > 0);
 
-			if (movingForward) {
-				if (newForwardSteps > 8 && newForwardSteps < 15) skipped = true;
-			}
-			else {
-				if (newForwardSteps <= 8 && newForwardSteps > 1) skipped = true;
-			}
-
-			if (skipped)
+			if (skipped && g_FollowedPlayerIdx != targetIdx)
 			{
-				ss.str("");
-				ss << "WARNING: Player " << (int)targetIdx << " skipped (death). Retrying...";
-				Logger::LogAppend(ss.str().c_str());
-				std::this_thread::sleep_for(std::chrono::milliseconds(500));
-			}
-			else
-			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(20));
+				Logger::LogAppend(std::string("WARNING: Overshot / Skipped.Current : " + std::to_string(g_FollowedPlayerIdx)).c_str());
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
 			}
 		}
 		else
 		{
-			Logger::LogAppend("WARNING: Retrying input...");
+			Logger::LogAppend("WARNING: Input not registered, retrying...");
 		}
 	}
 

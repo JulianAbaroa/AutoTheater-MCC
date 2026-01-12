@@ -17,7 +17,7 @@ void hkUpdateTelemetryTimer(
 
 	if (g_pReplayTime == nullptr)
 	{
-		uintptr_t match = Scanner::FindPattern(Sig_TimeModifier);
+		uintptr_t match = Scanner::FindPattern(Signatures::TimeModifier);
 
 		if (match)
 		{
@@ -37,7 +37,7 @@ void UpdateTelemetryTimer_Hook::Install()
 {
 	if (g_UpdateTelemetryTimer_Hook_Installed.load()) return;
 
-	void* methodAddress = (void*)Scanner::FindPattern(Sig_UpdateTelemetryTimer);
+	void* methodAddress = (void*)Scanner::FindPattern(Signatures::UpdateTelemetryTimer);
 
 	if (!methodAddress)
 	{
@@ -67,17 +67,9 @@ void UpdateTelemetryTimer_Hook::Uninstall()
 {
 	if (!g_UpdateTelemetryTimer_Hook_Installed.load()) return;
 
-	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
-	if (hMod != nullptr && g_UpdateTelemetryTimer_Address != 0)
-	{
-		MH_DisableHook(g_UpdateTelemetryTimer_Address);
-		MH_RemoveHook(g_UpdateTelemetryTimer_Address);
-		Logger::LogAppend("UpdateTelemetryTimer hook uninstalled safely");
-	}
-	else
-	{
-		Logger::LogAppend("UpdateTelemetryTimer hook skipped uninstall (module already gone)");
-	}
+	MH_DisableHook(g_UpdateTelemetryTimer_Address);
+	MH_RemoveHook(g_UpdateTelemetryTimer_Address);
 
 	g_UpdateTelemetryTimer_Hook_Installed.store(false);
+	Logger::LogAppend("UpdateTelemetryTimer hook uninstalled");
 }

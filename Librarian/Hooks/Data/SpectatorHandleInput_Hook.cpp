@@ -3,11 +3,14 @@
 #include "Utils/Logger.h"
 #include "Core/Scanner/Scanner.h"
 #include "Core/Systems/Timeline.h"
+#include "Core/Systems/Director.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
 
 SpectatorHandleInput_t original_SpectatorHandleInput = nullptr;
 std::atomic<bool> g_SpectatorHandleInput_Hook_Installed = false;
 void* g_SpectatorHandleInput_Address = nullptr;
+
+bool g_IsProcessingChange = false;
 
 void __fastcall hkSpectatorHandleInput(
 	uintptr_t pReplayModule,
@@ -47,7 +50,7 @@ void SpectatorHandleInput_Hook::Install()
 {
 	if (g_SpectatorHandleInput_Hook_Installed.load()) return;
 
-	void* methodAddress = (void*)Scanner::FindPattern(Sig_SpectatorHandleInput);
+	void* methodAddress = (void*)Scanner::FindPattern(Signatures::SpectatorHandleInput);
 	if (!methodAddress)
 	{
 		Logger::LogAppend("Failed to obtain the address of SpectatorHandleInput()");
@@ -76,17 +79,9 @@ void SpectatorHandleInput_Hook::Uninstall()
 {
 	if (!g_SpectatorHandleInput_Hook_Installed.load()) return;
 
-	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
-	if (hMod != nullptr && g_SpectatorHandleInput_Address != 0)
-	{
-		MH_DisableHook(g_SpectatorHandleInput_Address);
-		MH_RemoveHook(g_SpectatorHandleInput_Address);
-		Logger::LogAppend("SpectatorHandleInput hook uninstalled safely");
-	}
-	else
-	{
-		Logger::LogAppend("SpectatorHandleInput hook skipped uninstall (module already gone)");
-	}
+	MH_DisableHook(g_SpectatorHandleInput_Address);
+	MH_RemoveHook(g_SpectatorHandleInput_Address);
 
 	g_SpectatorHandleInput_Hook_Installed.store(false);
+	Logger::LogAppend("SpectatorHandleInput hook uninstalled");
 }

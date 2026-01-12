@@ -50,7 +50,7 @@ void BlamOpenFile_Hook::Install()
 {
 	if (g_BlamOpenFile_Hook_Installed.load()) return;
 
-	void* methodAddress = (void*)Scanner::FindPattern(Sig_BlamOpenFile);
+	void* methodAddress = (void*)Scanner::FindPattern(Signatures::BlamOpenFile);
 	if (!methodAddress)
 	{
 		Logger::LogAppend("Failed to obtain the address of BlamOpenFile()");
@@ -79,17 +79,9 @@ void BlamOpenFile_Hook::Uninstall()
 {
 	if (!g_BlamOpenFile_Hook_Installed.load()) return;
 
-	HMODULE hMod = GetModuleHandle(L"haloreach.dll");
-	if (hMod != nullptr && g_BlamOpenFile_Address != 0)
-	{
-		MH_DisableHook(g_BlamOpenFile_Address);
-		MH_RemoveHook(g_BlamOpenFile_Address);
-		Logger::LogAppend("BlamOpenFile hook uninstalled safely");
-	}
-	else
-	{
-		Logger::LogAppend("BlamOpenFile hook skipped uninstall (module already gone)");
-	}
+	MH_DisableHook(g_BlamOpenFile_Address);
+	MH_RemoveHook(g_BlamOpenFile_Address);
 
 	g_BlamOpenFile_Hook_Installed.store(false);
+	Logger::LogAppend("BlamOpenFile hook uninstalled");
 }
