@@ -53,6 +53,11 @@ namespace Signatures
 		"GetButtonState",
 		"?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? 0F BF D1 83 EA 69 74 ?? 83 EA 01 74 ?? 83 EA 01 74 ?? 83 FA 01 74"
 	};
+	
+	const Signature GameEngineStart = {
+		"GameEngineStart",
+		"48 89 5C 24 08 57 48 83 EC 30 49 8B F8 48 8D 0D ? ? ? ? 48 8B DA 41 B8 ? ? ? ? 48 8B D7 E8"
+	};
 
 	// Variables
 	const Signature TimeScaleModifier = {

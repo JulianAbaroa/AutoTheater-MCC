@@ -3,6 +3,7 @@
 #include "Utils/Logger.h"
 #include "Core/Systems/Timeline.h"
 #include "Core/Threads/InputThread.h"
+#include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include <map>
 
 std::thread g_InputThread;
@@ -19,6 +20,8 @@ void InputThread::Run()
 
     while (g_Running.load())
     {
+        if (!g_IsTheaterMode) return;
+
         for (const auto& [key, speed] : speedMap)
         {
             if (GetAsyncKeyState(key) & 0x8000)

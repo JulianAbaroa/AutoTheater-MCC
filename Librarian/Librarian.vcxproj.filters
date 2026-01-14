@@ -120,6 +120,9 @@
     <ClInclude Include="Hooks\Data\GetButtonState_Hook.h">
       <Filter>Hooks\Data</Filter>
     </ClInclude>
+    <ClInclude Include="Hooks\Lifecycle\GameEngineStart_Hook.h">
+      <Filter>Hooks\Lifecycle</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\DllMain.cpp">
@@ -202,6 +205,9 @@
     <ClCompile Include="Ignore\todos.cpp" />
     <ClCompile Include="Hooks\Data\GetButtonState_Hook.cpp">
       <Filter>Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\Lifecycle\GameEngineStart_Hook.cpp">
+      <Filter>Hooks\Lifecycle</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

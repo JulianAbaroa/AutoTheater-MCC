@@ -4,6 +4,7 @@
 #include "Core/Systems/Director.h"
 #include "Core/Threads/DirectorThread.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
+#include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -15,7 +16,7 @@ void DirectorThread::Run()
 
     while (g_Running.load())
     {
-        if (g_DirectorInitialized && !g_GameEngineDestroyed)
+        if (g_DirectorInitialized && !g_GameEngineDestroyed && g_IsTheaterMode)
         {
             Director::Update();
         }

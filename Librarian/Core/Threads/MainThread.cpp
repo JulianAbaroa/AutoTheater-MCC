@@ -3,7 +3,8 @@
 #include "Utils/Logger.h"
 #include "Core/Systems/Director.h"
 #include "Core/Threads/MainThread.h"
-#include "Core/Threads//TheaterThread.h"
+#include "Core/Threads/TheaterThread.h"
+#include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
 
@@ -39,8 +40,10 @@ void MainThread::Run() {
         {
             if (GetModuleHandle(L"haloreach.dll") != nullptr)
             {
-                if (EngineInitialize_Hook::Install() && DestroySubsystems_Hook::Install())
-                {
+                if (EngineInitialize_Hook::Install() && 
+                    DestroySubsystems_Hook::Install() && 
+                    GameEngineStart_Hook::Install()
+                ) {
                     ss << "All initial hooks installed successfully [" << context << "]";
                     Logger::LogAppend(ss.str().c_str());
                     ss.str("");
@@ -75,30 +78,33 @@ void MainThread::Run() {
         {
             Logger::LogAppend("Game engine destruction detected, resetting lifecycle...");
             std::this_thread::sleep_for(std::chrono::seconds(1));
-               
 
-            if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
+            if (g_IsTheaterMode)
             {
-                g_CurrentPhase = LibrarianPhase::ExecuteDirector;
-                g_LogGameEvents = false;
-            }
-            else
-            {
-                g_CurrentPhase = LibrarianPhase::BuildTimeline;
-                g_DirectorInitialized = false;
+                if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
+                {
+                    g_CurrentPhase = LibrarianPhase::ExecuteDirector;
+                    g_LogGameEvents = false;
+                }
+                else
+                {
+                    g_CurrentPhase = LibrarianPhase::BuildTimeline;
+                    g_DirectorInitialized = false;
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-                g_IsLastEvent = false;
+                    g_IsLastEvent = false;
 
-                g_Timeline.clear();
-                g_Script.clear();
+                    g_Timeline.clear();
+                    g_Script.clear();
 
-                g_LogGameEvents = true;
+                    g_LogGameEvents = true;
+                }
             }
 
             EngineInitialize_Hook::Uninstall();
             DestroySubsystems_Hook::Uninstall();
+            GameEngineStart_Hook::Uninstall();
 
             std::this_thread::sleep_for(std::chrono::seconds(1));
 

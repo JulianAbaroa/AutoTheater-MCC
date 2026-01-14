@@ -159,6 +159,7 @@
     <ClInclude Include="Hooks\Data\UpdateTelemetryTimer_Hook.h" />
     <ClInclude Include="Hooks\Lifecycle\DestroySubsystems_Hook.h" />
     <ClInclude Include="Hooks\Lifecycle\EngineInitialize_Hook.h" />
+    <ClInclude Include="Hooks\Lifecycle\GameEngineStart_Hook.h" />
     <ClInclude Include="Hooks\MovReader\BlamOpenFile_Hook.h" />
     <ClInclude Include="Hooks\MovReader\FilmInitializeState_Hook.h" />
     <ClInclude Include="Hooks\MovReader\MovParser.h" />
@@ -203,6 +204,7 @@
     <ClCompile Include="Hooks\Data\UpdateTelemetryTimer_Hook.cpp" />
     <ClCompile Include="Hooks\Lifecycle\DestroySubsystems_Hook.cpp" />
     <ClCompile Include="Hooks\Lifecycle\EngineInitialize_Hook.cpp" />
+    <ClCompile Include="Hooks\Lifecycle\GameEngineStart_Hook.cpp" />
     <ClCompile Include="Hooks\MovReader\BlamOpenFile_Hook.cpp" />
     <ClCompile Include="Hooks\MovReader\FilmInitializeState_Hook.cpp" />
     <ClCompile Include="Hooks\MovReader\MovParser.cpp" />

@@ -6,6 +6,7 @@
 #include "Core/Systems/Director.h"
 #include "Core/Systems/Timeline.h"
 #include "Core/Threads/TheaterThread.h"
+#include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 
 std::thread g_TheaterThread;
 bool g_LogGameEvents = false;
@@ -87,7 +88,7 @@ void TheaterThread::Run()
 
     while (g_Running)
     {
-        if (!g_LogGameEvents) continue;
+        if (!g_LogGameEvents || !g_IsTheaterMode) continue;
 
         while (processedCount < g_Timeline.size())
         {

@@ -4,6 +4,7 @@
 #include "Core/Scanner/Scanner.h"
 #include "Core/Systems/Director.h"
 #include "Hooks/Data/GetButtonState_Hook.h"
+#include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
 
 #include "Hooks/MovReader/BlamOpenFile_Hook.h"
@@ -20,6 +21,8 @@ void* g_EngineInitialize_Address = nullptr;
 void __fastcall hkEngineInitialize(void)
 {
 	original_EngineInitialize();
+
+	if (!g_IsTheaterMode) return;
 
 	if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
 	{
