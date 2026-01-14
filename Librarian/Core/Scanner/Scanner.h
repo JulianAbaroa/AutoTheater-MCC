@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Core/Scanner/Signatures.h"
-#include "windows.h"
-#include <cstdint>
 
 namespace Scanner
 {

@@ -4,11 +4,11 @@
 #include "Core/Scanner/Scanner.h"
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 
-bool g_IsTheaterMode = false;
-
 GameEngineStart_t original_GameEngineStart = nullptr;
 std::atomic<bool> g_GameEngineStart_Hook_Installed = false;
 void* g_GameEngineStart_Address = nullptr;
+
+bool g_IsTheaterMode = false;
 
 void __fastcall hkGameEngineStart(uint64_t param_1, uint64_t param_2, uint64_t* param_3)
 {

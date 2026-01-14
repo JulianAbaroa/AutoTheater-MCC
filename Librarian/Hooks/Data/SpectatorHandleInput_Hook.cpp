@@ -10,7 +10,8 @@ SpectatorHandleInput_t original_SpectatorHandleInput = nullptr;
 std::atomic<bool> g_SpectatorHandleInput_Hook_Installed = false;
 void* g_SpectatorHandleInput_Address = nullptr;
 
-bool g_IsProcessingChange = false;
+volatile uint8_t g_FollowedPlayerIdx = 255;
+uintptr_t g_pReplayModule = 0;
 
 void __fastcall hkSpectatorHandleInput(
 	uintptr_t pReplayModule,

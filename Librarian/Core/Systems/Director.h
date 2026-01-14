@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Systems/Timeline.h"
-#include <vector>
+#include <mutex>
 
 enum class CommandType { Cut, SetSpeed };
 
@@ -28,6 +28,8 @@ struct ActionSegment
 };
 
 extern std::vector<DirectorCommand> g_Script;
+extern std::mutex g_ScriptMutex;
+
 extern bool g_DirectorInitialized;
 extern int g_CurrentCommandIndex;
 

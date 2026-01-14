@@ -151,7 +151,7 @@
     <ClInclude Include="Core\Threads\DirectorThread.h" />
     <ClInclude Include="Core\Threads\InputThread.h" />
     <ClInclude Include="Core\Threads\MainThread.h" />
-    <ClInclude Include="Core\Threads\TheaterThread.h" />
+    <ClInclude Include="Core\Threads\LogThread.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Hooks\Data\GetButtonState_Hook.h" />
     <ClInclude Include="Hooks\Data\SpectatorHandleInput_Hook.h" />
@@ -182,7 +182,7 @@
     <ClCompile Include="Core\Threads\DirectorThread.cpp" />
     <ClCompile Include="Core\Threads\InputThread.cpp" />
     <ClCompile Include="Core\Threads\MainThread.cpp" />
-    <ClCompile Include="Core\Threads\TheaterThread.cpp" />
+    <ClCompile Include="Core\Threads\LogThread.cpp" />
     <ClCompile Include="External\minhook\src\buffer.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>

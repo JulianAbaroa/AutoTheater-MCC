@@ -72,7 +72,7 @@
     <ClInclude Include="Core\Threads\MainThread.h">
       <Filter>Core\Threads</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Threads\TheaterThread.h">
+    <ClInclude Include="Core\Threads\LogThread.h">
       <Filter>Core\Threads</Filter>
     </ClInclude>
     <ClInclude Include="Hooks\Data\SpectatorHandleInput_Hook.h">
@@ -149,7 +149,7 @@
     <ClCompile Include="Core\Threads\MainThread.cpp">
       <Filter>Core\Threads</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Threads\TheaterThread.cpp">
+    <ClCompile Include="Core\Threads\LogThread.cpp">
       <Filter>Core\Threads</Filter>
     </ClCompile>
     <ClCompile Include="Hooks\Data\SpectatorHandleInput_Hook.cpp">

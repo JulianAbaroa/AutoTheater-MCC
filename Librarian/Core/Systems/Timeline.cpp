@@ -11,6 +11,7 @@ static EventType GetEventType(const std::wstring& message)
 {
 	EventType bestType = EventType::Unknown;
 	int highestWeight = -1;
+	size_t longestMatch = 0;
 
 	for (const auto& er : g_EventRegistry)
 	{
@@ -18,13 +19,14 @@ static EventType GetEventType(const std::wstring& message)
 
 		if (message.find(keyword) != std::wstring::npos)
 		{
-			EventType currentType= er.first;
 			int weight = er.second.Weight;
+			size_t currentLength = keyword.length();
 
-			if (weight > highestWeight)
+			if (weight > highestWeight || (weight == highestWeight && currentLength > longestMatch))
 			{
-				bestType = currentType;
+				bestType = er.first;
 				highestWeight = weight;
+				longestMatch = currentLength;
 			}
 		}
 	}

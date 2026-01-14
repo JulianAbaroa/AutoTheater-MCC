@@ -9,6 +9,8 @@ UpdateTelemetryTimer_t original_UpdateTelemetryTimer = nullptr;
 std::atomic<bool> g_UpdateTelemetryTimer_Hook_Installed;
 void* g_UpdateTelemetryTimer_Address;
 
+float* g_pReplayTime = nullptr;
+
 void hkUpdateTelemetryTimer(
 	uint64_t timerContext,
 	float deltaTime
@@ -18,7 +20,6 @@ void hkUpdateTelemetryTimer(
 	if (g_pReplayTime == nullptr)
 	{
 		uintptr_t match = Scanner::FindPattern(Signatures::TimeModifier);
-
 		if (match)
 		{
 			int32_t relativeOffset = *(int32_t*)(match + 4);
@@ -28,7 +29,7 @@ void hkUpdateTelemetryTimer(
 		}
 		else
 		{
-			Logger::LogAppend("Match not found for Sig_TimeModifier");
+			Logger::LogAppend("Match not found for Signatures::TimeModifier");
 		}
 	}
 }

@@ -3,15 +3,15 @@
 #include "Utils/Logger.h"
 #include "Core/Scanner/Scanner.h"
 #include "Core/Systems/Director.h"
-#include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
 
-#include "Hooks/MovReader/BlamOpenFile_Hook.h"
-#include "Hooks/MovReader/FilmInitializeState_Hook.h"
+#include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
 #include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
 #include "Hooks/Data/UIBuildDynamicMessage_Hook.h"
+#include "Hooks/MovReader/FilmInitializeState_Hook.h"
+#include "Hooks/MovReader/BlamOpenFile_Hook.h"
 #include <thread>
 
 EngineInitialize_t original_EngineInitialize = nullptr;

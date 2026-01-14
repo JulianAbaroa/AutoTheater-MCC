@@ -3,11 +3,10 @@
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
 #include "Core/Scanner/Scanner.h"
-#include "Core/Systems/Theater.h"
 #include "Core/Systems/Timeline.h"
+#include "Hooks/Data/SpectatorHandleInput_Hook.h"
+#include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
 #include "Hooks/Data/UIBuildDynamicMessage_Hook.h"
-#include <iomanip>
-#include <vector>
 
 UIBuildDynamicMessage_t original_UIBuildDynamicMessage = nullptr;
 std::atomic<bool> g_UIBuildDynamicMessage_Hook_Installed;
@@ -75,10 +74,10 @@ unsigned char hkUIBuildDynamicMessage(
 			Timeline::AddGameEvent(totalTime, message, playerHandle);
 
 			// To find new GameEvents
-			//char finalMsg[512];
-			//std::string timeStr = Formatting::ToTimestamp(totalTime);
-			//snprintf(finalMsg, sizeof(finalMsg), "[%s] %ls", timeStr.c_str(), pOutBuffer);
-			//Logger::LogAppend(finalMsg);
+			char finalMsg[512];
+			std::string timeStr = Formatting::ToTimestamp(totalTime);
+			snprintf(finalMsg, sizeof(finalMsg), "[%s] %ls", timeStr.c_str(), pOutBuffer);
+			Logger::LogAppend(finalMsg);
 		}
 	}
 

@@ -1,15 +1,15 @@
 #include "pch.h"
 #include "Utils/Logger.h"
 #include "Core/Systems/Director.h"
-#include "Core/Threads/InputThread.h"
-#include "Core/Threads/TheaterThread.h"
 #include "Hooks/Data/GetButtonState_Hook.h"
+#include "Hooks/Data/SpectatorHandleInput_Hook.h"
+#include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
 #include <algorithm>
-#include <iomanip>
-#include <chrono>   
-#include <map>
+#include <thread>
 
 std::vector<DirectorCommand> g_Script;
+std::mutex g_ScriptMutex;
+
 static float g_LastReplayTime = 0.0f;
 bool g_DirectorInitialized = false;
 int g_CurrentCommandIndex = 0;
@@ -246,7 +246,6 @@ float GetWeight(const GameEvent& event, const std::string& targetPlayerName)
 
 void GenerateScript()
 {
-	g_Script.clear();
 	std::vector<ActionSegment> rawSegments;
 
 	for (size_t i = 0; i < g_Timeline.size(); ++i)
@@ -358,34 +357,41 @@ void Director::Initialize()
 	PrioritizeEvents();
 	FixOrphanedEvents();
 	RemoveDuplicates();
-	GenerateScript();
 
-	Logger::LogAppend("=== Generated Script ===");
-	for (const auto& cmd : g_Script) {
-		std::stringstream ss;
+	{
+		std::lock_guard<std::mutex> lock(g_ScriptMutex);
 
-		int totalSeconds = static_cast<int>(cmd.Timestamp);
-		int minutes = totalSeconds / 60;
-		int seconds = totalSeconds % 60;
+		g_Script.clear();
+		GenerateScript();
 
-		ss << "["
-			<< std::setw(2) << std::setfill('0') << minutes << ":"
-			<< std::setw(2) << std::setfill('0') << seconds
-			<< "] ";
+		Logger::LogAppend("=== Generated Script ===");
+		for (const auto& cmd : g_Script) {
+			std::stringstream ss;
 
-		if (cmd.Type == CommandType::Cut) {
-			ss << "Cut to: Player " << cmd.TargetPlayerName << " (" << cmd.Reason << ")";
+			int totalSeconds = static_cast<int>(cmd.Timestamp);
+			int minutes = totalSeconds / 60;
+			int seconds = totalSeconds % 60;
+
+			ss << "["
+				<< std::setw(2) << std::setfill('0') << minutes << ":"
+				<< std::setw(2) << std::setfill('0') << seconds
+				<< "] ";
+
+			if (cmd.Type == CommandType::Cut) {
+				ss << "Cut to: Player " << cmd.TargetPlayerName << " (" << cmd.Reason << ")";
+			}
+			else {
+				ss << "Speed: " << cmd.SpeedValue << "x";
+			}
+
+			Logger::LogAppend(ss.str().c_str());
 		}
-		else {
-			ss << "Speed: " << cmd.SpeedValue << "x";
-		}
-
-		Logger::LogAppend(ss.str().c_str());
+		Logger::LogAppend("======================");
+		
+		g_CurrentCommandIndex = 0;
 	}
-	Logger::LogAppend("======================");
 
 	g_LastReplayTime = 0.0f;
-	g_CurrentCommandIndex = 0;
 	g_DirectorInitialized = true;
 }
 
@@ -455,6 +461,15 @@ void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 
 void Director::Update()
 {
+	if (!g_pReplayTime) {
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(g_ScriptMutex);
+	if (g_Script.empty()) {
+		return;
+	}
+
 	float currentTime = *g_pReplayTime;
 
 	// g_LastReplayTime can produce bugs if it's not reseted correctly

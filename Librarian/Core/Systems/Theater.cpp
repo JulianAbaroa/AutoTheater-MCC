@@ -2,24 +2,19 @@
 #include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
-#include "Core/Scanner/Scanner.h"
 #include "Core/Systems/Theater.h"
+#include "Core/Scanner/Scanner.h"
 #include "Hooks/Telemetry/Telemetry.h"
+#include "Hooks/Data/SpectatorHandleInput_Hook.h"
 
-volatile uint8_t g_FollowedPlayerIdx = 255;
 std::vector<PlayerInfo> g_PlayerList(16);
-uintptr_t g_pReplayModule = 0;
-std::string g_FilmPath = "";
-
 float* g_pReplayTimeScale = nullptr;
-float* g_pReplayTime = nullptr;
 
 void Theater::SetReplaySpeed(float speed)
 {
 	if (g_pReplayTimeScale == nullptr)
 	{
 		uintptr_t match = Scanner::FindPattern(Signatures::TimeScaleModifier);
-
 		if (match)
 		{
 			int32_t relativeOffset = *(int32_t*)(match + 4);
@@ -29,7 +24,7 @@ void Theater::SetReplaySpeed(float speed)
 		}
 		else
 		{
-			Logger::LogAppend("No match found for Sig_TimeScaleModifier");
+			Logger::LogAppend("No match found for Signatures::TimeScaleModifier");
 		}
 	}
 	else

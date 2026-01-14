@@ -1,19 +1,19 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
-#include "Proxy/ProxyExports.h"
+#include "Core/DllMain.h"
 #include "Core/Threads/MainThread.h"
+#include "Core/Threads/LogThread.h"
 #include "Core/Threads/InputThread.h"
-#include "Core/Threads/TheaterThread.h"
 #include "Core/Threads/DirectorThread.h"
+#include "Proxy/ProxyExports.h"
 #include <shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
 
 LibrarianPhase g_CurrentPhase;
-std::atomic<bool> g_Running{ false };
-uintptr_t g_BaseModuleAddress = 0;
-HMODULE g_HandleModule = nullptr;
-std::string g_BaseDirectory = "";
+uintptr_t g_BaseModuleAddress;
+std::atomic<bool> g_Running;
+std::string g_BaseDirectory;
+HMODULE g_HandleModule;
 
 BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpReserved) {
     switch (ulReasonForCall) {
@@ -43,8 +43,8 @@ BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpRese
         Logger::LogAppend("=== Current Phase: Start ===");
 
         g_MainThread = std::thread(MainThread::Run);
+        g_LogThread = std::thread(LogThread::Run);
         g_InputThread = std::thread(InputThread::Run);
-        g_TheaterThread = std::thread(TheaterThread::Run);
         g_DirectorThread = std::thread(DirectorThread::Run);
 
         break;
@@ -60,8 +60,8 @@ BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpRese
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
             if (g_MainThread.joinable()) g_MainThread.detach();
+            if (g_LogThread.joinable()) g_LogThread.detach();
             if (g_InputThread.joinable()) g_InputThread.detach();
-            if (g_TheaterThread.joinable()) g_TheaterThread.detach();
             if (g_DirectorThread.joinable()) g_DirectorThread.detach();
         }
 

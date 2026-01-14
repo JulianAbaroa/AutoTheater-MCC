@@ -2,20 +2,20 @@
 #include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Core/Scanner/Scanner.h"
-#include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
 
-#include "Hooks/MovReader/BlamOpenFile_Hook.h"
-#include "Hooks/MovReader/FilmInitializeState_Hook.h"
+#include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
 #include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
 #include "Hooks/Data/UIBuildDynamicMessage_Hook.h"
-
-bool g_GameEngineDestroyed = false;
+#include "Hooks/MovReader/FilmInitializeState_Hook.h"
+#include "Hooks/MovReader/BlamOpenFile_Hook.h"
 
 DestroySubsystems_t original_DestroySubsystems = nullptr;
 std::atomic<bool> g_DestroySubsystems_Hook_Installed = false;
 void* g_DestroySubsystems_Address = nullptr;
+
+bool g_GameEngineDestroyed = false;
 
 void __fastcall hkDestroySubsystems(void)
 {

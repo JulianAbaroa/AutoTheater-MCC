@@ -20,7 +20,7 @@ void InputThread::Run()
 
     while (g_Running.load())
     {
-        if (!g_IsTheaterMode) return;
+        if (!g_IsTheaterMode) continue; 
 
         for (const auto& [key, speed] : speedMap)
         {

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <windows.h>
-#include <fstream>
 #include <sstream>
+#include <fstream>
+#include <iomanip>
 
 extern std::string g_LoggerPath;
 

@@ -10,6 +10,9 @@ BlamOpenFile_t original_BlamOpenFile = nullptr;
 std::atomic<bool> g_BlamOpenFile_Hook_Installed;
 void* g_BlamOpenFile_Address;
 
+std::string g_FilmPath = "";
+
+
 void hkBlam_OpenFile(
 	long long fileContext,
 	uint32_t accessFlags,

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Systems/RawTypes.h"
+#include <string>
 #include <vector>
 
 struct PlayerInfo {
@@ -14,12 +15,7 @@ struct PlayerInfo {
 };
 
 extern std::vector<PlayerInfo> g_PlayerList;
-extern volatile uint8_t g_FollowedPlayerIdx;
-extern uintptr_t g_pReplayModule;
-extern std::string g_FilmPath;
-
 extern float* g_pReplayTimeScale;
-extern float* g_pReplayTime;
 
 namespace Theater
 {

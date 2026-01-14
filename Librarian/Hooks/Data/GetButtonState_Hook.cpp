@@ -1,14 +1,14 @@
 #include "pch.h"
 #include "Core/DllMain.h"
 #include "Core/Scanner/Scanner.h"
-#include "Utils/Logger.h"
 #include "Hooks/Data/GetButtonState_Hook.h"
-
-GameInput g_NextInput{ InputContext::Theater, InputAction::Unknown };
+#include "Utils/Logger.h"
 
 GetButtonState_t original_GetButtonState= nullptr;
 std::atomic<bool> g_GetButtonState_Hook_Installed = false;
 void* g_GetButtonState_Address = nullptr;
+
+GameInput g_NextInput{ InputContext::Theater, InputAction::Unknown };
 
 char __fastcall hkGetButtonState(short buttonID)
 {

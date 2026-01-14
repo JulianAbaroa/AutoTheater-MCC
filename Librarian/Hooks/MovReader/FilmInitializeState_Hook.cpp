@@ -5,6 +5,7 @@
 #include "Core/Scanner/Scanner.h"
 #include "Core/Systems/Timeline.h"
 #include "Hooks/MovReader/MovParser.h"
+#include "Hooks/MovReader/BlamOpenFile_Hook.h"
 #include "Hooks/MovReader/FilmInitializeState_Hook.h"
 
 FilmInitializeState_t original_FilmInitializeState = nullptr;
