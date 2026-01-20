@@ -1,6 +1,5 @@
 #pragma once
 
-#include "External/minhook/include/MinHook.h"
 #include <atomic>
 #include <string>
 

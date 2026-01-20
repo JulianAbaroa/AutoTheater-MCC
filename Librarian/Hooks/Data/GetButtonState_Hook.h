@@ -1,8 +1,11 @@
 #pragma once
 
+#include <chrono>
+#include <mutex>
+
 enum class InputAction
 {
-	Unknown,
+	Unknown = -1,
 
 	// UI Controls
 	PauseMenu = 0,
@@ -41,8 +44,6 @@ struct GameInput
 };
 
 extern GameInput g_NextInput;
-
-typedef char(__fastcall* GetButtonState_t)(short buttonID);
 
 namespace GetButtonState_Hook
 {

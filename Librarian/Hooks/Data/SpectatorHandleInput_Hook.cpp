@@ -1,10 +1,12 @@
 #include "pch.h"
 #include "Core/DllMain.h"
 #include "Utils/Logger.h"
+#include "Utils/Formatting.h"
 #include "Core/Scanner/Scanner.h"
 #include "Core/Systems/Timeline.h"
 #include "Core/Systems/Director.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
+#include "External/minhook/include/MinHook.h"
 
 SpectatorHandleInput_t original_SpectatorHandleInput = nullptr;
 std::atomic<bool> g_SpectatorHandleInput_Hook_Installed = false;
@@ -14,16 +16,16 @@ volatile uint8_t g_FollowedPlayerIdx = 255;
 uintptr_t g_pReplayModule = 0;
 
 void __fastcall hkSpectatorHandleInput(
-	uintptr_t pReplayModule,
-	uintptr_t rdx_param
+	uint64_t* pReplayModule,
+	uint32_t rdx_param
 ) {
-	original_SpectatorHandleInput((uint64_t*)pReplayModule, rdx_param);
+	original_SpectatorHandleInput(pReplayModule, rdx_param);
 
-	if (pReplayModule > 0x10000)
+	if (pReplayModule != nullptr)
 	{
-		g_pReplayModule = pReplayModule;
+		g_pReplayModule = reinterpret_cast<uintptr_t>(pReplayModule);
 
-		Theater::TryGetFollowedPlayerIdx(pReplayModule);
+		Theater::TryGetFollowedPlayerIdx(g_pReplayModule);
 
 		if (g_FollowedPlayerIdx < 16)
 		{
@@ -35,8 +37,7 @@ void __fastcall hkSpectatorHandleInput(
 
 				wchar_t bufferNombre[32] = { 0 };
 				if (Theater::TryGetPlayerName(g_FollowedPlayerIdx, bufferNombre, 32)) {
-					std::wstring ws(bufferNombre);
-					std::string sName(ws.begin(), ws.end());
+					std::string sName = Formatting::WStringToString(bufferNombre);
 
 					std::stringstream ss;
 					ss << ">>> Changed to: [" << (int)g_FollowedPlayerIdx << "] " << sName;

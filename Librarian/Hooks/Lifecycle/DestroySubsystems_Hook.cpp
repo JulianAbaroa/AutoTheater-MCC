@@ -1,8 +1,10 @@
 #include "pch.h"
 #include "Core/DllMain.h"
 #include "Utils/Logger.h"
+#include "Core/Systems/Theater.h"
 #include "Core/Scanner/Scanner.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
+#include "External/minhook/include/MinHook.h"
 
 #include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
@@ -26,6 +28,8 @@ void __fastcall hkDestroySubsystems(void)
 	GetButtonState_Hook::Uninstall();
 	BlamOpenFile_Hook::Uninstall();
 
+	g_pReplayTime = nullptr;
+	g_pReplayTimeScale = nullptr;
 	g_GameEngineDestroyed = true;
 	original_DestroySubsystems();
 }

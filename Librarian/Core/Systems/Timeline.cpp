@@ -5,130 +5,126 @@
 #include <algorithm>
 
 std::vector<GameEvent> g_Timeline;
+std::mutex g_TimelineMutex;
+
 bool g_IsLastEvent = false;
 
-static EventType GetEventType(const std::wstring& message)
+static EventType GetEventType(const std::wstring& templateStr)
 {
-	EventType bestType = EventType::Unknown;
-	int highestWeight = -1;
-	size_t longestMatch = 0;
-
 	for (const auto& er : g_EventRegistry)
 	{
-		std::wstring keyword = er.second.Keyword;
-
-		if (message.find(keyword) != std::wstring::npos)
+		if (templateStr.find(er.first) != std::wstring::npos)
 		{
-			int weight = er.second.Weight;
-			size_t currentLength = keyword.length();
-
-			if (weight > highestWeight || (weight == highestWeight && currentLength > longestMatch))
-			{
-				bestType = er.first;
-				highestWeight = weight;
-				longestMatch = currentLength;
-			}
+			return er.second.Type;
 		}
 	}
 
-	return bestType;
+	return EventType::Unknown;
 }
 
-static std::vector<PlayerInfo> GetPlayers(
-	const std::wstring& cleanMessage, 
-	unsigned int playerHandle
-) {
+static std::vector<PlayerInfo> GetPlayers(EventData* eventData) {
 	std::vector<PlayerInfo> detectedPlayers;
-	if (cleanMessage.empty()) return detectedPlayers;
+	if (!eventData) return detectedPlayers;
 
-	// For the player that has the flag (or objective ?)
-	if (playerHandle != 0 && playerHandle != 0xFFFFFFFF)
+	const uint32_t INVALID_HANDLE = 0xFFFFFFFF;
+	const uint32_t ZERO_HANDLE = 0;
+
+	PlayerInfo* instigator = nullptr;
+	PlayerInfo* victim = nullptr;
+
+	for (auto& player : g_PlayerList)
 	{
-		for (auto& player : g_PlayerList)
+		uint32_t current = player.RawPlayer.BipedHandle;
+		uint32_t previous = player.RawPlayer.PreviousBipedHandle;
+
+		if (eventData->CauseHandle != INVALID_HANDLE && eventData->CauseHandle != ZERO_HANDLE)
 		{
-			if (player.RawPlayer.BipedHandle == playerHandle)
+			if (current == eventData->CauseHandle || previous == eventData->CauseHandle)
 			{
-				player.IsVictim = false;
-				detectedPlayers.push_back(player);
-				return detectedPlayers;
+				instigator = &player;
 			}
 		}
-	}
 
-	struct Match { PlayerInfo info; size_t pos; };
-	std::vector<Match> matches;
-
-	for (const auto& player : g_PlayerList)
-	{
-		if (player.Name.empty()) continue;
-
-		std::wstring cleanName = Formatting::ToCompactAlphaW(player.Name);
-
-		size_t foundPos = cleanMessage.find(cleanName);
-		if (foundPos != std::wstring::npos)
+		if (eventData->EffectHandle != INVALID_HANDLE && eventData->EffectHandle != ZERO_HANDLE)
 		{
-			matches.push_back({ player, foundPos });
+			if (current == eventData->EffectHandle || previous == eventData->EffectHandle)
+			{
+				victim = &player;
+			}
 		}
+
+		if (instigator && victim) break;
 	}
-	
-	if (matches.size() > 1) {
-		std::sort(matches.begin(), matches.end(), [](const Match& a, const Match& b) {
-			return a.pos < b.pos;
-		});
-	}
-	
-	for (size_t i = 0; i < matches.size(); ++i)
-	{
-		matches[i].info.IsVictim = (i > 0);
-		detectedPlayers.push_back(matches[i].info);
-	}
+
+	if (instigator) detectedPlayers.push_back(*instigator);
+	if (victim && victim != instigator) detectedPlayers.push_back(*victim);
 
 	return detectedPlayers;
 }
 
-static bool IsRepeatedEvent(GameEvent gameEvent) 
+static bool IsRepeatedEvent(GameEvent gameEvent)
 {
-	static GameEvent lastEvent;
-	static bool hasLastEvent = false;
+	static std::vector<GameEvent> eventHistory;
+	const size_t MAX_HISTORY = 10;
 
-	if (hasLastEvent)
+	for (const auto& pastEvent : eventHistory)
 	{
-		if (std::abs(lastEvent.Timestamp - gameEvent.Timestamp) < 1.0f && lastEvent.Type == gameEvent.Type)
-		{
-			if (lastEvent.Players.size() == gameEvent.Players.size())
-			{
-				if (gameEvent.Players.empty()) return true;
+		bool sameTime = std::abs(pastEvent.Timestamp - gameEvent.Timestamp) < 0.05f;
+		if (!sameTime) continue;
 
-				if (lastEvent.Players[0].Name == gameEvent.Players[0].Name) {
-					return true;
+		bool sameType = (pastEvent.Type == gameEvent.Type);
+		if (!sameType) continue;
+
+		bool samePlayers = false;
+		if (pastEvent.Players.size() == gameEvent.Players.size()) {
+			if (pastEvent.Players.empty()) {
+				samePlayers = true;
+			}
+			else {
+				int matchCount = 0;
+				for (const auto& pCurrent : gameEvent.Players) {
+					for (const auto& pPast : pastEvent.Players) {
+						if (pCurrent.Name == pPast.Name) {
+							matchCount++;
+							break;
+						}
+					}
 				}
+				if (matchCount == gameEvent.Players.size()) samePlayers = true;
 			}
 		}
+
+		if (samePlayers) return true;
 	}
 
-	lastEvent = gameEvent;
-	hasLastEvent = true;
+	eventHistory.push_back(gameEvent);
+	if (eventHistory.size() > MAX_HISTORY) {
+		eventHistory.erase(eventHistory.begin());
+	}
 
 	return false;
 }
 
-void Timeline::AddGameEvent(float timestamp, std::wstring eventText, unsigned int playerHandle=0)
+void Timeline::AddGameEvent(float timestamp, std::wstring& templateStr, EventData* eventData)
 {
 	if (g_IsLastEvent) return;
-
-	std::wstring cleanText = Formatting::ToCompactAlphaW(eventText);
 	
-	EventType currentType = GetEventType(cleanText);
-	std::vector<PlayerInfo> currentPlayers = GetPlayers(cleanText, playerHandle);
-
+	EventType currentType = GetEventType(templateStr);
+	std::vector<PlayerInfo> currentPlayers = GetPlayers(eventData);
+	Teams teams = { eventData->CauseTeam, eventData->EffectTeam };
+	
 	GameEvent gameEvent;
 	gameEvent.Timestamp = timestamp;
 	gameEvent.Type = currentType;
+	gameEvent.Teams = teams;
 	gameEvent.Players = currentPlayers;
-
+	
 	if (IsRepeatedEvent(gameEvent)) return;
-
-	g_Timeline.push_back(gameEvent);
-
+	
+	{
+		std::lock_guard<std::mutex> lock(g_TimelineMutex);
+		g_Timeline.push_back(gameEvent);
+	}
+	
 	if (gameEvent.Type == EventType::Wins) g_IsLastEvent = true;
 }

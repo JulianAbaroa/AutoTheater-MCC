@@ -4,6 +4,7 @@
 #include "Core/Scanner/Scanner.h"
 #include "Core/Systems/Theater.h"
 #include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
+#include "External/minhook/include/MinHook.h"
 
 UpdateTelemetryTimer_t original_UpdateTelemetryTimer = nullptr;
 std::atomic<bool> g_UpdateTelemetryTimer_Hook_Installed;

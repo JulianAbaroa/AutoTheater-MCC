@@ -1,11 +1,12 @@
 #include "pch.h"
 #include "Utils/Logger.h"
+#include "Proxy/ProxyExports.h"
 #include "Core/DllMain.h"
 #include "Core/Threads/MainThread.h"
 #include "Core/Threads/LogThread.h"
 #include "Core/Threads/InputThread.h"
 #include "Core/Threads/DirectorThread.h"
-#include "Proxy/ProxyExports.h"
+#include "External/minhook/include/MinHook.h"
 #include <shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
 

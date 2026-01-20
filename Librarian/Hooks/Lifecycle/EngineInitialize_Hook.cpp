@@ -5,6 +5,7 @@
 #include "Core/Systems/Director.h"
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
+#include "External/minhook/include/MinHook.h"
 
 #include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
@@ -18,6 +19,8 @@ EngineInitialize_t original_EngineInitialize = nullptr;
 std::atomic<bool> g_EngineInitialize_Hook_Installed = false;
 void* g_EngineInitialize_Address = nullptr;
 
+std::atomic<bool> g_EngineHooksReady{ false };
+
 void __fastcall hkEngineInitialize(void)
 {
 	original_EngineInitialize();
@@ -27,7 +30,7 @@ void __fastcall hkEngineInitialize(void)
 	if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
 	{
 		Logger::LogAppend("=== Build timeline ===");
-
+		
 		BlamOpenFile_Hook::Install();                   // Gets the selected film path
 		FilmInitializeState_Hook::Install();            // Gets the FLMH data
 		UpdateTelemetryTimer_Hook::Install();           // Gets the current ReplayTime
@@ -44,7 +47,8 @@ void __fastcall hkEngineInitialize(void)
 		UpdateTelemetryTimer_Hook::Install();
 		SpectatorHandleInput_Hook::Install();
 		GetButtonState_Hook::Install();
-		Director::Initialize();
+
+		g_EngineHooksReady.store(true);
 	}
 }
 

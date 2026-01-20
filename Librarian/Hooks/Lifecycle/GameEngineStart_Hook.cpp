@@ -3,6 +3,7 @@
 #include "Core/DllMain.h"
 #include "Core/Scanner/Scanner.h"
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
+#include "External/minhook/include/MinHook.h"
 
 GameEngineStart_t original_GameEngineStart = nullptr;
 std::atomic<bool> g_GameEngineStart_Hook_Installed = false;
@@ -21,12 +22,12 @@ void __fastcall hkGameEngineStart(uint64_t param_1, uint64_t param_2, uint64_t* 
 
 	if (memcmp(param_3, theaterSignature, 16) == 0)
 	{
-		Logger::LogAppend("Theater mode detected, proceding...");
+		Logger::LogAppend("CGB Theater detected, proceding...");
 		g_IsTheaterMode = true;
 	}
 	else
 	{
-		Logger::LogAppend("Theater mode wasn't detected, aborting...");
+		Logger::LogAppend("CGB Theater wasn't detected, aborting...");
 		g_IsTheaterMode = false;
 	}
 }

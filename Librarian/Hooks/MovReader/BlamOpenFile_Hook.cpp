@@ -5,6 +5,7 @@
 #include "Core/Scanner/Scanner.h"
 #include "Core/Systems/Theater.h"
 #include "Hooks/MovReader/BlamOpenFile_Hook.h"
+#include "External/minhook/include/MinHook.h"
 
 BlamOpenFile_t original_BlamOpenFile = nullptr;
 std::atomic<bool> g_BlamOpenFile_Hook_Installed;

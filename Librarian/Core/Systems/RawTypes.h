@@ -10,8 +10,10 @@ struct RawPlayer
     uint32_t SlotID;               
     std::byte _pad1[36];
 
-    uint32_t BipedHandle;          
-    std::byte _pad2[12];
+    uint32_t CurrentBipedHandle;      
+    uint32_t PreviousBipedHandle;
+    std::byte _pad2[4];
+    uint32_t BipedHandle;
 
     float Position[3];
     float Rotation[3];
@@ -61,6 +63,30 @@ struct RawWeapon
     std::byte _pad6[484];
 
     // ...
+};
+
+struct EventData
+{
+    // Player that caused the event
+    uint8_t CauseSlotIndex;
+    uint8_t _pad1;
+    uint16_t CauseSalt;
+    uint32_t CauseHandle;
+
+    // Player that suffered the event
+    uint8_t EffectSlotIndex;
+    uint8_t _pad2;
+    uint16_t EffectSalt;
+    uint32_t EffectHandle;
+
+    int8_t CauseTeam;
+    int8_t EffectTeam;
+
+    std::byte _pad3[10];
+
+    uint16_t CustomValue;
+
+    std::byte _pad4[2];
 };
 
 #pragma pack(pop)

@@ -56,7 +56,7 @@ std::string Formatting::WStringToString(const wchar_t* wstr) {
     if (!wstr) return "";
     std::string result;
 
-    for (int i = 0; i < 256 && wstr[i] != 0; ++i) {
+    for (size_t i = 0; i < 256 && wstr[i] != L'\0'; ++i) {
         if (iswprint(wstr[i])) {
             result += static_cast<char>(wstr[i]);
         }

@@ -7,6 +7,7 @@
 #include "Hooks/MovReader/MovParser.h"
 #include "Hooks/MovReader/BlamOpenFile_Hook.h"
 #include "Hooks/MovReader/FilmInitializeState_Hook.h"
+#include "External/minhook/include/MinHook.h"
 
 FilmInitializeState_t original_FilmInitializeState = nullptr;
 std::atomic<bool> g_FilmInitializeState_Hook_Installed;

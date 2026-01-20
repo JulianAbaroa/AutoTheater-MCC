@@ -33,6 +33,8 @@ uintptr_t Telemetry::GetTelemetryPlayerTable()
                 }
             }
         }
+
+        return 0;
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -68,6 +70,8 @@ uintptr_t Telemetry::GetTelemetryObjectTable()
                 }
             }
         }
+
+        return 0;
     }
     __except (EXCEPTION_EXECUTE_HANDLER) 
     { 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Systems/Timeline.h"
+#include <atomic>
 #include <mutex>
 
 enum class CommandType { Cut, SetSpeed };
@@ -22,7 +23,7 @@ struct ActionSegment
     std::vector<EventType> TotalEvents;
     std::string PlayerName;
     uint8_t PlayerID;
-    float TotalScore;
+    int TotalScore;
     float StartTime;
     float EndTime;
 };
@@ -30,8 +31,8 @@ struct ActionSegment
 extern std::vector<DirectorCommand> g_Script;
 extern std::mutex g_ScriptMutex;
 
-extern bool g_DirectorInitialized;
-extern int g_CurrentCommandIndex;
+extern std::atomic<bool> g_DirectorInitialized;
+extern size_t g_CurrentCommandIndex;
 
 namespace Director
 {

@@ -49,7 +49,9 @@ static bool RawReadSinglePlayer(
 
 		checkpoint = 1;
 		rawPlayer.SlotID = *(uint32_t*)(playerAddress + 0x0);
-		rawPlayer.BipedHandle = *(uint32_t*)(playerAddress + 0x28);
+		rawPlayer.CurrentBipedHandle = *(uint32_t*)(playerAddress + 0x28);
+		rawPlayer.PreviousBipedHandle = *(uint32_t*)(playerAddress + 0x2C);
+		rawPlayer.BipedHandle = *(uint32_t*)(playerAddress + 0x34);
 		memcpy(rawPlayer.Position, (void*)(playerAddress + 0x38), 12);
 		memcpy(rawPlayer.Name, (void*)(playerAddress + 0xB0), 56);
 		memcpy(rawPlayer.Tag, (void*)(playerAddress + 0xF4), 16);
@@ -115,15 +117,15 @@ void Theater::RebuildPlayerListFromMemory()
 	uintptr_t objectTable = Telemetry::GetTelemetryObjectTable();
 	if (!playerTable || !objectTable) return;
 
-	//static bool isFirst = true;
-	//
-	//if (isFirst)
-	//{
-	//	char buf[512];
-	//	sprintf_s(buf, "DEBUG: PlayerTable: %llx | ObjectTable: %llx", playerTable, objectTable);
-	//	Logger::LogAppend(buf);
-	//	isFirst = false;
-	//}
+	static bool isFirst = true;
+	
+	if (isFirst)
+	{
+		char buf[512];
+		sprintf_s(buf, "DEBUG: PlayerTable: %llx | ObjectTable: %llx", playerTable, objectTable);
+		Logger::LogAppend(buf);
+		isFirst = false;
+	}
 
 	for (uint8_t i = 0; i < 16; i++)	
 	{

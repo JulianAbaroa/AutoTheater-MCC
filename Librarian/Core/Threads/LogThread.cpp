@@ -146,6 +146,7 @@ std::string LogThread::EventTypeToString(EventType type) {
         case EventType::Betrayal:			    return "Betrayal";
         case EventType::Suicide:			    return "Suicide";
 
+        case EventType::Ignore:			        return "Ignore";
         default:							return "Unknown";
     }
 }

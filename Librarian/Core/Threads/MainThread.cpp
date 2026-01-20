@@ -55,21 +55,30 @@ void UpdatePhase()
 {
     if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
     {
-        g_CurrentPhase = LibrarianPhase::ExecuteDirector;
         g_LogGameEvents = false;
+        g_CurrentPhase = LibrarianPhase::ExecuteDirector;
     }
     else
     {
+        g_DirectorInitialized.store(false);
+        g_EngineHooksReady.store(false);
         g_CurrentPhase = LibrarianPhase::BuildTimeline;
-        g_DirectorInitialized = false;
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+        {
+            std::lock_guard<std::mutex> lock(g_TimelineMutex);
+            g_Timeline.clear();
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(g_ScriptMutex);
+            g_Script.clear();
+            g_CurrentCommandIndex = 0;
+        }
+
         g_LogGameEvents = true;
         g_IsLastEvent = false;
-
-        g_Timeline.clear();
-        g_Script.clear();
     }
 }
 

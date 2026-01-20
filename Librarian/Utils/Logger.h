@@ -3,6 +3,7 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
+#include <string>
 
 extern std::string g_LoggerPath;
 

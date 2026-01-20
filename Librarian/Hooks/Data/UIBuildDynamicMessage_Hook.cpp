@@ -7,6 +7,7 @@
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
 #include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
 #include "Hooks/Data/UIBuildDynamicMessage_Hook.h"
+#include "External/minhook/include/MinHook.h"
 
 UIBuildDynamicMessage_t original_UIBuildDynamicMessage = nullptr;
 std::atomic<bool> g_UIBuildDynamicMessage_Hook_Installed;
@@ -16,6 +17,9 @@ std::wstring lastMsg = L"";
 float lastReplaySeconds = -1.0f;
 std::vector<std::wstring> tickMessageHistory;
 
+static std::wstring lastTemplate;
+static float lastEventTime = -1.0f;
+
 unsigned char hkUIBuildDynamicMessage(
 	int playerMask,
 	wchar_t* pTemplateStr,
@@ -24,62 +28,49 @@ unsigned char hkUIBuildDynamicMessage(
 	wchar_t* pOutBuffer
 ) {
 	unsigned char result = original_UIBuildDynamicMessage(playerMask, pTemplateStr, pEventData, flags, pOutBuffer);
-	if (g_IsLastEvent || !g_pReplayTime) return result;
+	if (!result || !pOutBuffer || pOutBuffer[0] == L'\0') return result;
+	if (g_IsLastEvent || !g_pReplayTime || !pEventData) return result;
 
-	if (result && pOutBuffer && pOutBuffer[0] != L'\0')
-	{
-		std::wstring message(pOutBuffer);
-		std::wstring lowerMsg = message;
-		for (auto& c : lowerMsg) c = towlower(c);
+	EventData* eventData = (EventData*)pEventData;
+	std::wstring currentTemplate(pTemplateStr);
+	float currentTime = (g_pReplayTime != nullptr) ? (float)*g_pReplayTime : 0.0f;
 
-		float currentTime = (g_pReplayTime) ? *g_pReplayTime : 0.0f;
+	//bool alreadyMapped = false;
+	//for (const auto& entry : g_EventRegistry) {
+	//	if (entry.TemplateStr == currentTemplate) {
+	//		alreadyMapped = true;
+	//		break;
+	//	}
+	//}
+	//
+	//if (!alreadyMapped) {
+	//	lastEventTime = currentTime;
+	//	lastTemplate = currentTemplate;
+	//
+	//	EventData* data = (EventData*)pEventData;
+	//	char diagLog[512];
+	//	std::string timeStr = Formatting::ToTimestamp(currentTime);
+	//
+	//	snprintf(diagLog, sizeof(diagLog),
+	//		"[%s] [NEW EVENT] Template: %ls | Msg: %ls | Slot: %d | Val: %d",
+	//		timeStr.c_str(),
+	//		pTemplateStr,
+	//		pOutBuffer,
+	//		data->CauseSlotIndex,
+	//		data->CustomValue);
+	//
+	//	Logger::LogAppend(diagLog);
+	//}
+	//
+	//return result;
 
-		bool hasFlag = (lowerMsg.find(L"flag") != std::wstring::npos);
-		bool hasYou = (lowerMsg.find(L"you") != std::wstring::npos);
-		bool hasYour = (lowerMsg.find(L"your") != std::wstring::npos);
-		bool hasWas = (lowerMsg.find(L"was") != std::wstring::npos);
-		bool hasTeam = (lowerMsg.find(L"team") != std::wstring::npos);
-		bool hasGrabbed = (lowerMsg.find(L"grabbed") != std::wstring::npos);
+	// To find new GameEvents
+	//char finalMsg[512];
+	//snprintf(finalMsg, sizeof(finalMsg), "%ls", pOutBuffer);
+	//Logger::LogAppend(finalMsg);
 
-		unsigned int playerHandle = 0xFFFFFFFF;
-
-		if (hasFlag)
-		{
-			if (!hasGrabbed && (hasYour || hasWas || hasTeam)) return result;
-
-			if (pEventData != nullptr)
-			{
-				playerHandle = *(unsigned int*)((char*)pEventData + 0x4);
-			}
-		}
-		else
-		{
-			if (hasYou || hasYour || hasWas) return result;
-		}
-
-		if (std::abs(currentTime - lastReplaySeconds) > 0.001f)
-		{
-			tickMessageHistory.clear();
-			lastReplaySeconds = currentTime;
-		}
-
-		if (std::find(tickMessageHistory.begin(), tickMessageHistory.end(), message) == tickMessageHistory.end())
-		{
-			tickMessageHistory.push_back(message);
-
-			Theater::RebuildPlayerListFromMemory();
-
-			float totalTime = (g_pReplayModule != 0) ? (float)*g_pReplayTime : 0.0f;
-
-			Timeline::AddGameEvent(totalTime, message, playerHandle);
-
-			// To find new GameEvents
-			char finalMsg[512];
-			std::string timeStr = Formatting::ToTimestamp(totalTime);
-			snprintf(finalMsg, sizeof(finalMsg), "[%s] %ls", timeStr.c_str(), pOutBuffer);
-			Logger::LogAppend(finalMsg);
-		}
-	}
+	Theater::RebuildPlayerListFromMemory();
+	Timeline::AddGameEvent(currentTime, currentTemplate, eventData);
 
 	return result;
 }

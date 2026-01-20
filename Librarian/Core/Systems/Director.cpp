@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Core/Systems/Director.h"
 #include "Hooks/Data/GetButtonState_Hook.h"
@@ -11,8 +12,10 @@ std::vector<DirectorCommand> g_Script;
 std::mutex g_ScriptMutex;
 
 static float g_LastReplayTime = 0.0f;
-bool g_DirectorInitialized = false;
-int g_CurrentCommandIndex = 0;
+std::atomic<bool> g_DirectorInitialized{ false };
+size_t g_CurrentCommandIndex = 0;
+
+static float DIRECTOR_WARMUP_TIME = 5.0f;
 
 void PrioritizeEvents()
 {
@@ -113,7 +116,7 @@ void RemoveDuplicates()
 	{
 		bool isDuplicate = false;
 
-		for (int i = uniqueEvents.size() - 1; i >= 0; --i)
+		for (auto i = std::ssize(uniqueEvents) - 1; i >= 0; --i)
 		{
 			const auto& existingEvent = uniqueEvents[i];
 
@@ -231,17 +234,17 @@ void OptimizeSegments(std::vector<ActionSegment>& segments)
 	segments = finalSegments;
 }
 
-float GetWeight(const GameEvent& event, const std::string& targetPlayerName)
+int GetWeight(const GameEvent& event)
 {
-	int weight = 0.0f;
-	auto it = g_EventRegistry.find(event.Type);
-
-	if (it != g_EventRegistry.end())
+	for (const auto& entry : g_EventRegistry)
 	{
-		weight = it->second.Weight;
+		if (entry.second.Type== event.Type)
+		{
+			return entry.second.Weight;
+		}
 	}
 
-	return weight;
+	return 0;
 }
 
 void GenerateScript()
@@ -251,6 +254,7 @@ void GenerateScript()
 	for (size_t i = 0; i < g_Timeline.size(); ++i)
 	{
 		const auto& currentEvent = g_Timeline[i];
+		if (currentEvent.Timestamp < DIRECTOR_WARMUP_TIME + 2.0f) continue;
 		if (currentEvent.Players.empty()) continue;
 
 		const PlayerInfo* targetPlayer = &currentEvent.Players[0];
@@ -266,15 +270,15 @@ void GenerateScript()
 			}
 		}
 
-		float weight = GetWeight(currentEvent, targetPlayer->Name);
-		if (weight == 0.0f) continue;
+		int weight = GetWeight(currentEvent);
+		if (weight == 0) continue;
 
 		ActionSegment segment;
 		segment.PlayerName = targetPlayer->Name;
 		segment.PlayerID = targetPlayer->Id;
 
 		float rawStart = currentEvent.Timestamp - 6.0f;
-		float startTime = (rawStart < 0.0f) ? 0.0f : rawStart;
+		float startTime = (rawStart < DIRECTOR_WARMUP_TIME) ? DIRECTOR_WARMUP_TIME : rawStart;
 		float endTime = currentEvent.Timestamp + 2.0f;
 
 		float lookAheadWindow = 8.0f;
@@ -307,13 +311,12 @@ void GenerateScript()
 
 		segment.TotalScore = weight;
 		segment.TotalEvents.push_back(currentEvent.Type);
-
 		rawSegments.push_back(segment);
 	}
 
 	OptimizeSegments(rawSegments);
 
-	float lastSegmentEnd = 0.0f;
+	float lastSegmentEnd = DIRECTOR_WARMUP_TIME;
 	for (const auto& segment : rawSegments)
 	{
 		float gap = segment.StartTime - lastSegmentEnd;
@@ -354,6 +357,8 @@ void GenerateScript()
 
 void Director::Initialize()
 {
+	std::lock_guard<std::mutex> lock(g_TimelineMutex);
+
 	PrioritizeEvents();
 	FixOrphanedEvents();
 	RemoveDuplicates();
@@ -392,7 +397,7 @@ void Director::Initialize()
 	}
 
 	g_LastReplayTime = 0.0f;
-	g_DirectorInitialized = true;
+	g_DirectorInitialized.store(true);
 }
 
 void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
@@ -432,7 +437,7 @@ void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 				break;
 			}
 
-			std::this_thread::yield;
+			std::this_thread::yield();
 		}
 
 		g_NextInput.InputAction = InputAction::Unknown;
@@ -459,20 +464,33 @@ void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 	Logger::LogAppend("[Director] Navigation completed successfully");
 }
 
+float SafeGetCurrentTime()
+{
+	__try
+	{
+		return *g_pReplayTime;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return 0.0f;
+	}
+}
+
 void Director::Update()
 {
-	if (!g_pReplayTime) {
+	if (!g_pReplayTime || g_CurrentPhase != LibrarianPhase::ExecuteDirector) {
 		return;
 	}
 
 	std::lock_guard<std::mutex> lock(g_ScriptMutex);
-	if (g_Script.empty()) {
-		return;
-	}
 
-	float currentTime = *g_pReplayTime;
+	if (g_Script.empty()) return;
 
 	// g_LastReplayTime can produce bugs if it's not reseted correctly
+	float currentTime = SafeGetCurrentTime();
+
+	if (*g_pReplayTime < DIRECTOR_WARMUP_TIME) return;
+
 	if (currentTime < g_LastReplayTime)
 	{
 		auto it = std::lower_bound(
@@ -503,26 +521,26 @@ void Director::Update()
 		{
 			if (command.TargetPlayerIdx != g_FollowedPlayerIdx)
 			{
-				int nextCommandIndex = g_CurrentCommandIndex + 1;
+				std::stringstream ss;
+				ss << "Execute: Cut to " << (int)command.TargetPlayerIdx << " Reason [" << command.Reason << "]";
+				Logger::LogAppend(ss.str().c_str());
+
+				size_t nextCommandIndex = g_CurrentCommandIndex + 1;
 				float deadline =
 					(nextCommandIndex < g_Script.size()) ?
 					g_Script[nextCommandIndex].Timestamp - 1.0f :
 					(currentTime + 36000.0f);
 
 				GoToPlayer(command.TargetPlayerIdx, deadline);
-
-				std::stringstream ss;
-				ss << "Execute: Cut to " << (int)command.TargetPlayerIdx << " Reason [" << command.Reason << "]";
-				Logger::LogAppend(ss.str().c_str());
 			}
 		}
 		else if (command.Type == CommandType::SetSpeed)
 		{
-			Theater::SetReplaySpeed(command.SpeedValue);
-			
 			std::stringstream ss;
 			ss << "Execute: Speed set to [x" << command.SpeedValue << "]";
 			Logger::LogAppend(ss.str().c_str());
+
+			Theater::SetReplaySpeed(command.SpeedValue);
 		}
 
 		g_CurrentCommandIndex++;
