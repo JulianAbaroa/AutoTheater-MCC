@@ -2,6 +2,7 @@
 #include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Core/Systems/Director.h"
+#include "Core/Threads/InputThread.h"
 #include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
 #include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
@@ -30,73 +31,13 @@ void PrioritizeEvents()
 	});
 }
 
-void FixOrphanedEvents()
-{
-	if (g_Timeline.empty()) return;
-
-	const float MAX_GROUP_TIME_DIFF = 0.5f;
-
-	for (int i = 0; i < g_Timeline.size(); i++)
-	{
-		GameEvent& currentEvent = g_Timeline[i];
-
-		if (currentEvent.Players.empty() && g_OrphanEvents.count(currentEvent.Type) > 0)
-		{
-			bool foundOwner = 0;
-
-			// Look to the previous GameEvent
-			for (int j = i - 1; j >= 0; j--)
-			{
-				GameEvent& prev = g_Timeline[j];
-
-				float diff = currentEvent.Timestamp - prev.Timestamp;
-				if (diff > MAX_GROUP_TIME_DIFF) break;
-
-				if (!prev.Players.empty())
-				{
-					currentEvent.Players = prev.Players;
-					foundOwner = true;
-					break;
-				}
-			}
-
-			// Look to the next GameEvent
-			if (!foundOwner)
-			{
-				for (int j = i + 1; j < g_Timeline.size(); j++)
-				{
-					GameEvent& next = g_Timeline[j];
-					float diff = currentEvent.Timestamp - next.Timestamp;
-					if (diff > MAX_GROUP_TIME_DIFF) break;
-
-					if (!next.Players.empty())
-					{
-						currentEvent.Players = next.Players;
-						foundOwner = true;
-					}
-				}
-			}
-		}
-	}
-}
-
 bool ArePlayerSetsEqual(const std::vector<PlayerInfo>& listA, const std::vector<PlayerInfo>& listB)
 {
 	if (listA.size() != listB.size()) return false;
 
-	for (const auto& playerA : listA)
+	for (size_t i = 0; i < listA.size(); ++i)
 	{
-		bool found = false;
-		for (const auto& playerB : listB)
-		{
-			if (playerA.Id == playerB.Id)
-			{
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) return false;
+		if (listA[i].Id != listB[i].Id) return false;
 	}
 
 	return true;
@@ -124,7 +65,7 @@ void RemoveDuplicates()
 
 			if (timeDiff > 1.0f) break;
 
-			if (timeDiff < 0.1f)
+			if (timeDiff <= 1.0f)
 			{
 				if (currentEvent.Type == existingEvent.Type)
 				{
@@ -360,7 +301,6 @@ void Director::Initialize()
 	std::lock_guard<std::mutex> lock(g_TimelineMutex);
 
 	PrioritizeEvents();
-	FixOrphanedEvents();
 	RemoveDuplicates();
 
 	{
@@ -400,68 +340,55 @@ void Director::Initialize()
 	g_DirectorInitialized.store(true);
 }
 
+static void PushInput(InputAction action, InputContext context)
+{
+	std::lock_guard<std::mutex> lock(g_InputQueueMutex);
+	if (g_InputQueue.size() > 1) return;
+	g_InputQueue.push({ action, context });
+}
+
 void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 {
 	if (targetIdx >= 16) return;
 
-	std::stringstream ss;
-	ss << "Navigating to player [" << std::to_string(targetIdx) << "]";
-	Logger::LogAppend(ss.str().c_str());
-
-	while (g_FollowedPlayerIdx != targetIdx)
+	for (int attempt = 0; attempt < 3; attempt++)
 	{
-		float currentTime = *g_pReplayTime;
-		if (currentTime >= nextCommandTimestamp)
+		uint8_t current = g_FollowedPlayerIdx;
+		if (current == targetIdx) break;
+
+		int forwardSteps = (targetIdx - current + 16) % 16;
+		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
+		int stepsRequired = movingForward ? forwardSteps : (16 - forwardSteps);
+
+		Logger::LogAppend(("[Director] Navigation Plan: " + std::to_string(stepsRequired) + " steps " + (movingForward ? "Forward" : "Backward")).c_str());
+
+		for (int i = 0; i < stepsRequired; i++)
 		{
-			ss.str("");
-			ss << "[Director] Next command deadline reached: ("
-				<< std::to_string(nextCommandTimestamp) << "s)";
-			Logger::LogAppend(ss.str().c_str());
+			while (g_InputProcessing.load()) { std::this_thread::yield(); }
+
+			PushInput(movingForward ? InputAction::NextPlayer : InputAction::PreviousPlayer, InputContext::Theater);
+
+			auto startWait = std::chrono::steady_clock::now();
+			while (!g_InputProcessing.load() && (std::chrono::steady_clock::now() - startWait < std::chrono::milliseconds(100)))
+			{
+				std::this_thread::yield();
+			}
+
+			while(g_InputProcessing.load()) { std::this_thread::yield(); }
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(30));
+		}
+
+		Logger::LogAppend("[Director] Batch sent, waiting for engine to stabilize...");
+		std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+		if (g_FollowedPlayerIdx == targetIdx) {
+			Logger::LogAppend("[Director] Navigation successful.");
 			return;
 		}
 
-		uint8_t current = g_FollowedPlayerIdx;
-		int forwardSteps = (targetIdx - current + 16) % 16;
-		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
-
-		g_NextInput.InputAction = movingForward ? InputAction::NextPlayer : InputAction::PreviousPlayer;
-
-		auto startWait = std::chrono::steady_clock::now();
-		bool changed = false;
-
-		while (std::chrono::steady_clock::now() - startWait < std::chrono::milliseconds(500))
-		{
-			if (g_FollowedPlayerIdx != current)
-			{
-				changed = true;
-				break;
-			}
-
-			std::this_thread::yield();
-		}
-
-		g_NextInput.InputAction = InputAction::Unknown;
-
-		if (changed)
-		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-			int newForwardSteps = (targetIdx - g_FollowedPlayerIdx + 16) % 16;
-			bool skipped = movingForward ? (newForwardSteps > 8) : (newForwardSteps <= 8 && newForwardSteps > 0);
-
-			if (skipped && g_FollowedPlayerIdx != targetIdx)
-			{
-				Logger::LogAppend(std::string("WARNING: Overshot / Skipped.Current : " + std::to_string(g_FollowedPlayerIdx)).c_str());
-				std::this_thread::sleep_for(std::chrono::milliseconds(200));
-			}
-		}
-		else
-		{
-			Logger::LogAppend("WARNING: Input not registered, retrying...");
-		}
+		Logger::LogAppend(("[Director] Verification failed. Now at: " + std::to_string(g_FollowedPlayerIdx) + ". Retrying...").c_str());
 	}
-
-	Logger::LogAppend("[Director] Navigation completed successfully");
 }
 
 float SafeGetCurrentTime()
@@ -480,6 +407,11 @@ void Director::Update()
 {
 	if (!g_pReplayTime || g_CurrentPhase != LibrarianPhase::ExecuteDirector) {
 		return;
+	}
+
+	if (g_pReplayModule != 0 && g_CameraAttached == 0x01)
+	{
+		PushInput(InputAction::ToggleFreecam, InputContext::Theater);
 	}
 
 	std::lock_guard<std::mutex> lock(g_ScriptMutex);

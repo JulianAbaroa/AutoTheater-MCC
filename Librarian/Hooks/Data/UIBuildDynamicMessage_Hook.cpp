@@ -20,6 +20,41 @@ std::vector<std::wstring> tickMessageHistory;
 static std::wstring lastTemplate;
 static float lastEventTime = -1.0f;
 
+static void PrintNewEvent(
+	wchar_t* pTemplateStr,
+	void* pEventData, 
+	wchar_t* pOutBuffer,
+	std::wstring currentTemplate, 
+	float currentTime
+) {
+	bool alreadyMapped = false;
+	for (const auto& entry : g_EventRegistry) {
+		if (entry.first == currentTemplate) {
+			alreadyMapped = true;
+			break;
+		}
+	}
+
+	if (!alreadyMapped) {
+		lastEventTime = currentTime;
+		lastTemplate = currentTemplate;
+
+		EventData* data = (EventData*)pEventData;
+		char diagLog[512];
+		std::string timeStr = Formatting::ToTimestamp(currentTime);
+
+		snprintf(diagLog, sizeof(diagLog),
+			"[%s] [NEW EVENT] Template: %ls | Msg: %ls | Slot: %d | Val: %d",
+			timeStr.c_str(),
+			pTemplateStr,
+			pOutBuffer,
+			data->CauseSlotIndex,
+			data->CustomValue);
+
+		Logger::LogAppend(diagLog);
+	}
+}
+
 unsigned char hkUIBuildDynamicMessage(
 	int playerMask,
 	wchar_t* pTemplateStr,
@@ -35,36 +70,8 @@ unsigned char hkUIBuildDynamicMessage(
 	std::wstring currentTemplate(pTemplateStr);
 	float currentTime = (g_pReplayTime != nullptr) ? (float)*g_pReplayTime : 0.0f;
 
-	//bool alreadyMapped = false;
-	//for (const auto& entry : g_EventRegistry) {
-	//	if (entry.TemplateStr == currentTemplate) {
-	//		alreadyMapped = true;
-	//		break;
-	//	}
-	//}
-	//
-	//if (!alreadyMapped) {
-	//	lastEventTime = currentTime;
-	//	lastTemplate = currentTemplate;
-	//
-	//	EventData* data = (EventData*)pEventData;
-	//	char diagLog[512];
-	//	std::string timeStr = Formatting::ToTimestamp(currentTime);
-	//
-	//	snprintf(diagLog, sizeof(diagLog),
-	//		"[%s] [NEW EVENT] Template: %ls | Msg: %ls | Slot: %d | Val: %d",
-	//		timeStr.c_str(),
-	//		pTemplateStr,
-	//		pOutBuffer,
-	//		data->CauseSlotIndex,
-	//		data->CustomValue);
-	//
-	//	Logger::LogAppend(diagLog);
-	//}
-	//
-	//return result;
-
-	// To find new GameEvents
+	PrintNewEvent(pTemplateStr, pEventData, pOutBuffer, currentTemplate, currentTime);
+	
 	//char finalMsg[512];
 	//snprintf(finalMsg, sizeof(finalMsg), "%ls", pOutBuffer);
 	//Logger::LogAppend(finalMsg);

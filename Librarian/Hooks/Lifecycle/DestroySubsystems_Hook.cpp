@@ -34,27 +34,29 @@ void __fastcall hkDestroySubsystems(void)
 	original_DestroySubsystems();
 }
 
-bool DestroySubsystems_Hook::Install()
+bool DestroySubsystems_Hook::Install(bool silent)
 {
 	if (g_DestroySubsystems_Hook_Installed.load()) return true;
 
 	void* methodAddress = (void*)Scanner::FindPattern(Signatures::DestroySubsystems);
 	if (!methodAddress)
 	{
-		Logger::LogAppend("Failed to obtain the address of DestroySubsystems()");
+		if (!silent) Logger::LogAppend("Failed to obtain the address of DestroySubsystems()");
 		return false;
 	}
 
 	g_DestroySubsystems_Address = methodAddress;
 
-	if (MH_CreateHook(g_DestroySubsystems_Address, &hkDestroySubsystems, reinterpret_cast<LPVOID*>(&original_DestroySubsystems)) != MH_OK)
+	MH_RemoveHook(g_DestroySubsystems_Address);
+
+	MH_STATUS status = MH_CreateHook(g_DestroySubsystems_Address, &hkDestroySubsystems, reinterpret_cast<LPVOID*>(&original_DestroySubsystems));
+	if (status != MH_OK)
 	{
-		Logger::LogAppend("Failed to create DestroySubsystems hook");
+		Logger::LogAppend(std::string("Failed to create DestroySubsystems hook: " + std::to_string((int)status)).c_str());
 		return false;
 	}
 
-	if (MH_EnableHook(g_DestroySubsystems_Address) != MH_OK)
-	{
+	if (MH_EnableHook(g_DestroySubsystems_Address) != MH_OK) {
 		Logger::LogAppend("Failed to enable DestroySubsystems hook");
 		return false;
 	}

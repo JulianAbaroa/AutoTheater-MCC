@@ -11,18 +11,16 @@ std::atomic<bool> g_GetButtonState_Hook_Installed = false;
 void* g_GetButtonState_Address = nullptr;
 
 GameInput g_NextInput{ InputContext::Theater, InputAction::Unknown };
+std::atomic<bool> g_IsPressing{ false };
 
 char __fastcall hkGetButtonState(short buttonID)
 {
     if (g_NextInput.InputContext == InputContext::Theater)
     {
-        if (g_NextInput.InputAction != InputAction::Unknown)
+        if (g_NextInput.InputAction != InputAction::Unknown &&
+            static_cast<short>(g_NextInput.InputAction) == buttonID)
         {
-            InputAction action = static_cast<InputAction>(buttonID);
-            if (g_NextInput.InputAction == action)
-            {
-                return 1;
-            }
+            return 1; 
         }
     }
 

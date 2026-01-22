@@ -26,38 +26,26 @@ static std::vector<PlayerInfo> GetPlayers(EventData* eventData) {
 	std::vector<PlayerInfo> detectedPlayers;
 	if (!eventData) return detectedPlayers;
 
-	const uint32_t INVALID_HANDLE = 0xFFFFFFFF;
-	const uint32_t ZERO_HANDLE = 0;
+	size_t maxPlayers = g_PlayerList.size();
 
-	PlayerInfo* instigator = nullptr;
-	PlayerInfo* victim = nullptr;
+	auto AddPlayerBySlot = [&](uint8_t slotIndex) {
+		if (slotIndex < maxPlayers) {
+			PlayerInfo& player = g_PlayerList[slotIndex];
 
-	for (auto& player : g_PlayerList)
+			if (player.RawPlayer.Name[0] != L'\0') {
+				detectedPlayers.push_back(player);
+				return true;
+			}
+		}
+		return false;
+	};
+
+	AddPlayerBySlot(eventData->CauseSlotIndex);
+
+	if (eventData->EffectSlotIndex != eventData->CauseSlotIndex)
 	{
-		uint32_t current = player.RawPlayer.BipedHandle;
-		uint32_t previous = player.RawPlayer.PreviousBipedHandle;
-
-		if (eventData->CauseHandle != INVALID_HANDLE && eventData->CauseHandle != ZERO_HANDLE)
-		{
-			if (current == eventData->CauseHandle || previous == eventData->CauseHandle)
-			{
-				instigator = &player;
-			}
-		}
-
-		if (eventData->EffectHandle != INVALID_HANDLE && eventData->EffectHandle != ZERO_HANDLE)
-		{
-			if (current == eventData->EffectHandle || previous == eventData->EffectHandle)
-			{
-				victim = &player;
-			}
-		}
-
-		if (instigator && victim) break;
+		AddPlayerBySlot(eventData->EffectSlotIndex);
 	}
-
-	if (instigator) detectedPlayers.push_back(*instigator);
-	if (victim && victim != instigator) detectedPlayers.push_back(*victim);
 
 	return detectedPlayers;
 }
@@ -121,10 +109,8 @@ void Timeline::AddGameEvent(float timestamp, std::wstring& templateStr, EventDat
 	
 	if (IsRepeatedEvent(gameEvent)) return;
 	
-	{
-		std::lock_guard<std::mutex> lock(g_TimelineMutex);
-		g_Timeline.push_back(gameEvent);
-	}
-	
+	std::lock_guard<std::mutex> lock(g_TimelineMutex);
+	g_Timeline.push_back(gameEvent);
+		
 	if (gameEvent.Type == EventType::Wins) g_IsLastEvent = true;
 }

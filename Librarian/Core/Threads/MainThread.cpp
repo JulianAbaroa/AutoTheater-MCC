@@ -10,6 +10,21 @@
 
 std::thread g_MainThread;
 
+static bool IsHookIntact(void* address)
+{
+    if (address == nullptr) return false;
+
+    unsigned char firstByte;
+    size_t bytesRead;
+
+    if (ReadProcessMemory(GetCurrentProcess(), address, &firstByte, 1, &bytesRead))
+    {
+        return firstByte == 0xE9;
+    }
+
+    return false;
+}
+
 static void ShutdownAndEject()
 {
     g_Running.store(false);
@@ -20,38 +35,29 @@ static void ShutdownAndEject()
     }).detach();
 }
 
-bool TryInstallLifecycleHooks(const char* context)
+static bool TryInstallLifecycleHooks(const char* context)
 {
-    const int MAX_ATTEMPTS = 120;
     std::stringstream ss;
-    int attempts = 0;
 
-    while (g_Running.load() && attempts < MAX_ATTEMPTS)
+    while (g_Running.load())
     {
-        if (GetModuleHandle(L"haloreach.dll") != nullptr)
-        {
-            if (EngineInitialize_Hook::Install() &&
-                DestroySubsystems_Hook::Install() &&
-                GameEngineStart_Hook::Install()
-                ) {
-                ss << "All initial hooks installed successfully [" << context << "]";
-                Logger::LogAppend(ss.str().c_str());
-                ss.str("");
-                return true;
-            }
-        }
+        if (EngineInitialize_Hook::Install(true) &&
+             DestroySubsystems_Hook::Install(true) &&
+             GameEngineStart_Hook::Install(true)
+        ) {
+             ss << "All initial hooks installed successfully [" << context << "]";
+             Logger::LogAppend(ss.str().c_str());
+             ss.str("");
+             return true;
+         }
 
-        attempts++;
-        ss << "Waiting for hooks... (Attempt " << std::to_string(attempts) << ") [" << context << "]";
-        Logger::LogAppend(ss.str().c_str());
-        ss.str("");
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     return false;
 }
 
-void UpdatePhase()
+static void UpdatePhase()
 {
     if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
     {
@@ -99,6 +105,14 @@ void MainThread::Run() {
 
     while (g_Running.load())
     {
+        if (!IsHookIntact(g_EngineInitialize_Address) ||
+            !IsHookIntact(g_DestroySubsystems_Address) ||
+            !IsHookIntact(g_GameEngineStart_Address)
+        ) {
+            Logger::LogAppend("Watchdog: Hook corrupted or memory restored. Rebooting...");
+            g_GameEngineDestroyed = true;
+        }
+
         if (g_GameEngineDestroyed)
         {
             Logger::LogAppend("Game engine destruction detected, resetting lifecycle...");

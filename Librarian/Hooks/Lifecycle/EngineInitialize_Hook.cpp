@@ -52,27 +52,29 @@ void __fastcall hkEngineInitialize(void)
 	}
 }
 
-bool EngineInitialize_Hook::Install()
+bool EngineInitialize_Hook::Install(bool silent)
 {
 	if (g_EngineInitialize_Hook_Installed.load()) return true;
 
 	void* methodAddress = (void*)Scanner::FindPattern(Signatures::EngineInitialize);
 	if (!methodAddress)
 	{
-		Logger::LogAppend("Failed to obtain the address of EngineInitialize()");
+		if (!silent) Logger::LogAppend("Failed to obtain the address of EngineInitialize()");
 		return false;
 	}
 
 	g_EngineInitialize_Address = methodAddress;
 
-	if (MH_CreateHook(g_EngineInitialize_Address, &hkEngineInitialize, reinterpret_cast<LPVOID*>(&original_EngineInitialize)) != MH_OK)
+	MH_RemoveHook(g_EngineInitialize_Address);
+
+	MH_STATUS status = MH_CreateHook(g_EngineInitialize_Address, &hkEngineInitialize, reinterpret_cast<LPVOID*>(&original_EngineInitialize));
+	if (status != MH_OK)
 	{
-		Logger::LogAppend("Failed to create EngineInitialize hook");
+		Logger::LogAppend(std::string("Failed to create EngineInitialize hook: " + std::to_string((int)status)).c_str());
 		return false;
 	}
 
-	if (MH_EnableHook(g_EngineInitialize_Address) != MH_OK)
-	{
+	if (MH_EnableHook(g_EngineInitialize_Address) != MH_OK) {
 		Logger::LogAppend("Failed to enable EngineInitialize hook");
 		return false;
 	}

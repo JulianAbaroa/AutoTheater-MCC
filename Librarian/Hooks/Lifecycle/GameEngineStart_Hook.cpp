@@ -32,27 +32,29 @@ void __fastcall hkGameEngineStart(uint64_t param_1, uint64_t param_2, uint64_t* 
 	}
 }
 
-bool GameEngineStart_Hook::Install()
+bool GameEngineStart_Hook::Install(bool silent)
 {
 	if (g_GameEngineStart_Hook_Installed.load()) return true;
 
 	void* methodAddress = (void*)Scanner::FindPattern(Signatures::GameEngineStart);
 	if (!methodAddress)
 	{
-		Logger::LogAppend("Failed to obtain the address of GameEngineStart()");
+		if (!silent) Logger::LogAppend("Failed to obtain the address of GameEngineStart()");
 		return false;
 	}
 
 	g_GameEngineStart_Address = methodAddress;
 
-	if (MH_CreateHook(g_GameEngineStart_Address, &hkGameEngineStart, reinterpret_cast<LPVOID*>(&original_GameEngineStart)) != MH_OK)
+	MH_RemoveHook(g_GameEngineStart_Address);
+
+	MH_STATUS status = MH_CreateHook(g_GameEngineStart_Address, &hkGameEngineStart, reinterpret_cast<LPVOID*>(&original_GameEngineStart));
+	if (status != MH_OK)
 	{
-		Logger::LogAppend("Failed to create GameEngineStart hook");
+		Logger::LogAppend(std::string("Failed to create GameEngineStart hook: " + std::to_string((int)status)).c_str());
 		return false;
 	}
 
-	if (MH_EnableHook(g_GameEngineStart_Address) != MH_OK)
-	{
+	if (MH_EnableHook(g_GameEngineStart_Address) != MH_OK) {
 		Logger::LogAppend("Failed to enable GameEngineStart hook");
 		return false;
 	}

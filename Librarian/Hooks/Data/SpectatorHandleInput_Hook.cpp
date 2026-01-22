@@ -14,6 +14,7 @@ void* g_SpectatorHandleInput_Address = nullptr;
 
 volatile uint8_t g_FollowedPlayerIdx = 255;
 uintptr_t g_pReplayModule = 0;
+uint8_t g_CameraAttached = 0xFF;
 
 void __fastcall hkSpectatorHandleInput(
 	uint64_t* pReplayModule,
@@ -24,6 +25,7 @@ void __fastcall hkSpectatorHandleInput(
 	if (pReplayModule != nullptr)
 	{
 		g_pReplayModule = reinterpret_cast<uintptr_t>(pReplayModule);
+		g_CameraAttached = *reinterpret_cast<uint8_t*>(g_pReplayModule + 0x190);
 
 		Theater::TryGetFollowedPlayerIdx(g_pReplayModule);
 
