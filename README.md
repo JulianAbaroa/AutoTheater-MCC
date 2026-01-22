@@ -2,6 +2,8 @@
 
 AutoTheater-MCC is an automated cinematography and replay orchestration framework for Halo: The Master Chief Collection. Built upon the Librarian internal core, it utilizes a non-invasive proxy injection method to interface with the game engine, enabling automated camera management and event-driven replay playback.
 
+The core vision behind this project was to create a practical tool for content creation. By automating camera management and playback pacing, it aims to simplify the process of capturing cinematic footage, moving away from manual theater controls to a more reliable, event-driven system.
+
 ## Workflow Overview
 
 The tool operates in two distinct phases to ensure data accuracy and reliable orchestration:
@@ -14,7 +16,7 @@ The tool operates in two distinct phases to ensure data accuracy and reliable or
 
 The project is organized into several modular layers, each responsible for a specific aspect of the engine interfacing and logic execution.
 
-### Core Systems
+### Core
 
 - **Scanner:** Implements a memory orchestration system using AOB (Array of Bytes) signature scanning. This ensures that the tool can dynamically locate essential engine function addresses across different game builds without relying on hardcoded offsets.
 
@@ -34,9 +36,9 @@ The project is organized into several modular layers, each responsible for a spe
 
     - **InputThread:** Manages user-defined hotkeys and provides the Director with the necessary methods to simulate theater inputs (e.g., player switching).
 
-    - **TheaterThread:** Handles logging and telemetry monitoring during the event registration phase.
+    - **LogThread:** Handles logging and telemetry monitoring during the event registration phase.
 
-### Hooking Framework
+### Hooks
 
 Hooks are categorized by their functional purpose within the engine:
 
@@ -56,9 +58,13 @@ Hooks are categorized by their functional purpose within the engine:
 
 - **External:** Integration of the MinHook library for low-level function redirection.
 
+## Compatibility
+
+AutoTheater-MCC is only compatible with Halo Reach: Custom Game Browser and Custom Games replays.
+
 ## Technical Requirements
 
-- **Language:** C++17.
+- **Language:** C++23.
 
 - **Compiler:** Visual Studio 2022.
 
