@@ -117,15 +117,15 @@ void Theater::RebuildPlayerListFromMemory()
 	uintptr_t objectTable = Telemetry::GetTelemetryObjectTable();
 	if (!playerTable || !objectTable) return;
 
-	static bool isFirst = true;
-	
-	if (isFirst)
-	{
-		char buf[512];
-		sprintf_s(buf, "DEBUG: PlayerTable: %llx | ObjectTable: %llx", playerTable, objectTable);
-		Logger::LogAppend(buf);
-		isFirst = false;
-	}
+	//static bool isFirst = true;
+	//
+	//if (isFirst)
+	//{
+	//	char buf[512];
+	//	sprintf_s(buf, "DEBUG: PlayerTable: %llx | ObjectTable: %llx", playerTable, objectTable);
+	//	Logger::LogAppend(buf);
+	//	isFirst = false;
+	//}
 
 	for (uint8_t i = 0; i < 16; i++)	
 	{

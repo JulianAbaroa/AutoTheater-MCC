@@ -351,44 +351,34 @@ void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 {
 	if (targetIdx >= 16) return;
 
-	for (int attempt = 0; attempt < 3; attempt++)
+	Logger::LogAppend(("[Director] Starting navigation to: " + std::to_string(targetIdx)).c_str());
+
+	while (g_FollowedPlayerIdx != targetIdx)
 	{
-		uint8_t current = g_FollowedPlayerIdx;
-		if (current == targetIdx) break;
-
-		int forwardSteps = (targetIdx - current + 16) % 16;
-		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
-		int stepsRequired = movingForward ? forwardSteps : (16 - forwardSteps);
-
-		Logger::LogAppend(("[Director] Navigation Plan: " + std::to_string(stepsRequired) + " steps " + (movingForward ? "Forward" : "Backward")).c_str());
-
-		for (int i = 0; i < stepsRequired; i++)
+		if (*g_pReplayTime >= nextCommandTimestamp)
 		{
-			while (g_InputProcessing.load()) { std::this_thread::yield(); }
-
-			PushInput(movingForward ? InputAction::NextPlayer : InputAction::PreviousPlayer, InputContext::Theater);
-
-			auto startWait = std::chrono::steady_clock::now();
-			while (!g_InputProcessing.load() && (std::chrono::steady_clock::now() - startWait < std::chrono::milliseconds(100)))
-			{
-				std::this_thread::yield();
-			}
-
-			while(g_InputProcessing.load()) { std::this_thread::yield(); }
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(30));
-		}
-
-		Logger::LogAppend("[Director] Batch sent, waiting for engine to stabilize...");
-		std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
-		if (g_FollowedPlayerIdx == targetIdx) {
-			Logger::LogAppend("[Director] Navigation successful.");
+			Logger::LogAppend("[Director] Navigation aborted: Time limit reached.");
 			return;
 		}
+		
+		uint8_t current = g_FollowedPlayerIdx;
+		int forwardSteps = (targetIdx - current + 16) % 16;
+		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
 
-		Logger::LogAppend(("[Director] Verification failed. Now at: " + std::to_string(g_FollowedPlayerIdx) + ". Retrying...").c_str());
+		PushInput(movingForward ? InputAction::NextPlayer : InputAction::PreviousPlayer, InputContext::Theater);
+
+		auto startWait = std::chrono::steady_clock::now();
+		while (!g_InputProcessing.load() && (std::chrono::steady_clock::now() - startWait < std::chrono::milliseconds(100)))
+		{
+			std::this_thread::yield();
+		}
+
+		while (g_InputProcessing.load()) { std::this_thread::yield(); }
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
 	}
+
+	Logger::LogAppend("[Director] Navigation successful.");
 }
 
 float SafeGetCurrentTime()

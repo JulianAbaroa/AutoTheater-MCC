@@ -67,7 +67,7 @@ enum class EventType
 	Killpocalypse, Killionaire, Bulltrue, KilledByTheGuardians, Yoink, 
 	KillFromTheGrave, JuggernautSpree, FellToYourDeath, Wheelman, 
 	WheelmanSpree, Roadhog, Roadrage, AssistSpree, Sidekick, SecondGunman,
-	ShowStopper,
+	ShowStopper, SpawnSpree, Wingman, Broseidon,
 
 	// Keep adding game events...
 };

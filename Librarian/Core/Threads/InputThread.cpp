@@ -78,7 +78,7 @@ void InputThread::Run()
 
                 auto condition = [initialIdx]() {
                     return g_FollowedPlayerIdx != initialIdx;
-                    };
+                };
 
                 ExecuteInputWithFeedback(currentReq, condition, 500, 20);
             }
