@@ -1,20 +1,16 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
 #include "Core/Scanner/Scanner.h"
-#include "Core/Systems/Timeline.h"
-#include "Core/Systems/Director.h"
+#include "Core/Systems/Theater.h"
+#include "Core/Common/GlobalState.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
 #include "External/minhook/include/MinHook.h"
+#include <sstream>
 
 SpectatorHandleInput_t original_SpectatorHandleInput = nullptr;
 std::atomic<bool> g_SpectatorHandleInput_Hook_Installed = false;
 void* g_SpectatorHandleInput_Address = nullptr;
-
-volatile uint8_t g_FollowedPlayerIdx = 255;
-uintptr_t g_pReplayModule = 0;
-uint8_t g_CameraAttached = 0xFF;
 
 void __fastcall hkSpectatorHandleInput(
 	uint64_t* pReplayModule,
@@ -24,25 +20,25 @@ void __fastcall hkSpectatorHandleInput(
 
 	if (pReplayModule != nullptr)
 	{
-		g_pReplayModule = reinterpret_cast<uintptr_t>(pReplayModule);
-		g_CameraAttached = *reinterpret_cast<uint8_t*>(g_pReplayModule + 0x190);
+		g_State.pReplayModule.store(reinterpret_cast<uintptr_t>(pReplayModule));
+		g_State.cameraAttached.store(*reinterpret_cast<uint8_t*>(g_State.pReplayModule.load() + 0x190));
 
-		Theater::TryGetFollowedPlayerIdx(g_pReplayModule);
+		Theater::TryGetFollowedPlayerIdx(g_State.pReplayModule.load());
 
-		if (g_FollowedPlayerIdx < 16)
+		if (g_State.followedPlayerIdx.load() < 16)
 		{
 			static uint8_t lastID = 255;
 
-			if (g_FollowedPlayerIdx != lastID)
+			if (g_State.followedPlayerIdx.load() != lastID)
 			{
-				lastID = g_FollowedPlayerIdx;
+				lastID = g_State.followedPlayerIdx.load();
 
 				wchar_t bufferNombre[32] = { 0 };
-				if (Theater::TryGetPlayerName(g_FollowedPlayerIdx, bufferNombre, 32)) {
+				if (Theater::TryGetPlayerName(g_State.followedPlayerIdx.load(), bufferNombre, 32)) {
 					std::string sName = Formatting::WStringToString(bufferNombre);
 
 					std::stringstream ss;
-					ss << ">>> Changed to: [" << (int)g_FollowedPlayerIdx << "] " << sName;
+					ss << ">>> Changed to: [" << (int)g_State.followedPlayerIdx.load() << "] " << sName;
 					Logger::LogAppend(ss.str().c_str());
 				}
 			}

@@ -1,21 +1,6 @@
 #pragma once
 
-#include "Core/Systems/RawTypes.h"
-#include <string>
-#include <vector>
-
-struct PlayerInfo {
-    RawPlayer RawPlayer;
-    std::vector<RawWeapon> Weapons;
-
-    std::string Name;
-    std::string Tag;
-    bool IsVictim;
-    uint8_t Id;
-};
-
-extern std::vector<PlayerInfo> g_PlayerList;
-extern float* g_pReplayTimeScale;
+#include <cstdint>
 
 namespace Theater
 {

@@ -1,16 +1,16 @@
 #include "pch.h"
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
+#include "Core/Common/Types.h"
+#include "Core/Common/Registry.h"
+#include "Core/Common/GlobalState.h"
 #include "Core/Systems/Timeline.h"
 #include <algorithm>
 
-std::vector<GameEvent> g_Timeline;
-std::mutex g_TimelineMutex;
-
-bool g_IsLastEvent = false;
-
 static EventType GetEventType(const std::wstring& templateStr)
 {
+	std::lock_guard lock(g_State.configMutex);
+
 	for (const auto& er : g_EventRegistry)
 	{
 		if (templateStr.find(er.first) != std::wstring::npos)
@@ -26,11 +26,19 @@ static std::vector<PlayerInfo> GetPlayers(EventData* eventData) {
 	std::vector<PlayerInfo> detectedPlayers;
 	if (!eventData) return detectedPlayers;
 
-	size_t maxPlayers = g_PlayerList.size();
+	std::vector<PlayerInfo> playerListCopy;
+	playerListCopy.resize(16);
+
+	{
+		std::lock_guard lock(g_State.theaterMutex);
+		playerListCopy = g_State.playerList;
+	}
+
+	size_t maxPlayers = playerListCopy.size();
 
 	auto AddPlayerBySlot = [&](uint8_t slotIndex) {
 		if (slotIndex < maxPlayers) {
-			PlayerInfo& player = g_PlayerList[slotIndex];
+			PlayerInfo& player = playerListCopy[slotIndex];
 
 			if (player.RawPlayer.Name[0] != L'\0') {
 				detectedPlayers.push_back(player);
@@ -95,7 +103,7 @@ static bool IsRepeatedEvent(GameEvent gameEvent)
 
 void Timeline::AddGameEvent(float timestamp, std::wstring& templateStr, EventData* eventData)
 {
-	if (g_IsLastEvent) return;
+	if (g_State.isLastEvent.load()) return;
 	
 	EventType currentType = GetEventType(templateStr);
 	std::vector<PlayerInfo> currentPlayers = GetPlayers(eventData);
@@ -109,8 +117,10 @@ void Timeline::AddGameEvent(float timestamp, std::wstring& templateStr, EventDat
 	
 	if (IsRepeatedEvent(gameEvent)) return;
 	
-	std::lock_guard<std::mutex> lock(g_TimelineMutex);
-	g_Timeline.push_back(gameEvent);
+	{
+		std::lock_guard<std::mutex> lock(g_State.timelineMutex);
+		g_State.timeline.push_back(gameEvent);
+	}
 		
-	if (gameEvent.Type == EventType::Wins) g_IsLastEvent = true;
+	if (gameEvent.Type == EventType::Wins) g_State.isLastEvent.store(true);
 }

@@ -1,8 +1,5 @@
 #pragma once
 
-#include <atomic>
-
-extern std::atomic<bool> g_EngineHooksReady;
 extern void* g_EngineInitialize_Address;
 
 typedef void(__fastcall* EngineInitialize_t)(void);

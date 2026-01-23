@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Core/Scanner/Scanner.h"
 #include "Hooks/Telemetry/Telemetry.h"
+#include <cstdint>
 
 uintptr_t Telemetry::GetTelemetryPlayerTable()
 {

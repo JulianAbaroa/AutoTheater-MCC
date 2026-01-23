@@ -1,12 +1,14 @@
 #include "pch.h"
-#include "LogThread.h"
-#include "Core/DllMain.h"
-#include "Core/Systems/Director.h"
+#include "Utils/Logger.h"
 #include "Core/Threads/MainThread.h"
+#include "Core/Common/GlobalState.h"
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
-#include "Utils/Logger.h"
+#include <sstream>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 std::thread g_MainThread;
 
@@ -27,11 +29,11 @@ static bool IsHookIntact(void* address)
 
 static void ShutdownAndEject()
 {
-    g_Running.store(false);
+    g_State.running.store(false);
 
     std::thread([=]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        FreeLibraryAndExitThread(g_HandleModule, 0);
+        std::this_thread::sleep_for(200ms);
+        FreeLibraryAndExitThread(g_State.handleModule, 0);
     }).detach();
 }
 
@@ -39,7 +41,7 @@ static bool TryInstallLifecycleHooks(const char* context)
 {
     std::stringstream ss;
 
-    while (g_Running.load())
+    while (g_State.running.load())
     {
         if (EngineInitialize_Hook::Install(true) &&
              DestroySubsystems_Hook::Install(true) &&
@@ -51,7 +53,7 @@ static bool TryInstallLifecycleHooks(const char* context)
              return true;
          }
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(1s);
     }
 
     return false;
@@ -59,37 +61,38 @@ static bool TryInstallLifecycleHooks(const char* context)
 
 static void UpdatePhase()
 {
-    if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
+    if (g_State.currentPhase.load() == Phase::BuildTimeline)
     {
-        g_LogGameEvents = false;
-        g_CurrentPhase = LibrarianPhase::ExecuteDirector;
+        g_State.logGameEvents.store(false);
+        g_State.processedCount.store(0);
+        g_State.currentPhase.store(Phase::ExecuteDirector);
     }
     else
     {
-        g_DirectorInitialized.store(false);
-        g_EngineHooksReady.store(false);
-        g_CurrentPhase = LibrarianPhase::BuildTimeline;
+        g_State.directorInitialized.store(false);
+        g_State.engineHooksReady.store(false);
+        g_State.currentPhase.store(Phase::BuildTimeline);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(100ms);
 
         {
-            std::lock_guard<std::mutex> lock(g_TimelineMutex);
-            g_Timeline.clear();
+            std::lock_guard lock(g_State.timelineMutex);
+            g_State.timeline.clear();
         }
 
         {
-            std::lock_guard<std::mutex> lock(g_ScriptMutex);
-            g_Script.clear();
-            g_CurrentCommandIndex = 0;
+            std::lock_guard lock(g_State.directorMutex);
+            g_State.script.clear();
         }
 
-        g_LogGameEvents = true;
-        g_IsLastEvent = false;
+        g_State.currentCommandIndex.store(0);
+        g_State.logGameEvents.store(true);
+        g_State.isLastEvent.store(false);
     }
 }
 
 void MainThread::Run() {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(5s);
 
     Logger::LogAppend("=== Main Thread Started ===");
 
@@ -100,31 +103,31 @@ void MainThread::Run() {
         return;
     }
 
-    g_CurrentPhase = LibrarianPhase::BuildTimeline;
-    g_LogGameEvents = true;
+    g_State.currentPhase.store(Phase::BuildTimeline);
+    g_State.logGameEvents.store(true);
 
-    while (g_Running.load())
+    while (g_State.running.load())
     {
         if (!IsHookIntact(g_EngineInitialize_Address) ||
             !IsHookIntact(g_DestroySubsystems_Address) ||
             !IsHookIntact(g_GameEngineStart_Address)
         ) {
             Logger::LogAppend("Watchdog: Hook corrupted or memory restored. Rebooting...");
-            g_GameEngineDestroyed = true;
+            g_State.gameEngineDestroyed.store(true);
         }
 
-        if (g_GameEngineDestroyed)
+        if (g_State.gameEngineDestroyed.load())
         {
             Logger::LogAppend("Game engine destruction detected, resetting lifecycle...");
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(1s);
 
-            if (g_IsTheaterMode) UpdatePhase();
+            if (g_State.isTheaterMode.load()) UpdatePhase();
 
             EngineInitialize_Hook::Uninstall();
             DestroySubsystems_Hook::Uninstall();
             GameEngineStart_Hook::Uninstall();
 
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(1s);
 
             if (!TryInstallLifecycleHooks("Engine Reset Cycle")) {
                 Logger::LogAppend("ERROR: Failed to re-install hooks after engine reset!");
@@ -132,14 +135,11 @@ void MainThread::Run() {
                 return;
             }
 
-            g_GameEngineDestroyed = false;
+            g_State.gameEngineDestroyed.store(false);
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(1s);
     }
-
-    g_CurrentPhase = LibrarianPhase::End;
-    Logger::LogAppend("=== Current Phase: End ===");
 
     EngineInitialize_Hook::Uninstall();
     DestroySubsystems_Hook::Uninstall();

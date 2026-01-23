@@ -1,13 +1,11 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
 #include "Core/Scanner/Scanner.h"
-#include "Core/Systems/Timeline.h"
-#include "Hooks/MovReader/MovParser.h"
-#include "Hooks/MovReader/BlamOpenFile_Hook.h"
+#include "Core/Common/GlobalState.h"
 #include "Hooks/MovReader/FilmInitializeState_Hook.h"
 #include "External/minhook/include/MinHook.h"
+#include <sstream>
 
 FilmInitializeState_t original_FilmInitializeState = nullptr;
 std::atomic<bool> g_FilmInitializeState_Hook_Installed;
@@ -30,15 +28,18 @@ void hkFilm_InitializeState(
 
 		Logger::LogAppend("Players present at joining:");
 
+		std::vector<PlayerInfo> firstPlayerList;
+		firstPlayerList.resize(16);
+
 		for (uint8_t i = 0; i < 16; i++)
 		{
 			uintptr_t playerOffset = headerBuffer + 0xBD0 + (i * 0xA0);
 			wchar_t* wName = reinterpret_cast<wchar_t*>(playerOffset);
-
+		
 			if (wName[0] != 0 && iswprint(wName[0]))
 			{
 				std::string finalName = Formatting::ToCompactAlpha(wName);
-
+		
 				wchar_t* wTag = reinterpret_cast<wchar_t*>(playerOffset + 0x44);
 				std::string tag = Formatting::WStringToString(wTag);
 
@@ -46,10 +47,9 @@ void hkFilm_InitializeState(
 				info.Name = finalName;
 				info.Tag = tag;
 				info.Id = i;
-				info.IsVictim = false;
-
-				g_PlayerList[i] = info;
-
+		
+				firstPlayerList[i] = info;
+		
 				ss.str("");
 				ss << "Player [" << std::to_string(i) << "]: " 
 					<< finalName << " [" << tag << "]";
@@ -59,6 +59,11 @@ void hkFilm_InitializeState(
 			{
 				missingIndices.push_back(i);
 			}
+		}
+
+		{
+			std::lock_guard lock(g_State.theaterMutex);
+			g_State.playerList = firstPlayerList;
 		}
 
 		if (!missingIndices.empty())
@@ -77,11 +82,6 @@ void hkFilm_InitializeState(
 	}
 
 	original_FilmInitializeState(sessionContext, headerBuffer);
-
-	if (!g_FilmPath.empty())
-	{
-		MovParser::GetHeaderSizes(g_FilmPath);
-	}
 }
 
 void FilmInitializeState_Hook::Install()

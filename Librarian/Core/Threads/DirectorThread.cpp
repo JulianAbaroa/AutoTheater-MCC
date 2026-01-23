@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Core/Systems/Director.h"
+#include "Core/Common/GlobalState.h"
 #include "Core/Threads/DirectorThread.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
@@ -9,19 +9,20 @@
 #include <chrono>
 
 using namespace std::chrono_literals;
+
 std::thread g_DirectorThread;
 
 void DirectorThread::Run()
 {
     Logger::LogAppend("=== Director Thread Started ===");
     
-    while (g_Running.load())
+    while (g_State.running.load())
     {
-        if (g_CurrentPhase == LibrarianPhase::ExecuteDirector)
+        if (g_State.currentPhase.load() == Phase::ExecuteDirector)
         {
-            if (!g_DirectorInitialized)
+            if (!g_State.directorInitialized.load())
             {
-                if (g_EngineHooksReady)
+                if (g_State.engineHooksReady.load())
                 {
                     Logger::LogAppend("DirectorThread: Phase match and Engine ready. Initializing...");
                     Director::Initialize();
@@ -29,7 +30,7 @@ void DirectorThread::Run()
             }
             else
             {
-                if (!g_GameEngineDestroyed && g_IsTheaterMode)
+                if (!g_State.gameEngineDestroyed.load() && g_State.isTheaterMode.load())
                 {
                     Director::Update();
                 }
@@ -37,9 +38,8 @@ void DirectorThread::Run()
 
             std::this_thread::sleep_for(16ms);
         }
-        else if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
-        {
-            g_EngineHooksReady.store(false);
+        else if (g_State.currentPhase.load() == Phase::BuildTimeline) {
+            g_State.engineHooksReady.store(false);
         }
     }
 

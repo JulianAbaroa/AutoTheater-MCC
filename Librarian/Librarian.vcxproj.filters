@@ -40,15 +40,12 @@
     <Filter Include="External\minhook">
       <UniqueIdentifier>{c2d9b282-f103-48be-aeb2-23d37af92617}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Common">
+      <UniqueIdentifier>{c5d8cc20-924e-44e4-8517-a94106c80c2b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\DllMain.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Systems\Director.h">
-      <Filter>Core\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\RawTypes.h">
       <Filter>Core\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Core\Systems\Theater.h">
@@ -96,12 +93,6 @@
     <ClInclude Include="Hooks\MovReader\FilmInitializeState_Hook.h">
       <Filter>Hooks\MovReader</Filter>
     </ClInclude>
-    <ClInclude Include="Hooks\MovReader\MovParser.h">
-      <Filter>Hooks\MovReader</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\MovReader\MovTypes.h">
-      <Filter>Hooks\MovReader</Filter>
-    </ClInclude>
     <ClInclude Include="Hooks\Telemetry\Telemetry.h">
       <Filter>Hooks\Telemetry</Filter>
     </ClInclude>
@@ -122,6 +113,15 @@
     </ClInclude>
     <ClInclude Include="Hooks\Lifecycle\GameEngineStart_Hook.h">
       <Filter>Hooks\Lifecycle</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\GlobalState.h">
+      <Filter>Core\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types.h">
+      <Filter>Core\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Registry.h">
+      <Filter>Core\Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -173,9 +173,6 @@
     <ClCompile Include="Hooks\MovReader\FilmInitializeState_Hook.cpp">
       <Filter>Hooks\MovReader</Filter>
     </ClCompile>
-    <ClCompile Include="Hooks\MovReader\MovParser.cpp">
-      <Filter>Hooks\MovReader</Filter>
-    </ClCompile>
     <ClCompile Include="Hooks\Telemetry\Telemetry.cpp">
       <Filter>Hooks\Telemetry</Filter>
     </ClCompile>
@@ -208,6 +205,12 @@
     </ClCompile>
     <ClCompile Include="Hooks\Lifecycle\GameEngineStart_Hook.cpp">
       <Filter>Hooks\Lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Common\Registry.cpp">
+      <Filter>Core\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalState.cpp">
+      <Filter>Core\Common</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

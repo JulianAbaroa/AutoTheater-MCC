@@ -1,6 +1,5 @@
 #pragma once
 
-extern bool g_GameEngineDestroyed;
 extern void* g_DestroySubsystems_Address;
 
 typedef void(__fastcall* DestroySubsystems_t)(void);

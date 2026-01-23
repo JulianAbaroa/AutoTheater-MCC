@@ -1,18 +1,15 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
 #include "Core/Scanner/Scanner.h"
-#include "Core/Systems/Theater.h"
-#include "Hooks/MovReader/BlamOpenFile_Hook.h"
+#include "Core/Common/GlobalState.h"
 #include "External/minhook/include/MinHook.h"
+#include "Hooks/MovReader/BlamOpenFile_Hook.h"
+#include <fstream>
 
 BlamOpenFile_t original_BlamOpenFile = nullptr;
 std::atomic<bool> g_BlamOpenFile_Hook_Installed;
 void* g_BlamOpenFile_Address;
-
-std::string g_FilmPath = "";
-
 
 void hkBlam_OpenFile(
 	long long fileContext,
@@ -26,7 +23,10 @@ void hkBlam_OpenFile(
 	if (filePath != nullptr && !IsBadReadPtr(filePath, 4)) {
 		std::string pathStr(filePath);
 		if (pathStr.find(".mov") != std::string::npos) {
-			g_FilmPath = filePath;
+			{
+				std::lock_guard lock(g_State.configMutex);
+				g_State.filmPath = filePath;
+			}
 
 			Logger::LogAppend((std::string("Film path: ") + filePath).c_str());
 

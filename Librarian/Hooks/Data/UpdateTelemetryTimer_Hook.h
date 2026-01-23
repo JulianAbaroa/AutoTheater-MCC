@@ -2,8 +2,6 @@
 
 #include <cstdint>
 
-extern float* g_pReplayTime;
-
 typedef void(__fastcall* UpdateTelemetryTimer_t)(
 	uint64_t timerContext,
 	float deltaTime

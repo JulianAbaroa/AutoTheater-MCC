@@ -1,11 +1,10 @@
 #pragma once
 
-#include "Core/Systems/Timeline.h"
+#include "Core/Common/Types.h"
 #include <thread>
 #include <string>
 
 extern std::thread g_LogThread;
-extern bool g_LogGameEvents;
 
 namespace LogThread
 {

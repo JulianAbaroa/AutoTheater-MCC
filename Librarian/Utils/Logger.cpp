@@ -1,17 +1,23 @@
 #include "pch.h"
 #include "Utils/Logger.h"
-#include <mutex>
-
-std::string g_LoggerPath;
-static std::mutex g_LogMutex;
+#include "Core/Common/GlobalState.h"
+#include <sstream>
+#include <fstream>
+#include <iomanip>
 
 void Logger::LogAppend(const char* format) {
-	std::lock_guard<std::mutex> lock(g_LogMutex);
-	std::ofstream ofs(g_LoggerPath, std::ios::app);
+	std::string loggerPathCopy;
+
+	{
+		std::lock_guard<std::mutex> lock(g_State.configMutex);
+		loggerPathCopy = g_State.loggerPath;
+	}
+
+	std::ofstream ofs(loggerPathCopy, std::ios::app);
 
 	if (!ofs.is_open()) {
 		std::stringstream ss;
-		ss << "logAppend: failed to open '" << g_LoggerPath << "' - msg: " << format;
+		ss << "logAppend: failed to open '" << loggerPathCopy << "' - msg: " << format;
 		OutputDebugStringA(ss.str().c_str());
 		return;
 	}

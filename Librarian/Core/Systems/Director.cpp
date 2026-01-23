@@ -1,26 +1,20 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
+#include "Core/Systems/Theater.h"
 #include "Core/Systems/Director.h"
-#include "Core/Threads/InputThread.h"
-#include "Hooks/Data/GetButtonState_Hook.h"
-#include "Hooks/Data/SpectatorHandleInput_Hook.h"
-#include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
+#include "Core/Common/GlobalState.h"
 #include <algorithm>
-#include <thread>
+#include <sstream>
+#include <iomanip>
+#include <chrono>
 
-std::vector<DirectorCommand> g_Script;
-std::mutex g_ScriptMutex;
+using namespace std::chrono_literals;
 
-static float g_LastReplayTime = 0.0f;
-std::atomic<bool> g_DirectorInitialized{ false };
-size_t g_CurrentCommandIndex = 0;
+static const float DIRECTOR_WARMUP_TIME = 5.0f;
 
-static float DIRECTOR_WARMUP_TIME = 5.0f;
-
-void PrioritizeEvents()
+static void PrioritizeEvents(std::vector<GameEvent> tempTimeline)
 {
-	std::sort(g_Timeline.begin(), g_Timeline.end(), [](const GameEvent& a, const GameEvent& b)
+	std::sort(tempTimeline.begin(), tempTimeline.end(), [](const GameEvent& a, const GameEvent& b)
 	{
 		if (abs(a.Timestamp - b.Timestamp) < 0.001f)
 		{
@@ -29,9 +23,12 @@ void PrioritizeEvents()
 	
 		return a.Timestamp < b.Timestamp;
 	});
+
+	std::lock_guard lock(g_State.timelineMutex);
+	g_State.timeline = tempTimeline;
 }
 
-bool ArePlayerSetsEqual(const std::vector<PlayerInfo>& listA, const std::vector<PlayerInfo>& listB)
+static bool ArePlayerSetsEqual(const std::vector<PlayerInfo>& listA, const std::vector<PlayerInfo>& listB)
 {
 	if (listA.size() != listB.size()) return false;
 
@@ -43,17 +40,17 @@ bool ArePlayerSetsEqual(const std::vector<PlayerInfo>& listA, const std::vector<
 	return true;
 }
 
-void RemoveDuplicates()
+static void RemoveDuplicates(std::vector<GameEvent> tempTimeline)
 {
-	if (g_Timeline.empty()) return;
+	if (tempTimeline.empty()) return;
 
-	std::sort(g_Timeline.begin(), g_Timeline.end(), [](const GameEvent& a, const GameEvent& b) {
+	std::sort(tempTimeline.begin(), tempTimeline.end(), [](const GameEvent& a, const GameEvent& b) {
 		return a.Timestamp < b.Timestamp;
 	});
 
 	std::vector<GameEvent> uniqueEvents;
 
-	for (const auto& currentEvent : g_Timeline)
+	for (const auto& currentEvent : tempTimeline)
 	{
 		bool isDuplicate = false;
 
@@ -85,7 +82,8 @@ void RemoveDuplicates()
 		}
 	}
 
-	g_Timeline = uniqueEvents;
+	std::lock_guard lock(g_State.timelineMutex);
+	g_State.timeline = uniqueEvents;
 }
 
 void OptimizeSegments(std::vector<ActionSegment>& segments)
@@ -172,12 +170,13 @@ void OptimizeSegments(std::vector<ActionSegment>& segments)
 			finalSegments.push_back(seg);
 		}
 	}
+
 	segments = finalSegments;
 }
 
-int GetWeight(const GameEvent& event)
+static int GetWeight(const GameEvent& event, const std::unordered_map<std::wstring, EventInfo>& localRegistry)
 {
-	for (const auto& entry : g_EventRegistry)
+	for (const auto& entry : localRegistry)
 	{
 		if (entry.second.Type== event.Type)
 		{
@@ -188,44 +187,39 @@ int GetWeight(const GameEvent& event)
 	return 0;
 }
 
-void GenerateScript()
+static void GenerateScript(std::vector<GameEvent> tempTimeline)
 {
+	std::unordered_map<std::wstring, EventInfo> registryCopy;
+	{
+		std::lock_guard lock(g_State.configMutex);
+		registryCopy = g_State.eventRegistry;
+	}
+
 	std::vector<ActionSegment> rawSegments;
 
-	for (size_t i = 0; i < g_Timeline.size(); ++i)
+	for (size_t i = 0; i < tempTimeline.size(); ++i)
 	{
-		const auto& currentEvent = g_Timeline[i];
+		const auto& currentEvent = tempTimeline[i];
 		if (currentEvent.Timestamp < DIRECTOR_WARMUP_TIME + 2.0f) continue;
 		if (currentEvent.Players.empty()) continue;
-
+	
 		const PlayerInfo* targetPlayer = &currentEvent.Players[0];
-		if (currentEvent.Players.size() >= 2)
-		{
-			for (const auto& player : currentEvent.Players)
-			{
-				if (!player.IsVictim)
-				{
-					targetPlayer = &player;
-					break;
-				}
-			}
-		}
-
-		int weight = GetWeight(currentEvent);
+	
+		int weight = GetWeight(currentEvent, registryCopy);
 		if (weight == 0) continue;
-
+	
 		ActionSegment segment;
 		segment.PlayerName = targetPlayer->Name;
 		segment.PlayerID = targetPlayer->Id;
-
-		float rawStart = currentEvent.Timestamp - 6.0f;
+	
+		float rawStart = currentEvent.Timestamp - 4.0f;
 		float startTime = (rawStart < DIRECTOR_WARMUP_TIME) ? DIRECTOR_WARMUP_TIME : rawStart;
-		float endTime = currentEvent.Timestamp + 2.0f;
-
+		float endTime = currentEvent.Timestamp + 4.0f;
+		
 		float lookAheadWindow = 8.0f;
-		for (size_t j = i + 1; j < g_Timeline.size(); ++j)
+		for (size_t j = i + 1; j < tempTimeline.size(); ++j)
 		{
-			const auto& nextEvent = g_Timeline[j];
+			const auto& nextEvent = tempTimeline[j];
 			if (nextEvent.Timestamp - currentEvent.Timestamp > lookAheadWindow) break;
 		
 			bool isInvolved = false;
@@ -238,18 +232,18 @@ void GenerateScript()
 		
 			if (isInvolved)
 			{
-				float newEndTime = nextEvent.Timestamp + 2.0f;
+				float newEndTime = nextEvent.Timestamp + 4.0f;
 				if (newEndTime > endTime)
 				{
 					endTime = newEndTime;
 				}
 			}
 		}
-
+		
 		segment.StartTime = startTime;
 		segment.EndTime = endTime;
 		if (segment.EndTime - segment.StartTime < 5.0f) continue;
-
+		
 		segment.TotalScore = weight;
 		segment.TotalEvents.push_back(currentEvent.Type);
 		rawSegments.push_back(segment);
@@ -258,23 +252,28 @@ void GenerateScript()
 	OptimizeSegments(rawSegments);
 
 	float lastSegmentEnd = DIRECTOR_WARMUP_TIME;
+
+	std::vector<DirectorCommand> tempScript;
+
 	for (const auto& segment : rawSegments)
 	{
 		float gap = segment.StartTime - lastSegmentEnd;
-
+	
 		if (gap > 5.0f)
 		{
 			DirectorCommand speedCmd;
 			speedCmd.Timestamp = lastSegmentEnd + 0.25f;
 			speedCmd.Type = CommandType::SetSpeed;
 			speedCmd.SpeedValue = (gap > 10.0f) ? 4.0f : 2.0f;
-			g_Script.push_back(speedCmd);
 
+			tempScript.push_back(speedCmd);
+	
 			DirectorCommand normalCmd;
 			normalCmd.Timestamp = segment.StartTime - 0.25f;
 			normalCmd.Type = CommandType::SetSpeed;
 			normalCmd.SpeedValue = 1.0f;
-			g_Script.push_back(normalCmd);
+
+			tempScript.push_back(normalCmd);
 		}
 
 		DirectorCommand cutCmd;
@@ -282,110 +281,131 @@ void GenerateScript()
 		cutCmd.Type = CommandType::Cut;
 		cutCmd.TargetPlayerIdx = segment.PlayerID;
 		cutCmd.TargetPlayerName = segment.PlayerName;
-
+	
 		std::stringstream ss;
 		ss << "Score: " << segment.TotalScore << " Events: " << segment.TotalEvents.size();
 		cutCmd.Reason = ss.str();
-
+	
 		lastSegmentEnd = segment.EndTime;
-		g_Script.push_back(cutCmd);
-	}
 
-	std::sort(g_Script.begin(), g_Script.end(), [](const DirectorCommand& a, const DirectorCommand& b) {
+		tempScript.push_back(cutCmd);
+	}
+	
+	std::sort(tempScript.begin(), tempScript.end(), [](const DirectorCommand& a, const DirectorCommand& b) {
 		return a.Timestamp < b.Timestamp;
 	});
+
+	std::lock_guard lock(g_State.directorMutex);
+	g_State.script = tempScript;
 }
 
 void Director::Initialize()
 {
-	std::lock_guard<std::mutex> lock(g_TimelineMutex);
-
-	PrioritizeEvents();
-	RemoveDuplicates();
-
+	std::vector<GameEvent> timelineCopy;
 	{
-		std::lock_guard<std::mutex> lock(g_ScriptMutex);
-
-		g_Script.clear();
-		GenerateScript();
-
-		Logger::LogAppend("=== Generated Script ===");
-		for (const auto& cmd : g_Script) {
-			std::stringstream ss;
-
-			int totalSeconds = static_cast<int>(cmd.Timestamp);
-			int minutes = totalSeconds / 60;
-			int seconds = totalSeconds % 60;
-
-			ss << "["
-				<< std::setw(2) << std::setfill('0') << minutes << ":"
-				<< std::setw(2) << std::setfill('0') << seconds
-				<< "] ";
-
-			if (cmd.Type == CommandType::Cut) {
-				ss << "Cut to: Player " << cmd.TargetPlayerName << " (" << cmd.Reason << ")";
-			}
-			else {
-				ss << "Speed: " << cmd.SpeedValue << "x";
-			}
-
-			Logger::LogAppend(ss.str().c_str());
-		}
-		Logger::LogAppend("======================");
-		
-		g_CurrentCommandIndex = 0;
+		std::lock_guard lock(g_State.timelineMutex);
+		timelineCopy = g_State.timeline;
 	}
 
-	g_LastReplayTime = 0.0f;
-	g_DirectorInitialized.store(true);
+	PrioritizeEvents(timelineCopy);
+	RemoveDuplicates(timelineCopy);
+
+	{
+		std::lock_guard lock(g_State.directorMutex);
+		g_State.script.clear();
+	}
+
+	GenerateScript(timelineCopy);
+
+	Logger::LogAppend("=== Generated Script ===");
+
+	std::vector<DirectorCommand> tempScript{};
+
+	{
+		std::lock_guard lock(g_State.directorMutex);
+		tempScript = g_State.script;
+	}
+
+	for (const auto& cmd : tempScript) {
+		std::stringstream ss;
+
+		int totalSeconds = static_cast<int>(cmd.Timestamp);
+		int minutes = totalSeconds / 60;
+		int seconds = totalSeconds % 60;
+
+		ss << "["
+			<< std::setw(2) << std::setfill('0') << minutes << ":"
+			<< std::setw(2) << std::setfill('0') << seconds
+			<< "] ";
+
+		if (cmd.Type == CommandType::Cut) {
+			ss << "Cut to: Player " << cmd.TargetPlayerName << " (" << cmd.Reason << ")";
+		}
+		else {
+			ss << "Speed: " << cmd.SpeedValue << "x";
+		}
+	
+		Logger::LogAppend(ss.str().c_str());
+	}
+	Logger::LogAppend("=== Script End ===");
+	
+	std::lock_guard lock(g_State.directorMutex);
+	g_State.currentCommandIndex.store(0);
+	g_State.lastReplayTime.store(0.0f);
+	g_State.directorInitialized.store(true);
 }
 
 static void PushInput(InputAction action, InputContext context)
 {
-	std::lock_guard<std::mutex> lock(g_InputQueueMutex);
-	if (g_InputQueue.size() > 1) return;
-	g_InputQueue.push({ action, context });
+	std::lock_guard<std::mutex> lock(g_State.inputMutex);
+	if (g_State.inputQueue.size() > 1) return;
+	g_State.inputQueue.push({ action, context });
 }
 
-void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
+static void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 {
 	if (targetIdx >= 16) return;
 
 	Logger::LogAppend(("[Director] Starting navigation to: " + std::to_string(targetIdx)).c_str());
 
-	while (g_FollowedPlayerIdx != targetIdx)
+	auto getFollowedIdx = [&]() {
+		return g_State.followedPlayerIdx.load();
+	};
+
+	while (getFollowedIdx() != targetIdx)
 	{
-		if (*g_pReplayTime >= nextCommandTimestamp)
+		if (*g_State.pReplayTime.load() >= nextCommandTimestamp)
 		{
 			Logger::LogAppend("[Director] Navigation aborted: Time limit reached.");
 			return;
 		}
 		
-		uint8_t current = g_FollowedPlayerIdx;
+		uint8_t current = g_State.followedPlayerIdx.load();
 		int forwardSteps = (targetIdx - current + 16) % 16;
 		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
 
 		PushInput(movingForward ? InputAction::NextPlayer : InputAction::PreviousPlayer, InputContext::Theater);
 
 		auto startWait = std::chrono::steady_clock::now();
-		while (!g_InputProcessing.load() && (std::chrono::steady_clock::now() - startWait < std::chrono::milliseconds(100)))
+		
+		while (!g_State.inputProcessing.load() && (std::chrono::steady_clock::now() - startWait < 100ms))
 		{
 			std::this_thread::yield();
 		}
 
-		while (g_InputProcessing.load()) { std::this_thread::yield(); }
+		while (g_State.inputProcessing.load()) { std::this_thread::yield(); }
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(30));
+		std::this_thread::sleep_for(30ms);
 	}
 
 	Logger::LogAppend("[Director] Navigation successful.");
 }
 
-float SafeGetCurrentTime()
+static float SafeGetCurrentTime()
 {
 	__try
 	{
-		return *g_pReplayTime;
+		return *g_State.pReplayTime.load();
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -395,62 +415,68 @@ float SafeGetCurrentTime()
 
 void Director::Update()
 {
-	if (!g_pReplayTime || g_CurrentPhase != LibrarianPhase::ExecuteDirector) {
+	if (!g_State.pReplayTime.load() || g_State.currentPhase.load() != Phase::ExecuteDirector) {
 		return;
 	}
 
-	if (g_pReplayModule != 0 && g_CameraAttached == 0x01)
+	if (g_State.pReplayModule.load() != 0 && g_State.cameraAttached.load() == 0x01)
 	{
 		PushInput(InputAction::ToggleFreecam, InputContext::Theater);
 	}
 
-	std::lock_guard<std::mutex> lock(g_ScriptMutex);
+	std::vector<DirectorCommand> scriptCopy{};
 
-	if (g_Script.empty()) return;
+	{
+		std::lock_guard<std::mutex> lock(g_State.directorMutex);
+		scriptCopy = g_State.script;
+	}
+
+	if (scriptCopy.empty()) return;
 
 	// g_LastReplayTime can produce bugs if it's not reseted correctly
 	float currentTime = SafeGetCurrentTime();
 
-	if (*g_pReplayTime < DIRECTOR_WARMUP_TIME) return;
+	float* pTime = g_State.pReplayTime.load();
+	if (!pTime || *pTime < DIRECTOR_WARMUP_TIME) return;
 
-	if (currentTime < g_LastReplayTime)
+	if (currentTime < g_State.lastReplayTime.load())
 	{
 		auto it = std::lower_bound(
-			g_Script.begin(),
-			g_Script.end(),
+			scriptCopy.begin(),
+			scriptCopy.end(),
 			currentTime,
 			[](const DirectorCommand& cmd, float timeVal) {
 				return cmd.Timestamp < timeVal;
 			}
 		);
 
-		g_CurrentCommandIndex = std::distance(g_Script.begin(), it);
+		g_State.currentCommandIndex.store(std::distance(scriptCopy.begin(), it));
 
 		std::stringstream ss;
-		ss << "[Director] Rewind detected at " << currentTime << "s. Resetting script to index " << g_CurrentCommandIndex;
+		ss << "[Director] Rewind detected at " << currentTime << "s. Resetting script to index " << g_State.currentCommandIndex;
 		Logger::LogAppend(ss.str().c_str());
 	}
 
-	g_LastReplayTime = currentTime;
+	g_State.lastReplayTime.store(currentTime);
 
-	if (g_CurrentCommandIndex >= g_Script.size()) return;
+	if (g_State.currentCommandIndex.load() >= scriptCopy.size()) return;
 
-	DirectorCommand& command = g_Script[g_CurrentCommandIndex];
+	DirectorCommand& command = scriptCopy[g_State.currentCommandIndex.load()];
 
 	if (currentTime >= command.Timestamp)
 	{
 		if (command.Type == CommandType::Cut)
 		{
-			if (command.TargetPlayerIdx != g_FollowedPlayerIdx)
+			if (command.TargetPlayerIdx != g_State.followedPlayerIdx.load())
 			{
 				std::stringstream ss;
 				ss << "Execute: Cut to " << (int)command.TargetPlayerIdx << " Reason [" << command.Reason << "]";
 				Logger::LogAppend(ss.str().c_str());
 
-				size_t nextCommandIndex = g_CurrentCommandIndex + 1;
+				size_t nextCommandIndex = g_State.currentCommandIndex.load() + 1;
 				float deadline =
-					(nextCommandIndex < g_Script.size()) ?
-					g_Script[nextCommandIndex].Timestamp - 1.0f :
+					(nextCommandIndex < scriptCopy.size()) ?
+					scriptCopy[nextCommandIndex].Timestamp - 1.0f :
 					(currentTime + 36000.0f);
 
 				GoToPlayer(command.TargetPlayerIdx, deadline);
@@ -465,6 +491,6 @@ void Director::Update()
 			Theater::SetReplaySpeed(command.SpeedValue);
 		}
 
-		g_CurrentCommandIndex++;
+		g_State.currentCommandIndex++;
 	}
 }

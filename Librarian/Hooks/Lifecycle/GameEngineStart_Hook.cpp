@@ -1,15 +1,13 @@
 #include "pch.h"
 #include "Utils/Logger.h"
-#include "Core/DllMain.h"
 #include "Core/Scanner/Scanner.h"
+#include "Core/Common/GlobalState.h"
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include "External/minhook/include/MinHook.h"
 
 GameEngineStart_t original_GameEngineStart = nullptr;
 std::atomic<bool> g_GameEngineStart_Hook_Installed = false;
 void* g_GameEngineStart_Address = nullptr;
-
-bool g_IsTheaterMode = false;
 
 void __fastcall hkGameEngineStart(uint64_t param_1, uint64_t param_2, uint64_t* param_3)
 {
@@ -23,12 +21,12 @@ void __fastcall hkGameEngineStart(uint64_t param_1, uint64_t param_2, uint64_t* 
 	if (memcmp(param_3, theaterSignature, 16) == 0)
 	{
 		Logger::LogAppend("CGB Theater detected, proceding...");
-		g_IsTheaterMode = true;
+		g_State.isTheaterMode.store(true);
 	}
 	else
 	{
 		Logger::LogAppend("CGB Theater wasn't detected, aborting...");
-		g_IsTheaterMode = false;
+		g_State.isTheaterMode.store(false);
 	}
 }
 

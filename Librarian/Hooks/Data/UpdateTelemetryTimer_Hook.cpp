@@ -1,8 +1,7 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Core/Scanner/Scanner.h"
-#include "Core/Systems/Theater.h"
+#include "Core/Common/GlobalState.h"
 #include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -10,15 +9,15 @@ UpdateTelemetryTimer_t original_UpdateTelemetryTimer = nullptr;
 std::atomic<bool> g_UpdateTelemetryTimer_Hook_Installed;
 void* g_UpdateTelemetryTimer_Address;
 
-float* g_pReplayTime = nullptr;
-
 void hkUpdateTelemetryTimer(
 	uint64_t timerContext,
 	float deltaTime
 ) {
 	original_UpdateTelemetryTimer(timerContext, deltaTime);
 
-	if (g_pReplayTime == nullptr)
+	float* currentPtr = g_State.pReplayTime.load();
+
+	if (currentPtr == nullptr)
 	{
 		uintptr_t match = Scanner::FindPattern(Signatures::TimeModifier);
 		if (match)
@@ -26,11 +25,18 @@ void hkUpdateTelemetryTimer(
 			int32_t relativeOffset = *(int32_t*)(match + 4);
 			uintptr_t replayTimeAddr = (match + 8) + relativeOffset;
 			uintptr_t finalAddr = (replayTimeAddr - 0xC);
-			g_pReplayTime = reinterpret_cast<float*>(finalAddr);
+
+			g_State.pReplayTime.store(reinterpret_cast<float*>(finalAddr));
+			Logger::LogAppend("ReplayTime pointer found and stored.");
 		}
 		else
 		{
-			Logger::LogAppend("Match not found for Signatures::TimeModifier");
+			static bool loggedError = false;
+			if (!loggedError)
+			{
+				Logger::LogAppend("Match not found for Signatures::TimeModifier");
+				loggedError = true;
+			}
 		}
 	}
 }

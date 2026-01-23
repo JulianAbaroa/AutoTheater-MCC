@@ -1,23 +1,19 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
-#include "Core/Systems/Theater.h"
 #include "Core/Scanner/Scanner.h"
-#include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
-#include "External/minhook/include/MinHook.h"
-
+#include "Core/Common/GlobalState.h"
 #include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
 #include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
 #include "Hooks/Data/UIBuildDynamicMessage_Hook.h"
 #include "Hooks/MovReader/FilmInitializeState_Hook.h"
+#include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
 #include "Hooks/MovReader/BlamOpenFile_Hook.h"
+#include "External/minhook/include/MinHook.h"
 
 DestroySubsystems_t original_DestroySubsystems = nullptr;
 std::atomic<bool> g_DestroySubsystems_Hook_Installed = false;
 void* g_DestroySubsystems_Address = nullptr;
-
-bool g_GameEngineDestroyed = false;
 
 void __fastcall hkDestroySubsystems(void)
 {
@@ -28,9 +24,9 @@ void __fastcall hkDestroySubsystems(void)
 	GetButtonState_Hook::Uninstall();
 	BlamOpenFile_Hook::Uninstall();
 
-	g_pReplayTime = nullptr;
-	g_pReplayTimeScale = nullptr;
-	g_GameEngineDestroyed = true;
+	g_State.pReplayTime.store(nullptr);
+	g_State.pReplayTimeScale.store(nullptr);
+	g_State.gameEngineDestroyed.store(true);
 	original_DestroySubsystems();
 }
 

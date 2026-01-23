@@ -3,7 +3,7 @@
 #include <psapi.h>
 #include <vector>
 
-uintptr_t Scan(uintptr_t base, size_t size, const char* pattern)
+static uintptr_t Scan(uintptr_t base, size_t size, const char* pattern)
 {
     auto patternToByte = [](const char* pattern) {
         auto bytes = std::vector<int>{};

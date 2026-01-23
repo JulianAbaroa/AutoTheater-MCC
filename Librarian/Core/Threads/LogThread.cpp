@@ -1,15 +1,15 @@
 #include "pch.h"
 #include "LogThread.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
-#include "Core/Systems/Theater.h"
-#include "Core/Systems/Director.h"
-#include "Core/Systems/Timeline.h"
+#include "Core/Common/GlobalState.h"
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
+#include <sstream>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 std::thread g_LogThread;
-bool g_LogGameEvents = false;
 
 std::string LogThread::EventTypeToString(EventType type) {
     switch (type) {
@@ -166,23 +166,25 @@ void LogThread::Run()
 {
     Logger::LogAppend("=== Log Thread Started ===");
 
-    static size_t processedCount = 0;
-
-    while (g_Running)
+    while (g_State.running.load())
     {
-        if (!g_LogGameEvents || !g_IsTheaterMode) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if (!g_State.logGameEvents.load() || !g_State.isTheaterMode.load()) {
+            std::this_thread::sleep_for(100ms);
             continue;
         }
 
         std::vector<GameEvent> eventsToProcess;
 
         {
-            std::lock_guard<std::mutex> lock(g_TimelineMutex);
-            if (processedCount < g_Timeline.size())
+            std::lock_guard<std::mutex> lock(g_State.timelineMutex);
+
+            size_t currentSize = g_State.timeline.size();
+            size_t lastProcessed = g_State.processedCount.load();
+
+            if (lastProcessed < currentSize)
             {
-                eventsToProcess.assign(g_Timeline.begin() + processedCount, g_Timeline.end());
-                processedCount = g_Timeline.size();
+                eventsToProcess.assign(g_State.timeline.begin() + lastProcessed, g_State.timeline.end());
+                g_State.processedCount.store(currentSize);
             }
         }
 
@@ -205,7 +207,7 @@ void LogThread::Run()
             Logger::LogAppend(ss.str().c_str());
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(50ms);
     }
 
     Logger::LogAppend("=== Log Thread Stopped ===");

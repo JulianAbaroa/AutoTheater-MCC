@@ -1,33 +1,30 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Core/Scanner/Scanner.h"
-#include "Core/Systems/Director.h"
-#include "Hooks/Lifecycle/GameEngineStart_Hook.h"
-#include "Hooks/Lifecycle/EngineInitialize_Hook.h"
-#include "External/minhook/include/MinHook.h"
-
+#include "Core/Common/GlobalState.h"
 #include "Hooks/Data/GetButtonState_Hook.h"
 #include "Hooks/Data/SpectatorHandleInput_Hook.h"
 #include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
 #include "Hooks/Data/UIBuildDynamicMessage_Hook.h"
 #include "Hooks/MovReader/FilmInitializeState_Hook.h"
 #include "Hooks/MovReader/BlamOpenFile_Hook.h"
-#include <thread>
+#include "Hooks/Lifecycle/EngineInitialize_Hook.h"
+#include "External/minhook/include/MinHook.h"
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 EngineInitialize_t original_EngineInitialize = nullptr;
 std::atomic<bool> g_EngineInitialize_Hook_Installed = false;
 void* g_EngineInitialize_Address = nullptr;
 
-std::atomic<bool> g_EngineHooksReady{ false };
-
 void __fastcall hkEngineInitialize(void)
 {
 	original_EngineInitialize();
 
-	if (!g_IsTheaterMode) return;
+	if (!g_State.isTheaterMode.load()) return;
 
-	if (g_CurrentPhase == LibrarianPhase::BuildTimeline)
+	if (g_State.currentPhase.load() == Phase::BuildTimeline)
 	{
 		Logger::LogAppend("=== Build timeline ===");
 		
@@ -39,16 +36,16 @@ void __fastcall hkEngineInitialize(void)
 
 		return;
 	}
-	else if (g_CurrentPhase == LibrarianPhase::ExecuteDirector)
+	else if (g_State.currentPhase.load() == Phase::ExecuteDirector)
 	{
 		Logger::LogAppend("=== Execute Director ===");
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(200));
+		std::this_thread::sleep_for(200ms);
 		UpdateTelemetryTimer_Hook::Install();
 		SpectatorHandleInput_Hook::Install();
 		GetButtonState_Hook::Install();
 
-		g_EngineHooksReady.store(true);
+		g_State.engineHooksReady.store(true);
 	}
 }
 

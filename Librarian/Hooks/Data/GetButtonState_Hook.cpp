@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Core/Scanner/Scanner.h"
+#include "Core/Common/GlobalState.h"
 #include "Hooks/Data/GetButtonState_Hook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -10,17 +10,14 @@ GetButtonState_t original_GetButtonState = nullptr;
 std::atomic<bool> g_GetButtonState_Hook_Installed = false;
 void* g_GetButtonState_Address = nullptr;
 
-GameInput g_NextInput{ InputContext::Theater, InputAction::Unknown };
-std::atomic<bool> g_IsPressing{ false };
-
 char __fastcall hkGetButtonState(short buttonID)
 {
-    if (g_NextInput.InputContext == InputContext::Theater)
+    if (g_State.nextInput.load().InputContext == InputContext::Theater &&
+        g_State.nextInput.load().InputAction != InputAction::Unknown)
     {
-        if (g_NextInput.InputAction != InputAction::Unknown &&
-            static_cast<short>(g_NextInput.InputAction) == buttonID)
+        if (static_cast<short>(g_State.nextInput.load().InputAction) == buttonID)
         {
-            return 1; 
+            return 1;
         }
     }
 

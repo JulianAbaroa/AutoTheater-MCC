@@ -1,24 +1,16 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
 #include "Core/Scanner/Scanner.h"
+#include "Core/Systems/Theater.h"
 #include "Core/Systems/Timeline.h"
-#include "Hooks/Data/SpectatorHandleInput_Hook.h"
-#include "Hooks/Data/UpdateTelemetryTimer_Hook.h"
+#include "Core/Common/GlobalState.h"
 #include "Hooks/Data/UIBuildDynamicMessage_Hook.h"
 #include "External/minhook/include/MinHook.h"
 
 UIBuildDynamicMessage_t original_UIBuildDynamicMessage = nullptr;
 std::atomic<bool> g_UIBuildDynamicMessage_Hook_Installed;
 void* g_UIBuildDynamicMessage_Address;
-
-std::wstring lastMsg = L"";
-float lastReplaySeconds = -1.0f;
-std::vector<std::wstring> tickMessageHistory;
-
-static std::wstring lastTemplate;
-static float lastEventTime = -1.0f;
 
 static void PrintNewEvent(
 	wchar_t* pTemplateStr,
@@ -28,17 +20,19 @@ static void PrintNewEvent(
 	float currentTime
 ) {
 	bool alreadyMapped = false;
-	for (const auto& entry : g_EventRegistry) {
-		if (entry.first == currentTemplate) {
-			alreadyMapped = true;
-			break;
+
+	{
+		std::lock_guard lock(g_State.configMutex);
+
+		for (const auto& entry : g_State.eventRegistry) {
+			if (entry.first == currentTemplate) {
+				alreadyMapped = true;
+				break;
+			}
 		}
 	}
 
 	if (!alreadyMapped) {
-		lastEventTime = currentTime;
-		lastTemplate = currentTemplate;
-
 		EventData* data = (EventData*)pEventData;
 		char diagLog[512];
 		std::string timeStr = Formatting::ToTimestamp(currentTime);
@@ -64,11 +58,11 @@ unsigned char hkUIBuildDynamicMessage(
 ) {
 	unsigned char result = original_UIBuildDynamicMessage(playerMask, pTemplateStr, pEventData, flags, pOutBuffer);
 	if (!result || !pOutBuffer || pOutBuffer[0] == L'\0') return result;
-	if (g_IsLastEvent || !g_pReplayTime || !pEventData) return result;
+	if (g_State.isLastEvent.load() || !g_State.pReplayTime.load() || !pEventData) return result;
 
 	EventData* eventData = (EventData*)pEventData;
 	std::wstring currentTemplate(pTemplateStr);
-	float currentTime = (g_pReplayTime != nullptr) ? (float)*g_pReplayTime : 0.0f;
+	float currentTime = (g_State.pReplayTime.load() != nullptr) ? (float)*g_State.pReplayTime.load() : 0.0f;
 
 	PrintNewEvent(pTemplateStr, pEventData, pOutBuffer, currentTemplate, currentTime);
 	

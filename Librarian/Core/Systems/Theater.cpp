@@ -1,26 +1,26 @@
 #include "pch.h"
-#include "Core/DllMain.h"
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
 #include "Core/Systems/Theater.h"
 #include "Core/Scanner/Scanner.h"
+#include "Core/Common/GlobalState.h"
 #include "Hooks/Telemetry/Telemetry.h"
-#include "Hooks/Data/SpectatorHandleInput_Hook.h"
-
-std::vector<PlayerInfo> g_PlayerList(16);
-float* g_pReplayTimeScale = nullptr;
 
 void Theater::SetReplaySpeed(float speed)
 {
-	if (g_pReplayTimeScale == nullptr)
+	float* speedPtr = g_State.pReplayTimeScale.load();
+
+	if (speedPtr == nullptr)
 	{
 		uintptr_t match = Scanner::FindPattern(Signatures::TimeScaleModifier);
 		if (match)
 		{
 			int32_t relativeOffset = *(int32_t*)(match + 4);
 			uintptr_t timeScaleAddr = (match + 8) + relativeOffset;
-			g_pReplayTimeScale = reinterpret_cast<float*>(timeScaleAddr);
-			*g_pReplayTimeScale = speed;
+
+			speedPtr = reinterpret_cast<float*>(timeScaleAddr);
+			g_State.pReplayTimeScale.store(speedPtr);
+			*speedPtr = speed;
 		}
 		else
 		{
@@ -29,7 +29,7 @@ void Theater::SetReplaySpeed(float speed)
 	}
 	else
 	{
-		*g_pReplayTimeScale = speed;
+		*speedPtr = speed;
 	}
 }
 
@@ -127,6 +127,9 @@ void Theater::RebuildPlayerListFromMemory()
 	//	isFirst = false;
 	//}
 
+	std::vector<PlayerInfo> nextPlayerList;
+	nextPlayerList.resize(16);
+
 	for (uint8_t i = 0; i < 16; i++)	
 	{
 		PlayerInfo newPlayer = { 0 };
@@ -136,16 +139,18 @@ void Theater::RebuildPlayerListFromMemory()
 			newPlayer.Name = Formatting::WStringToString(newPlayer.RawPlayer.Name);
 			newPlayer.Tag = Formatting::WStringToString(newPlayer.RawPlayer.Tag);
 			newPlayer.Id = i;
-			newPlayer.IsVictim = false;
 
-			g_PlayerList[i] = newPlayer;
+			nextPlayerList[i] = newPlayer;
 		}
 		else
 		{
-			g_PlayerList[i] = PlayerInfo();
+			nextPlayerList[i] = PlayerInfo();
 			Logger::LogAppend("RawReadSinglePlayer failed");
 		}
 	}
+
+	std::lock_guard lock(g_State.theaterMutex);
+	g_State.playerList = nextPlayerList;
 }
 
 bool Theater::TryGetFollowedPlayerIdx(uint64_t pReplayModule)
@@ -156,7 +161,7 @@ bool Theater::TryGetFollowedPlayerIdx(uint64_t pReplayModule)
 
 		if (currentPlayer >= 0 && currentPlayer < 16)
 		{
-			g_FollowedPlayerIdx = currentPlayer;
+			g_State.followedPlayerIdx.store(currentPlayer);
 			return true;
 		}
 	}

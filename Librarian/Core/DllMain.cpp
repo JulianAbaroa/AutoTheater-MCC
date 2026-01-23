@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Utils/Logger.h"
 #include "Proxy/ProxyExports.h"
-#include "Core/DllMain.h"
+#include "Core/Common/GlobalState.h"
 #include "Core/Threads/MainThread.h"
 #include "Core/Threads/LogThread.h"
 #include "Core/Threads/InputThread.h"
@@ -9,26 +9,29 @@
 #include "External/minhook/include/MinHook.h"
 #include <shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
+#include <fstream>
+#include <chrono>
 
-LibrarianPhase g_CurrentPhase;
-uintptr_t g_BaseModuleAddress;
-std::atomic<bool> g_Running;
-std::string g_BaseDirectory;
-HMODULE g_HandleModule;
+using namespace std::chrono_literals;
 
 BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpReserved) {
     switch (ulReasonForCall) {
     case DLL_PROCESS_ATTACH: {
         DisableThreadLibraryCalls(handleModule);
-        g_HandleModule = handleModule;
+        g_State.handleModule.store(handleModule);
 
         char buffer[MAX_PATH];
-        GetModuleFileNameA(g_HandleModule, buffer, MAX_PATH);
+        GetModuleFileNameA(handleModule, buffer, MAX_PATH);
         PathRemoveFileSpecA(buffer);
-        g_BaseDirectory = std::string(buffer);
 
-        g_LoggerPath = g_BaseDirectory + "\\AutoTheater.txt";
-        std::ofstream ofs(g_LoggerPath, std::ios::trunc);
+        {
+            std::lock_guard lock(g_State.configMutex);
+
+            g_State.baseDirectory = std::string(buffer);
+            g_State.loggerPath = g_State.baseDirectory + "\\AutoTheater.txt";
+            std::ofstream ofs(g_State.loggerPath, std::ios::trunc);
+        }
+
         Logger::LogAppend("AutoTheater Proxy Loaded Successfully");
 
         if (MH_Initialize() != MH_OK) {
@@ -38,10 +41,7 @@ BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpRese
 
         Logger::LogAppend("MinHook initialized successfully");
 
-        g_Running.store(true);
-
-        g_CurrentPhase = LibrarianPhase::Start;
-        Logger::LogAppend("=== Current Phase: Start ===");
+        g_State.running.store(true);
 
         g_MainThread = std::thread(MainThread::Run);
         g_LogThread = std::thread(LogThread::Run);
@@ -54,11 +54,11 @@ BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpRese
     case DLL_PROCESS_DETACH: {
         Logger::LogAppend("=== DLL_PROCESS_DETACH ===");
 
-        g_Running.store(false); 
+        g_State.running.store(false);
 
         if (lpReserved == NULL)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(100ms);
 
             if (g_MainThread.joinable()) g_MainThread.detach();
             if (g_LogThread.joinable()) g_LogThread.detach();
