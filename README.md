@@ -18,6 +18,14 @@ The project is organized into several modular layers, each responsible for a spe
 
 ### Core
 
+- **Common:**
+
+    - **GlobalState:** Serves as the central synchronization hub, utilizing a hybrid atomic and mutex-based memory model to ensure thread-safe data access across all systems.
+    
+    - **Registry:** Manages the event weighting system and configuration metadata used by the Director to evaluate and score game events.
+
+    - **Types:** Defines the foundational data structures and enumerations, ensuring type consistency across the engine's architectural layers.
+
 - **Scanner:** Implements a memory orchestration system using AOB (Array of Bytes) signature scanning. This ensures that the tool can dynamically locate essential engine function addresses across different game builds without relying on hardcoded offsets.
 
 - **Systems:**
