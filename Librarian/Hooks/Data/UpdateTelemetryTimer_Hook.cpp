@@ -15,7 +15,7 @@ void hkUpdateTelemetryTimer(
 ) {
 	original_UpdateTelemetryTimer(timerContext, deltaTime);
 
-	float* currentPtr = g_State.pReplayTime.load();
+	float* currentPtr = g_pState->pReplayTime.load();
 
 	if (currentPtr == nullptr)
 	{
@@ -26,7 +26,7 @@ void hkUpdateTelemetryTimer(
 			uintptr_t replayTimeAddr = (match + 8) + relativeOffset;
 			uintptr_t finalAddr = (replayTimeAddr - 0xC);
 
-			g_State.pReplayTime.store(reinterpret_cast<float*>(finalAddr));
+			g_pState->pReplayTime.store(reinterpret_cast<float*>(finalAddr));
 			Logger::LogAppend("ReplayTime pointer found and stored.");
 		}
 		else

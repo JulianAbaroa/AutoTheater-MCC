@@ -22,9 +22,9 @@ void __fastcall hkEngineInitialize(void)
 {
 	original_EngineInitialize();
 
-	if (!g_State.isTheaterMode.load()) return;
+	if (!g_pState->isTheaterMode.load()) return;
 
-	if (g_State.currentPhase.load() == Phase::BuildTimeline)
+	if (g_pState->currentPhase.load() == Phase::BuildTimeline)
 	{
 		Logger::LogAppend("=== Build timeline ===");
 		
@@ -33,10 +33,8 @@ void __fastcall hkEngineInitialize(void)
 		UpdateTelemetryTimer_Hook::Install();           // Gets the current ReplayTime
 		UIBuildDynamicMessage_Hook::Install();          // Gets the GameEvents
 		SpectatorHandleInput_Hook::Install();           // Gets the ReplayModule
-
-		return;
 	}
-	else if (g_State.currentPhase.load() == Phase::ExecuteDirector)
+	else if (g_pState->currentPhase.load() == Phase::ExecuteDirector)
 	{
 		Logger::LogAppend("=== Execute Director ===");
 
@@ -45,8 +43,10 @@ void __fastcall hkEngineInitialize(void)
 		SpectatorHandleInput_Hook::Install();
 		GetButtonState_Hook::Install();
 
-		g_State.engineHooksReady.store(true);
+		g_pState->directorHooksReady.store(true);
 	}
+
+	g_pState->engineStatus.store({ EngineStatus::Running });
 }
 
 bool EngineInitialize_Hook::Install(bool silent)

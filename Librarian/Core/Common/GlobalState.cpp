@@ -3,15 +3,15 @@
 #include "Core/Common/GlobalState.h"
 #include <fstream>
 
-AppState g_State;
+AppState* g_pState = nullptr;
 
 void AppState::SaveTimeline(std::string replayName)
 {
 	std::string path;
 
 	{
-		std::lock_guard lock(g_State.configMutex);
-		path = g_State.baseDirectory + "\\Replays\\" + replayName + ".timeline";
+		std::lock_guard lock(g_pState->configMutex);
+		path = g_pState->baseDirectory + "\\Replays\\" + replayName + ".timeline";
 	}
 
 	std::ofstream file(path, std::ios::binary);
@@ -28,7 +28,7 @@ void AppState::SaveTimeline(std::string replayName)
 
 	{
 		std::lock_guard lock(timelineMutex);
-		timelineCopy = g_State.timeline;
+		timelineCopy = g_pState->timeline;
 	}
 
 	size_t eventCount = timelineCopy.size();
@@ -71,8 +71,8 @@ void AppState::LoadTimeline(std::string replayName)
 	std::string path;
 
 	{
-		std::lock_guard lock(g_State.configMutex);
-		path = g_State.baseDirectory + "\\Replays\\" + replayName + ".timeline";
+		std::lock_guard lock(g_pState->configMutex);
+		path = g_pState->baseDirectory + "\\Replays\\" + replayName + ".timeline";
 	}
 
 	std::ifstream file(path, std::ios::binary);
@@ -96,11 +96,11 @@ void AppState::LoadTimeline(std::string replayName)
 	std::vector<GameEvent> tempTimeline;
 
 	{
-		std::lock_guard lock(g_State.timelineMutex);
-		g_State.timeline.clear();
+		std::lock_guard lock(g_pState->timelineMutex);
+		g_pState->timeline.clear();
 
 		file.read((char*)&eventCount, sizeof(eventCount));
-		g_State.timeline.reserve(eventCount);
+		g_pState->timeline.reserve(eventCount);
 	}
 	
 	for (size_t i = 0; i < eventCount; i++)
@@ -141,8 +141,8 @@ void AppState::LoadTimeline(std::string replayName)
 	}
 
 	{
-		std::lock_guard lock(g_State.timelineMutex);
-		g_State.timeline = tempTimeline;
+		std::lock_guard lock(g_pState->timelineMutex);
+		g_pState->timeline = tempTimeline;
 	}
 
 	file.close();

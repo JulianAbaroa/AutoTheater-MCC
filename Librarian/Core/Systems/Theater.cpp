@@ -8,7 +8,10 @@
 
 void Theater::SetReplaySpeed(float speed)
 {
-	float* speedPtr = g_State.pReplayTimeScale.load();
+	if (speed < 0.0f) speed = 0.0f;
+	if (speed > 32.0f) speed = 32.0f;
+
+	float* speedPtr = g_pState->pReplayTimeScale.load();
 
 	if (speedPtr == nullptr)
 	{
@@ -19,7 +22,7 @@ void Theater::SetReplaySpeed(float speed)
 			uintptr_t timeScaleAddr = (match + 8) + relativeOffset;
 
 			speedPtr = reinterpret_cast<float*>(timeScaleAddr);
-			g_State.pReplayTimeScale.store(speedPtr);
+			g_pState->pReplayTimeScale.store(speedPtr);
 			*speedPtr = speed;
 		}
 		else
@@ -30,6 +33,38 @@ void Theater::SetReplaySpeed(float speed)
 	else
 	{
 		*speedPtr = speed;
+	}
+}
+
+void Theater::UpdateRealTimeScale()
+{
+	float* pTimePtr = g_pState->pReplayTime.load();
+	if (!pTimePtr) return;
+
+	auto now = std::chrono::steady_clock::now();
+	double currentWallClock = std::chrono::duration<double>(now.time_since_epoch()).count();
+	float currentReplayTime = *pTimePtr;
+
+	double elapsedWall = currentWallClock - g_pState->anchorSystemTime.load();
+
+	if (elapsedWall >= 0.1f)
+	{
+		float deltaReplay = currentReplayTime - g_pState->anchorReplayTime.load();
+
+		if (elapsedWall > 0)
+		{
+			float actualSpeed = static_cast<float>(deltaReplay / elapsedWall);
+
+			float lastScale = g_pState->realTimeScale.load();
+			float smoothed = (lastScale * 0.7f) + (actualSpeed * 0.3f);
+
+			if (smoothed < 0.01f) smoothed = 0.0f;
+
+			g_pState->realTimeScale.store(smoothed);
+		}
+
+		g_pState->anchorSystemTime.store(currentWallClock);
+		g_pState->anchorReplayTime.store(currentReplayTime);
 	}
 }
 
@@ -149,8 +184,8 @@ void Theater::RebuildPlayerListFromMemory()
 		}
 	}
 
-	std::lock_guard lock(g_State.theaterMutex);
-	g_State.playerList = nextPlayerList;
+	std::lock_guard lock(g_pState->theaterMutex);
+	g_pState->playerList = nextPlayerList;
 }
 
 bool Theater::TryGetFollowedPlayerIdx(uint64_t pReplayModule)
@@ -161,7 +196,7 @@ bool Theater::TryGetFollowedPlayerIdx(uint64_t pReplayModule)
 
 		if (currentPlayer >= 0 && currentPlayer < 16)
 		{
-			g_State.followedPlayerIdx.store(currentPlayer);
+			g_pState->followedPlayerIdx.store(currentPlayer);
 			return true;
 		}
 	}

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Common/Types.h"
+#include <unordered_map>
 #include <string>
 
 namespace Formatting
@@ -11,4 +13,7 @@ namespace Formatting
     std::wstring ToCompactAlphaW(const std::string& s_in);
 
     std::string WStringToString(const wchar_t* wstr);
+
+    std::string EventTypeToString(EventType type);
+    const std::unordered_map<EventType, EventMetadata>& GetEventDb();
 }

@@ -5,17 +5,16 @@
 #include "Hooks/Data/GetButtonState_Hook.h"
 #include "External/minhook/include/MinHook.h"
 
-typedef char(__fastcall* GetButtonState_t)(short buttonID);
 GetButtonState_t original_GetButtonState = nullptr;
 std::atomic<bool> g_GetButtonState_Hook_Installed = false;
 void* g_GetButtonState_Address = nullptr;
 
 char __fastcall hkGetButtonState(short buttonID)
 {
-    if (g_State.nextInput.load().InputContext == InputContext::Theater &&
-        g_State.nextInput.load().InputAction != InputAction::Unknown)
+    if (g_pState->nextInput.load().InputContext == InputContext::Theater &&
+        g_pState->nextInput.load().InputAction != InputAction::Unknown)
     {
-        if (static_cast<short>(g_State.nextInput.load().InputAction) == buttonID)
+        if (static_cast<short>(g_pState->nextInput.load().InputAction) == buttonID)
         {
             return 1;
         }
@@ -57,7 +56,7 @@ void GetButtonState_Hook::Uninstall()
 {
     if (!g_GetButtonState_Hook_Installed.load()) return;
 
-
+    MH_DisableHook(g_GetButtonState_Address);
     MH_RemoveHook(g_GetButtonState_Address);
 
     g_GetButtonState_Hook_Installed.store(false);

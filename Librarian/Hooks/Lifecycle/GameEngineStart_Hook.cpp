@@ -21,12 +21,12 @@ void __fastcall hkGameEngineStart(uint64_t param_1, uint64_t param_2, uint64_t* 
 	if (memcmp(param_3, theaterSignature, 16) == 0)
 	{
 		Logger::LogAppend("CGB Theater detected, proceding...");
-		g_State.isTheaterMode.store(true);
+		g_pState->isTheaterMode.store(true);
 	}
 	else
 	{
 		Logger::LogAppend("CGB Theater wasn't detected, aborting...");
-		g_State.isTheaterMode.store(false);
+		g_pState->isTheaterMode.store(false);
 	}
 }
 

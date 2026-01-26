@@ -62,8 +62,8 @@ void hkFilm_InitializeState(
 		}
 
 		{
-			std::lock_guard lock(g_State.theaterMutex);
-			g_State.playerList = firstPlayerList;
+			std::lock_guard lock(g_pState->theaterMutex);
+			g_pState->playerList = firstPlayerList;
 		}
 
 		if (!missingIndices.empty())

@@ -9,7 +9,7 @@
 
 static EventType GetEventType(const std::wstring& templateStr)
 {
-	std::lock_guard lock(g_State.configMutex);
+	std::lock_guard lock(g_pState->configMutex);
 
 	for (const auto& er : g_EventRegistry)
 	{
@@ -30,8 +30,8 @@ static std::vector<PlayerInfo> GetPlayers(EventData* eventData) {
 	playerListCopy.resize(16);
 
 	{
-		std::lock_guard lock(g_State.theaterMutex);
-		playerListCopy = g_State.playerList;
+		std::lock_guard lock(g_pState->theaterMutex);
+		playerListCopy = g_pState->playerList;
 	}
 
 	size_t maxPlayers = playerListCopy.size();
@@ -103,7 +103,7 @@ static bool IsRepeatedEvent(GameEvent gameEvent)
 
 void Timeline::AddGameEvent(float timestamp, std::wstring& templateStr, EventData* eventData)
 {
-	if (g_State.isLastEvent.load()) return;
+	if (g_pState->isLastEvent.load()) return;
 	
 	EventType currentType = GetEventType(templateStr);
 	std::vector<PlayerInfo> currentPlayers = GetPlayers(eventData);
@@ -118,9 +118,9 @@ void Timeline::AddGameEvent(float timestamp, std::wstring& templateStr, EventDat
 	if (IsRepeatedEvent(gameEvent)) return;
 	
 	{
-		std::lock_guard<std::mutex> lock(g_State.timelineMutex);
-		g_State.timeline.push_back(gameEvent);
+		std::lock_guard<std::mutex> lock(g_pState->timelineMutex);
+		g_pState->timeline.push_back(gameEvent);
 	}
 		
-	if (gameEvent.Type == EventType::Wins) g_State.isLastEvent.store(true);
+	if (gameEvent.Type == EventType::Wins) g_pState->isLastEvent.store(true);
 }

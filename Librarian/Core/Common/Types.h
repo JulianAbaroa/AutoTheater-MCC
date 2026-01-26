@@ -102,15 +102,16 @@ enum Phase
 
 enum class EventType
 {
+	// Other
 	Unknown, Ignore,
 
-	// Server types
-	Join, Rejoin, Quit, Booted, OneMinuteRemaining,
-	OneMinuteToWin, ThirtySecondsToWin, TenSecondsRemaining,
-	ThirtySecondsRemaining, JoinedTeam,
+	// Server 
+	Join, Rejoin, Quit, Booted, JoinedTeam, 
 
 	// Match
-	TookLead, TiedLead, GameOver, Wins, RoundOver, LostLead,
+	TookLead, LostLead, TiedLead, OneMinuteRemaining,
+	OneMinuteToWin, ThirtySecondsToWin, TenSecondsRemaining,
+	ThirtySecondsRemaining, RoundOver, GameOver, Wins,
 
 	// Custom
 	Custom,
@@ -134,7 +135,6 @@ enum class EventType
 
 	// KOTH
 	KingOfTheHill, ControlsTheHill, HillContested, HillMoved,
-
 
 	// Territories
 	Territories, TeamCapturedATerritory, TerritoryContested,
@@ -265,4 +265,17 @@ struct InputRequest
 {
 	InputAction Action;
 	InputContext Context;
+};
+
+struct EventMetadata
+{
+	std::string Description;
+	std::vector<std::wstring> InternalTemplates;
+};
+
+enum class EngineStatus
+{
+	Idle,
+	Running,
+	Destroyed,
 };

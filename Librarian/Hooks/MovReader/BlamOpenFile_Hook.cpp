@@ -24,8 +24,8 @@ void hkBlam_OpenFile(
 		std::string pathStr(filePath);
 		if (pathStr.find(".mov") != std::string::npos) {
 			{
-				std::lock_guard lock(g_State.configMutex);
-				g_State.filmPath = filePath;
+				std::lock_guard lock(g_pState->configMutex);
+				g_pState->filmPath = filePath;
 			}
 
 			Logger::LogAppend((std::string("Film path: ") + filePath).c_str());

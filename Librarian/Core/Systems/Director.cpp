@@ -24,8 +24,8 @@ static void PrioritizeEvents(std::vector<GameEvent> tempTimeline)
 		return a.Timestamp < b.Timestamp;
 	});
 
-	std::lock_guard lock(g_State.timelineMutex);
-	g_State.timeline = tempTimeline;
+	std::lock_guard lock(g_pState->timelineMutex);
+	g_pState->timeline = tempTimeline;
 }
 
 static bool ArePlayerSetsEqual(const std::vector<PlayerInfo>& listA, const std::vector<PlayerInfo>& listB)
@@ -82,8 +82,8 @@ static void RemoveDuplicates(std::vector<GameEvent> tempTimeline)
 		}
 	}
 
-	std::lock_guard lock(g_State.timelineMutex);
-	g_State.timeline = uniqueEvents;
+	std::lock_guard lock(g_pState->timelineMutex);
+	g_pState->timeline = uniqueEvents;
 }
 
 void OptimizeSegments(std::vector<ActionSegment>& segments)
@@ -191,8 +191,8 @@ static void GenerateScript(std::vector<GameEvent> tempTimeline)
 {
 	std::unordered_map<std::wstring, EventInfo> registryCopy;
 	{
-		std::lock_guard lock(g_State.configMutex);
-		registryCopy = g_State.eventRegistry;
+		std::lock_guard lock(g_pState->configMutex);
+		registryCopy = g_pState->eventRegistry;
 	}
 
 	std::vector<ActionSegment> rawSegments;
@@ -295,24 +295,24 @@ static void GenerateScript(std::vector<GameEvent> tempTimeline)
 		return a.Timestamp < b.Timestamp;
 	});
 
-	std::lock_guard lock(g_State.directorMutex);
-	g_State.script = tempScript;
+	std::lock_guard lock(g_pState->directorMutex);
+	g_pState->script = tempScript;
 }
 
 void Director::Initialize()
 {
 	std::vector<GameEvent> timelineCopy;
 	{
-		std::lock_guard lock(g_State.timelineMutex);
-		timelineCopy = g_State.timeline;
+		std::lock_guard lock(g_pState->timelineMutex);
+		timelineCopy = g_pState->timeline;
 	}
 
 	PrioritizeEvents(timelineCopy);
 	RemoveDuplicates(timelineCopy);
 
 	{
-		std::lock_guard lock(g_State.directorMutex);
-		g_State.script.clear();
+		std::lock_guard lock(g_pState->directorMutex);
+		g_pState->script.clear();
 	}
 
 	GenerateScript(timelineCopy);
@@ -322,8 +322,8 @@ void Director::Initialize()
 	std::vector<DirectorCommand> tempScript{};
 
 	{
-		std::lock_guard lock(g_State.directorMutex);
-		tempScript = g_State.script;
+		std::lock_guard lock(g_pState->directorMutex);
+		tempScript = g_pState->script;
 	}
 
 	for (const auto& cmd : tempScript) {
@@ -349,17 +349,17 @@ void Director::Initialize()
 	}
 	Logger::LogAppend("=== Script End ===");
 	
-	std::lock_guard lock(g_State.directorMutex);
-	g_State.currentCommandIndex.store(0);
-	g_State.lastReplayTime.store(0.0f);
-	g_State.directorInitialized.store(true);
+	std::lock_guard lock(g_pState->directorMutex);
+	g_pState->currentCommandIndex.store(0);
+	g_pState->lastReplayTime.store(0.0f);
+	g_pState->directorInitialized.store(true);
 }
 
 static void PushInput(InputAction action, InputContext context)
 {
-	std::lock_guard<std::mutex> lock(g_State.inputMutex);
-	if (g_State.inputQueue.size() > 1) return;
-	g_State.inputQueue.push({ action, context });
+	std::lock_guard<std::mutex> lock(g_pState->inputMutex);
+	if (g_pState->inputQueue.size() > 1) return;
+	g_pState->inputQueue.push({ action, context });
 }
 
 static void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
@@ -369,18 +369,18 @@ static void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 	Logger::LogAppend(("[Director] Starting navigation to: " + std::to_string(targetIdx)).c_str());
 
 	auto getFollowedIdx = [&]() {
-		return g_State.followedPlayerIdx.load();
+		return g_pState->followedPlayerIdx.load();
 	};
 
 	while (getFollowedIdx() != targetIdx)
 	{
-		if (*g_State.pReplayTime.load() >= nextCommandTimestamp)
+		if (*g_pState->pReplayTime.load() >= nextCommandTimestamp)
 		{
 			Logger::LogAppend("[Director] Navigation aborted: Time limit reached.");
 			return;
 		}
 		
-		uint8_t current = g_State.followedPlayerIdx.load();
+		uint8_t current = g_pState->followedPlayerIdx.load();
 		int forwardSteps = (targetIdx - current + 16) % 16;
 		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
 
@@ -388,12 +388,12 @@ static void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 
 		auto startWait = std::chrono::steady_clock::now();
 		
-		while (!g_State.inputProcessing.load() && (std::chrono::steady_clock::now() - startWait < 100ms))
+		while (!g_pState->inputProcessing.load() && (std::chrono::steady_clock::now() - startWait < 100ms))
 		{
 			std::this_thread::yield();
 		}
 
-		while (g_State.inputProcessing.load()) { std::this_thread::yield(); }
+		while (g_pState->inputProcessing.load()) { std::this_thread::yield(); }
 
 		std::this_thread::sleep_for(30ms);
 	}
@@ -405,7 +405,7 @@ static float SafeGetCurrentTime()
 {
 	__try
 	{
-		return *g_State.pReplayTime.load();
+		return *g_pState->pReplayTime.load();
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -415,11 +415,13 @@ static float SafeGetCurrentTime()
 
 void Director::Update()
 {
-	if (!g_State.pReplayTime.load() || g_State.currentPhase.load() != Phase::ExecuteDirector) {
+	if (!g_pState->pReplayTime.load() || g_pState->currentPhase.load() != Phase::ExecuteDirector) {
 		return;
 	}
 
-	if (g_State.pReplayModule.load() != 0 && g_State.cameraAttached.load() == 0x01)
+	if (g_pState->pReplayModule.load() != 0 && 
+		g_pState->cameraAttached.load() == 0x01 &&
+		g_pState->attachThirdPersonPOV.load())
 	{
 		PushInput(InputAction::ToggleFreecam, InputContext::Theater);
 	}
@@ -427,8 +429,8 @@ void Director::Update()
 	std::vector<DirectorCommand> scriptCopy{};
 
 	{
-		std::lock_guard<std::mutex> lock(g_State.directorMutex);
-		scriptCopy = g_State.script;
+		std::lock_guard<std::mutex> lock(g_pState->directorMutex);
+		scriptCopy = g_pState->script;
 	}
 
 	if (scriptCopy.empty()) return;
@@ -436,10 +438,10 @@ void Director::Update()
 	// g_LastReplayTime can produce bugs if it's not reseted correctly
 	float currentTime = SafeGetCurrentTime();
 
-	float* pTime = g_State.pReplayTime.load();
+	float* pTime = g_pState->pReplayTime.load();
 	if (!pTime || *pTime < DIRECTOR_WARMUP_TIME) return;
 
-	if (currentTime < g_State.lastReplayTime.load())
+	if (currentTime < g_pState->lastReplayTime.load())
 	{
 		auto it = std::lower_bound(
 			scriptCopy.begin(),
@@ -450,30 +452,30 @@ void Director::Update()
 			}
 		);
 
-		g_State.currentCommandIndex.store(std::distance(scriptCopy.begin(), it));
+		g_pState->currentCommandIndex.store(std::distance(scriptCopy.begin(), it));
 
 		std::stringstream ss;
-		ss << "[Director] Rewind detected at " << currentTime << "s. Resetting script to index " << g_State.currentCommandIndex;
+		ss << "[Director] Rewind detected at " << currentTime << "s. Resetting script to index " << g_pState->currentCommandIndex;
 		Logger::LogAppend(ss.str().c_str());
 	}
 
-	g_State.lastReplayTime.store(currentTime);
+	g_pState->lastReplayTime.store(currentTime);
 
-	if (g_State.currentCommandIndex.load() >= scriptCopy.size()) return;
+	if (g_pState->currentCommandIndex.load() >= scriptCopy.size()) return;
 
-	DirectorCommand& command = scriptCopy[g_State.currentCommandIndex.load()];
+	DirectorCommand& command = scriptCopy[g_pState->currentCommandIndex.load()];
 
 	if (currentTime >= command.Timestamp)
 	{
 		if (command.Type == CommandType::Cut)
 		{
-			if (command.TargetPlayerIdx != g_State.followedPlayerIdx.load())
+			if (command.TargetPlayerIdx != g_pState->followedPlayerIdx.load())
 			{
 				std::stringstream ss;
 				ss << "Execute: Cut to " << (int)command.TargetPlayerIdx << " Reason [" << command.Reason << "]";
 				Logger::LogAppend(ss.str().c_str());
 
-				size_t nextCommandIndex = g_State.currentCommandIndex.load() + 1;
+				size_t nextCommandIndex = g_pState->currentCommandIndex.load() + 1;
 				float deadline =
 					(nextCommandIndex < scriptCopy.size()) ?
 					scriptCopy[nextCommandIndex].Timestamp - 1.0f :
@@ -491,6 +493,6 @@ void Director::Update()
 			Theater::SetReplaySpeed(command.SpeedValue);
 		}
 
-		g_State.currentCommandIndex++;
+		g_pState->currentCommandIndex++;
 	}
 }

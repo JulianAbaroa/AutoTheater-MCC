@@ -16,13 +16,13 @@ void DirectorThread::Run()
 {
     Logger::LogAppend("=== Director Thread Started ===");
     
-    while (g_State.running.load())
+    while (g_pState->running.load())
     {
-        if (g_State.currentPhase.load() == Phase::ExecuteDirector)
+        if (g_pState->currentPhase.load() == Phase::ExecuteDirector)
         {
-            if (!g_State.directorInitialized.load())
+            if (!g_pState->directorInitialized.load())
             {
-                if (g_State.engineHooksReady.load())
+                if (g_pState->directorHooksReady.load())
                 {
                     Logger::LogAppend("DirectorThread: Phase match and Engine ready. Initializing...");
                     Director::Initialize();
@@ -30,7 +30,7 @@ void DirectorThread::Run()
             }
             else
             {
-                if (!g_State.gameEngineDestroyed.load() && g_State.isTheaterMode.load())
+                if (g_pState->engineStatus.load() != EngineStatus::Destroyed  && g_pState->isTheaterMode.load())
                 {
                     Director::Update();
                 }
@@ -38,8 +38,8 @@ void DirectorThread::Run()
 
             std::this_thread::sleep_for(16ms);
         }
-        else if (g_State.currentPhase.load() == Phase::BuildTimeline) {
-            g_State.engineHooksReady.store(false);
+        else if (g_pState->currentPhase.load() == Phase::BuildTimeline) {
+            g_pState->directorHooksReady.store(false);
         }
     }
 

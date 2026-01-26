@@ -9,8 +9,8 @@ void Logger::LogAppend(const char* format) {
 	std::string loggerPathCopy;
 
 	{
-		std::lock_guard<std::mutex> lock(g_State.configMutex);
-		loggerPathCopy = g_State.loggerPath;
+		std::lock_guard<std::mutex> lock(g_pState->configMutex);
+		loggerPathCopy = g_pState->loggerPath;
 	}
 
 	std::ofstream ofs(loggerPathCopy, std::ios::app);
@@ -34,4 +34,15 @@ void Logger::LogAppend(const char* format) {
 		<< format << "\r\n";
 
 	ofs.close();
+
+	{
+		std::lock_guard lock(g_pState->logMutex);
+
+		g_pState->debugLogs.push_back(std::string(format));
+
+		if (g_pState->debugLogs.size() > 500)
+		{
+			g_pState->debugLogs.erase(g_pState->debugLogs.begin());
+		}
+	}
 }

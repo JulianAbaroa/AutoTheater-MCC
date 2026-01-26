@@ -23,13 +23,14 @@ std::unordered_map<std::wstring, EventInfo> g_EventRegistry = {
 	{ L"You are tied for the lead!",								{ EventType::TiedLead,				0 } },
 	{ L"Your team is tied for the lead!",							{ EventType::TiedLead,				0 } },
 	{ L"#cause_player tied for the lead!",							{ EventType::TiedLead,				0 } },
+	{ L"#cause_team scored", 										{ EventType::TeamScored,			0 } },
 	{ L"1 minute to win!",											{ EventType::OneMinuteToWin,		75 } },
 	{ L"#cause_player 1 minute to win!",							{ EventType::OneMinuteToWin,		75 } },
 	{ L"30 seconds to win!",										{ EventType::ThirtySecondsToWin,	75 } },
 	{ L"#cause_player 30 seconds to win!",							{ EventType::ThirtySecondsToWin,	75 } },
 	{ L"1 minute remaining",										{ EventType::OneMinuteRemaining,	0 } },
-	{ L"30 seconds remaining",										{ EventType::TenSecondsRemaining,	0 } },
-	{ L"10 seconds remaining",										{ EventType::ThirtySecondsRemaining,0 } },
+	{ L"30 seconds remaining",										{ EventType::ThirtySecondsRemaining,0 } },
+	{ L"10 seconds remaining",										{ EventType::TenSecondsRemaining,	0 } },
 	{ L"Round over",												{ EventType::RoundOver,				0 } },
 	{ L"Game over",													{ EventType::GameOver,				0 } },
 
@@ -61,7 +62,6 @@ std::unordered_map<std::wstring, EventInfo> g_EventRegistry = {
 	{ L"You armed the bomb",										{ EventType::ArmedTheBomb,			100 } },
 	{ L"#cause_player armed the bomb",								{ EventType::ArmedTheBomb,			100 } },
 	{ L"You dropped the bomb",										{ EventType::DroppedTheBomb,		0 } },
-	{ L"#cause_team scored", 										{ EventType::TeamScored,			0 } },
 	{ L"Bomb reset",												{ EventType::BombReset,				0 } },
 
 	// Juggernaut

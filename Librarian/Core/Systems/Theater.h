@@ -5,6 +5,7 @@
 namespace Theater
 {
     void SetReplaySpeed(float speed);
+    void UpdateRealTimeScale();
     void RebuildPlayerListFromMemory();
 
     bool TryGetFollowedPlayerIdx(uint64_t pReplayModule);

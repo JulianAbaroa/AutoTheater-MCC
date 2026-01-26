@@ -2,6 +2,7 @@
 #include "Utils/Logger.h"
 #include "Core/Threads/MainThread.h"
 #include "Core/Common/GlobalState.h"
+#include "Hooks/UserInterface/Present_Hook.h"
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
@@ -27,21 +28,17 @@ static bool IsHookIntact(void* address)
     return false;
 }
 
-static void ShutdownAndEject()
+static void MainThread::ShutdownAndEject()
 {
-    g_State.running.store(false);
-
-    std::thread([=]() {
-        std::this_thread::sleep_for(200ms);
-        FreeLibraryAndExitThread(g_State.handleModule, 0);
-    }).detach();
+    Logger::LogAppend("Critical Error: Initiating emergency shutdown.");
+    g_pState->running.store(false);
 }
 
 static bool TryInstallLifecycleHooks(const char* context)
 {
     std::stringstream ss;
 
-    while (g_State.running.load())
+    while (g_pState->running.load())
     {
         if (EngineInitialize_Hook::Install(true) &&
              DestroySubsystems_Hook::Install(true) &&
@@ -61,33 +58,47 @@ static bool TryInstallLifecycleHooks(const char* context)
 
 static void UpdatePhase()
 {
-    if (g_State.currentPhase.load() == Phase::BuildTimeline)
+    if (g_pState->currentPhase.load() == Phase::BuildTimeline)
     {
-        g_State.logGameEvents.store(false);
-        g_State.processedCount.store(0);
-        g_State.currentPhase.store(Phase::ExecuteDirector);
+        g_pState->logGameEvents.store(false);
+        g_pState->processedCount.store(0);
+        g_pState->currentPhase.store(Phase::ExecuteDirector);
     }
     else
     {
-        g_State.directorInitialized.store(false);
-        g_State.engineHooksReady.store(false);
-        g_State.currentPhase.store(Phase::BuildTimeline);
+        g_pState->directorInitialized.store(false);
+        g_pState->directorHooksReady.store(false);
+        g_pState->currentPhase.store(Phase::BuildTimeline);
 
         std::this_thread::sleep_for(100ms);
 
         {
-            std::lock_guard lock(g_State.timelineMutex);
-            g_State.timeline.clear();
+            std::lock_guard lock(g_pState->timelineMutex);
+            g_pState->timeline.clear();
         }
 
         {
-            std::lock_guard lock(g_State.directorMutex);
-            g_State.script.clear();
+            std::lock_guard lock(g_pState->directorMutex);
+            g_pState->script.clear();
         }
 
-        g_State.currentCommandIndex.store(0);
-        g_State.logGameEvents.store(true);
-        g_State.isLastEvent.store(false);
+        g_pState->currentCommandIndex.store(0);
+        g_pState->lastReplayTime.store(0.0f);
+        g_pState->logGameEvents.store(true);
+        g_pState->isLastEvent.store(false);
+    }
+
+    {
+        std::lock_guard lock(g_pState->theaterMutex);
+        for (auto& player : g_pState->playerList)
+        {
+            player.Name.clear();
+            player.Tag.clear();
+            player.Id = 0;
+
+            player.RawPlayer = RawPlayer{};
+            player.Weapons.clear();
+        }
     }
 }
 
@@ -103,31 +114,43 @@ void MainThread::Run() {
         return;
     }
 
-    g_State.currentPhase.store(Phase::BuildTimeline);
-    g_State.logGameEvents.store(true);
+    Logger::LogAppend("Installing DX11 Present Hook...");
+    Present_Hook::Install();
 
-    while (g_State.running.load())
+    g_pState->currentPhase.store(Phase::BuildTimeline);
+    g_pState->logGameEvents.store(true);
+
+    while (g_pState->running.load())
     {
         if (!IsHookIntact(g_EngineInitialize_Address) ||
             !IsHookIntact(g_DestroySubsystems_Address) ||
             !IsHookIntact(g_GameEngineStart_Address)
         ) {
             Logger::LogAppend("Watchdog: Hook corrupted or memory restored. Rebooting...");
-            g_State.gameEngineDestroyed.store(true);
+            g_pState->engineStatus.store({ EngineStatus::Destroyed });
         }
 
-        if (g_State.gameEngineDestroyed.load())
+        if (g_pState->engineStatus.load() == EngineStatus::Destroyed)
         {
             Logger::LogAppend("Game engine destruction detected, resetting lifecycle...");
-            std::this_thread::sleep_for(1s);
 
-            if (g_State.isTheaterMode.load()) UpdatePhase();
+            std::this_thread::sleep_for(1s);
+            if (!g_pState->running.load()) break;
+
+            if (g_pState->isTheaterMode.load()) UpdatePhase();
 
             EngineInitialize_Hook::Uninstall();
             DestroySubsystems_Hook::Uninstall();
             GameEngineStart_Hook::Uninstall();
 
             std::this_thread::sleep_for(1s);
+            if (!g_pState->running.load()) break;
+
+            if (!g_pState->running.load())
+            {
+                Logger::LogAppend("MainThread: Shutdown in progress, skipping re-installation.");
+                break;
+            }
 
             if (!TryInstallLifecycleHooks("Engine Reset Cycle")) {
                 Logger::LogAppend("ERROR: Failed to re-install hooks after engine reset!");
@@ -135,15 +158,21 @@ void MainThread::Run() {
                 return;
             }
 
-            g_State.gameEngineDestroyed.store(false);
+            g_pState->engineStatus.store({ EngineStatus::Idle });
+            g_pState->isTheaterMode.store(false);
         }
 
         std::this_thread::sleep_for(1s);
     }
 
+    Logger::LogAppend("=== Main Thread Stopped ===");
+
+    Present_Hook::Uninstall();
     EngineInitialize_Hook::Uninstall();
     DestroySubsystems_Hook::Uninstall();
     GameEngineStart_Hook::Uninstall();
 
-    Logger::LogAppend("=== Main Thread Stopped ===");
+    Logger::LogAppend("=== Cleanup complete. Ejecting mod... ===");
+
+    FreeLibraryAndExitThread(g_pState->handleModule.load(), 0);
 }

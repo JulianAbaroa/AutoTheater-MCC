@@ -24,9 +24,11 @@ void __fastcall hkDestroySubsystems(void)
 	GetButtonState_Hook::Uninstall();
 	BlamOpenFile_Hook::Uninstall();
 
-	g_State.pReplayTime.store(nullptr);
-	g_State.pReplayTimeScale.store(nullptr);
-	g_State.gameEngineDestroyed.store(true);
+	g_pState->pReplayTime.store(nullptr);
+	g_pState->pReplayTimeScale.store(nullptr);
+
+	g_pState->engineStatus.store({ EngineStatus::Destroyed });
+
 	original_DestroySubsystems();
 }
 

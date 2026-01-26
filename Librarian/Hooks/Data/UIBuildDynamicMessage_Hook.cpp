@@ -22,9 +22,9 @@ static void PrintNewEvent(
 	bool alreadyMapped = false;
 
 	{
-		std::lock_guard lock(g_State.configMutex);
+		std::lock_guard lock(g_pState->configMutex);
 
-		for (const auto& entry : g_State.eventRegistry) {
+		for (const auto& entry : g_pState->eventRegistry) {
 			if (entry.first == currentTemplate) {
 				alreadyMapped = true;
 				break;
@@ -58,11 +58,11 @@ unsigned char hkUIBuildDynamicMessage(
 ) {
 	unsigned char result = original_UIBuildDynamicMessage(playerMask, pTemplateStr, pEventData, flags, pOutBuffer);
 	if (!result || !pOutBuffer || pOutBuffer[0] == L'\0') return result;
-	if (g_State.isLastEvent.load() || !g_State.pReplayTime.load() || !pEventData) return result;
+	if (g_pState->isLastEvent.load() || !g_pState->pReplayTime.load() || !pEventData) return result;
 
 	EventData* eventData = (EventData*)pEventData;
 	std::wstring currentTemplate(pTemplateStr);
-	float currentTime = (g_State.pReplayTime.load() != nullptr) ? (float)*g_State.pReplayTime.load() : 0.0f;
+	float currentTime = (g_pState->pReplayTime.load() != nullptr) ? (float)*g_pState->pReplayTime.load() : 0.0f;
 
 	PrintNewEvent(pTemplateStr, pEventData, pOutBuffer, currentTemplate, currentTime);
 	

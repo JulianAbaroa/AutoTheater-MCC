@@ -13,8 +13,8 @@ std::thread g_InputThread;
 
 static bool ExecuteInputWithFeedback(InputRequest req, std::function<bool()> successCondition, int timeoutMs, int stabilizeMs)
 {
-    g_State.inputProcessing.store(true);
-    g_State.nextInput.store({req.Context, req.Action });
+    g_pState->inputProcessing.store(true);
+    g_pState->nextInput.store({req.Context, req.Action });
 
     auto startWait = std::chrono::steady_clock::now();
     bool success = false;
@@ -29,12 +29,12 @@ static bool ExecuteInputWithFeedback(InputRequest req, std::function<bool()> suc
         std::this_thread::yield();
     }
 
-    g_State.nextInput.store({ InputContext::Theater, InputAction::Unknown });
+    g_pState->nextInput.store({ InputContext::Theater, InputAction::Unknown });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(stabilizeMs));
 
-    std::lock_guard lock(g_State.inputMutex);
-    g_State.inputProcessing.store(false);
+    std::lock_guard lock(g_pState->inputMutex);
+    g_pState->inputProcessing.store(false);
     return success;
 }
 
@@ -48,9 +48,9 @@ void InputThread::Run()
         {'4', 0.1f},   {'3', 0.0f},
     };
 
-    while (g_State.running.load())
+    while (g_pState->running.load())
     {
-        if (!g_State.isTheaterMode.load()) {
+        if (!g_pState->isTheaterMode.load()) {
             std::this_thread::sleep_for(100ms);
             continue;
         }
@@ -58,11 +58,11 @@ void InputThread::Run()
         InputRequest currentReq = { InputAction::Unknown, InputContext::Unknown };
 
         {
-            std::lock_guard<std::mutex> lock(g_State.inputMutex);
-            if (!g_State.inputQueue.empty())
+            std::lock_guard<std::mutex> lock(g_pState->inputMutex);
+            if (!g_pState->inputQueue.empty())
             {
-                currentReq = g_State.inputQueue.front();
-                g_State.inputQueue.pop();
+                currentReq = g_pState->inputQueue.front();
+                g_pState->inputQueue.pop();
             }
         }
 
@@ -70,21 +70,21 @@ void InputThread::Run()
         {
             if (currentReq.Action == InputAction::NextPlayer || currentReq.Action == InputAction::PreviousPlayer)
             {
-                uint8_t initialIdx = g_State.followedPlayerIdx.load();
+                uint8_t initialIdx = g_pState->followedPlayerIdx.load();
 
                 auto condition = [initialIdx]() {
-                    return g_State.followedPlayerIdx.load() != initialIdx;
+                    return g_pState->followedPlayerIdx.load() != initialIdx;
                 };
 
                 ExecuteInputWithFeedback(currentReq, condition, 500, 20);
             }
             else if (currentReq.Action == InputAction::ToggleFreecam)
             {
-                uint8_t initialCamState = g_State.cameraAttached.load();
+                uint8_t initialCamState = g_pState->cameraAttached.load();
 
                 auto condition = [initialCamState]() {
-                    return g_State.cameraAttached.load() != initialCamState;
-                    };
+                    return g_pState->cameraAttached.load() != initialCamState;
+                };
 
                 if (!ExecuteInputWithFeedback(currentReq, condition, 500, 50)) {
                     Logger::LogAppend("[InputThread] Warning: Freecam toggle timed out.");
