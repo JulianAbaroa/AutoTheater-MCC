@@ -46,6 +46,8 @@ The project is organized into several modular layers, each responsible for a spe
 
     - **LogThread:** Handles logging and telemetry monitoring during the event registration phase.
 
+- **UserInterface:** Implements a Dear ImGui-based overlay for real-time state manipulation, featuring modular tabs for system configuration and monitoring.
+
 ### Hooks
 
 Hooks are categorized by their functional purpose within the engine:
@@ -58,13 +60,15 @@ Hooks are categorized by their functional purpose within the engine:
 
 - **Telemetry:** Facilitates the discovery and tracking of the engine's internal PlayerTable and ObjectTable.
 
+- **UserInterface:** Manages D3D11 Present and WndProc/GetRawInputData detours to render the overlay and handle input without disrupting the game's message pump.
+
 ### Proxy and Utilities
 
 - **Proxy:** Implements wtsapi32.dll export definitions to allow for automatic loading by the game executable.
 
 - **Utils:** Contains foundational utilities for string formatting and thread-safe logging.
 
-- **External:** Integration of the MinHook library for low-level function redirection.
+- **External:** Git submodule integration of MinHook and Dear ImGui for core library dependencies.
 
 ## Compatibility
 
@@ -76,7 +80,9 @@ AutoTheater-MCC is only compatible with Halo Reach: Custom Game Browser and Cust
 
 - **Compiler:** Visual Studio 2022.
 
-- **Dependencies:** [MinHook](https://github.com/TsudaKageyu/minhook).
+- **Dependencies:**
+    - [MinHook](https://github.com/TsudaKageyu/minhook).
+    - [Dear ImGui](https://github.com/ocornut/imgui).
 
 - **Platform:** Windows 10/11 (x64).
 
@@ -87,6 +93,8 @@ AutoTheater-MCC is only compatible with Halo Reach: Custom Game Browser and Cust
 - **[Mjolnir-Forge-Editor](https://github.com/Waffle1434/Mjolnir-Forge-Editor):** For the initial inspiration and proof-of-concept regarding Halo engine memory manipulation, which served as the primary motivation for this project.
 
 - **MinHook:** Used for reliable function hooking.
+
+- **ImGui:** For the bloat-free immediate mode graphical user interface library.
 
 - **Halo Modding Community:** Contributions to the understanding of the Blam! Engine.
 
