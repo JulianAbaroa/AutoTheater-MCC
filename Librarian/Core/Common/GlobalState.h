@@ -12,7 +12,7 @@
 struct AppState
 {
 	// Timeline
-	std::vector<GameEvent> timeline;
+	std::vector<GameEvent> timeline{};
 	std::atomic<bool> logGameEvents{ true };			
 	std::atomic<bool> isLastEvent{ false };		
 	std::atomic<size_t> processedCount{ 0 };			
@@ -33,7 +33,7 @@ struct AppState
 	std::mutex theaterMutex;
 
 	// Director
-	std::vector<DirectorCommand> script;
+	std::vector<DirectorCommand> script{};
 	std::atomic<bool> directorInitialized{ false };		
 	std::atomic<bool> directorHooksReady{ false };		
 	std::atomic<size_t> currentCommandIndex{ 0 };		
@@ -43,11 +43,11 @@ struct AppState
 	// Input
 	std::atomic<GameInput> nextInput{ { InputContext::Unknown, InputAction::Unknown } };
 	std::atomic<bool> inputProcessing{ false };			
-	std::queue<InputRequest> inputQueue;
+	std::queue<InputRequest> inputQueue{};
 	std::mutex inputMutex;
 
 	// Debug
-	std::vector<std::string> debugLogs;
+	std::vector<std::string> debugLogs{}	;
 	std::mutex logMutex;
 
 	// Game Events Registry
@@ -57,16 +57,16 @@ struct AppState
 	std::atomic<bool> showMenu{ true };
 	std::atomic<bool> forceMenuReset{ false };
 	std::atomic<bool> freezeMouse{ true };
-	std::string baseDirectory;
-	std::string loggerPath;
-	std::string filmPath;
+	std::string baseDirectory{};
+	std::string loggerPath{};
+	std::string filmPath{};
 	std::mutex configMutex;
 
 	// D3D11
-	ID3D11Device* pDevice;
-	ID3D11DeviceContext* pContext;
-	HWND gameHWND;
-	ID3D11RenderTargetView* pMainRenderTargetView;
+	ID3D11Device* pDevice{ nullptr };
+	ID3D11DeviceContext* pContext{ nullptr };
+	HWND gameHWND{ nullptr };
+	ID3D11RenderTargetView* pMainRenderTargetView{ nullptr };
 
 	// Project
 	std::atomic<bool> running{ false };					

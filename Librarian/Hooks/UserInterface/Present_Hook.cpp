@@ -7,8 +7,8 @@
 #include "Hooks/UserInterface/WndProc_Hook.h"
 #include "Hooks/UserInterface/GetRawInputData_Hook.h"
 #include "External/minhook/include/MinHook.h"
-#include "External/imgui/imgui_impl_win32.h"
-#include "External/imgui/imgui_impl_dx11.h"
+#include "External/imgui/backends/imgui_impl_win32.h"
+#include "External/imgui/backends/imgui_impl_dx11.h"
 #include "External/imgui/imgui.h"
 #include <sstream>
 #pragma comment(lib, "d3d11.lib")
