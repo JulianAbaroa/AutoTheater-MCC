@@ -1,0 +1,6 @@
+[submodule "Librarian/External/imgui"]
+	path = Librarian/External/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "Librarian/External/minhook"]
+	path = Librarian/External/minhook
+	url = https://github.com/TsudaKageyu/minhook.git
