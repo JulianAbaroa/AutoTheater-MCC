@@ -1,3 +1,10 @@
+/**
+ * @file DllMain.cpp
+ * @brief Entry point and orchestration for the AutoTheater DLL.
+ * * Manages the DLL lifecycle, thread initialization, and global state setup.
+ * Uses a secondary initialization thread to prevent DllMain deadlocks.
+ */
+
 #include "pch.h"
 #include "Utils/Logger.h"
 #include "Proxy/ProxyExports.h"
@@ -14,6 +21,13 @@
 
 using namespace std::chrono_literals;
 
+/**
+ * @brief Secondary initialization routine.
+ * @param lpParam HMODULE handle of the injected DLL.
+ * @return 0 on completion.
+ * * Performs blocking operations: path resolution, log file creation,
+ * MinHook initialization, and spawns the core worker threads.
+ */
 DWORD WINAPI InitializeLibrarian(LPVOID lpParam)
 {
     g_pState = new AppState();
@@ -51,6 +65,10 @@ DWORD WINAPI InitializeLibrarian(LPVOID lpParam)
     return 0;
 }
 
+/** @brief Windows DLL Entry Point. 
+ * * - ATTACH: Spawns InitilizeLibrarian to avoid Loader Lock deadlocks.
+ * - DETACH: Signals shutdown to all threads and unhooks MinHook.
+ */
 BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpReserved) {
     switch (ulReasonForCall) {
         case DLL_PROCESS_ATTACH: {
@@ -63,13 +81,23 @@ BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpRese
         }
 
         case DLL_PROCESS_DETACH: {
+            /** * @note Important: lpReserved == NULL means that the DLL is being
+             * released via FreeLibrary (manually), not because the process finished. 
+             */
             if (lpReserved == NULL)
             {
-                Logger::LogAppend("=== DLL_PROCESS_DETACH ===");
+                Logger::LogAppend("[DLL_PROCESS_DETACH]");
 
                 g_pState->running.store(false);
 
-                std::this_thread::sleep_for(100ms);
+                /** 
+                 * @warning We avoid extensive '.join()' here due to Loader Lock.
+                 * Instead, we allow some time and use '.detach()' to allow the
+                 * OS to clean up if threads get stuck.
+                 */
+                std::this_thread::sleep_for(150ms);
+
+                MH_Uninitialize();
 
                 if (g_MainThread.joinable()) g_MainThread.detach();
                 if (g_LogThread.joinable()) g_LogThread.detach();
@@ -77,7 +105,6 @@ BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpRese
                 if (g_DirectorThread.joinable()) g_DirectorThread.detach();
             }
 
-            MH_Uninitialize();
             break;
         }
     }

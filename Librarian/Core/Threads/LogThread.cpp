@@ -2,6 +2,7 @@
 #include "LogThread.h"
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
+#include "Utils/ThreadUtils.h"
 #include "Core/Common/GlobalState.h"
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include <sstream>
@@ -18,7 +19,7 @@ void LogThread::Run()
     while (g_pState->running.load())
     {
         if (!g_pState->logGameEvents.load() || !g_pState->isTheaterMode.load()) {
-            std::this_thread::sleep_for(100ms);
+            ThreadUtils::WaitOrExit(100ms);
             continue;
         }
 
@@ -56,7 +57,7 @@ void LogThread::Run()
             Logger::LogAppend(ss.str().c_str());
         }
 
-        std::this_thread::sleep_for(50ms);
+        ThreadUtils::WaitOrExit(50ms);
     }
 
     Logger::LogAppend("=== Log Thread Stopped ===");

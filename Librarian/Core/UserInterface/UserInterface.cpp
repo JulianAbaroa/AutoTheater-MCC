@@ -1,12 +1,14 @@
 #include "pch.h"
 #include "Utils/Formatting.h"
 #include "Core/Common/GlobalState.h"
+#include "Core/Threads/MainThread.h"
+#include "Core/UserInterface/UserInterface.h"
 #include "Core/UserInterface/Tabs/LogsTab.h"
 #include "Core/UserInterface/Tabs/TimelineTab.h"
 #include "Core/UserInterface/Tabs/TheaterTab.h"
 #include "Core/UserInterface/Tabs/DirectorTab.h"
 #include "Core/UserInterface/Tabs/ConfigurationTab.h"
-#include "Core/UserInterface/UserInterface.h"
+#include "Core/UserInterface/Tabs/ReplayManagerTab.h"
 #include "Core/UserInterface/Tabs/EventRegistryTab.h"
 #include "External/imgui/imgui_internal.h"
 #include "External/imgui/imgui.h"
@@ -19,20 +21,21 @@ static void DrawStatusBar()
 
 	ImGui::Text("Phase:");
 	ImGui::SameLine();
-	Phase current = g_pState->currentPhase.load();
+
+	AutoTheaterPhase current = g_pState->currentPhase.load();
 	ImVec4 phaseColor;
 	std::string phaseName;
 
 	switch (current)
 	{
-	case Phase::BuildTimeline: 
+	case AutoTheaterPhase::Timeline: 
 		phaseColor = ImVec4(0.4f, 0.7f, 1.0f, 1.0f);
-		phaseName = "Build Timeline";
+		phaseName = "Timeline";
 		break;
 
-	case Phase::ExecuteDirector:
+	case AutoTheaterPhase::Director:
 		phaseColor = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
-		phaseName = "Execute Director";
+		phaseName = "Director";
 		break;
 
 	default: 
@@ -40,7 +43,59 @@ static void DrawStatusBar()
 		phaseName = "Default";
 	}
 
-	ImGui::TextColored(phaseColor, "[ %s ]", phaseName.c_str());
+	bool isTheater = g_pState->isTheaterMode.load();
+	if (isTheater) ImGui::BeginDisabled();
+
+	ImGui::PushStyleColor(ImGuiCol_Text, phaseColor);
+	if (ImGui::Selectable(phaseName.c_str(), false, 0, ImGui::CalcTextSize(phaseName.c_str())))
+	{
+		ImGui::OpenPopup("PhaseSelectorPopup");
+	}
+	ImGui::PopStyleColor();
+
+	if (!ImGui::IsPopupOpen("PhaseSelectorPopup"))
+	{
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		{
+			if (isTheater)
+			{
+				ImGui::SetTooltip("Manual phase change disabled during Theater mode.");
+			}
+			else
+			{
+				ImGui::SetTooltip("Click to change phase manually.");
+			}
+		}
+	}
+
+	if (ImGui::BeginPopup("PhaseSelectorPopup"))
+	{
+		if (ImGui::MenuItem("Default", nullptr, current == AutoTheaterPhase::Default))
+		{
+			MainThread::UpdateToPhase(AutoTheaterPhase::Default);
+		}
+
+		if (ImGui::MenuItem("Timeline", nullptr, current == AutoTheaterPhase::Timeline))
+		{
+			MainThread::UpdateToPhase(AutoTheaterPhase::Timeline);
+		}
+
+		if (ImGui::MenuItem("Director", nullptr, current == AutoTheaterPhase::Director))
+		{
+			MainThread::UpdateToPhase(AutoTheaterPhase::Director);
+		}
+
+		ImGui::EndPopup();
+	}
+
+	if (isTheater) ImGui::EndDisabled();
+
+	ImGui::SameLine();
+	bool autoUpdatePhase = g_pState->autoUpdatePhase.load();
+	if (ImGui::Checkbox("Auto-Update Phase", &autoUpdatePhase))
+	{
+		g_pState->autoUpdatePhase.store(autoUpdatePhase);
+	}
 
 	ImGui::SameLine();
 	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
@@ -72,8 +127,19 @@ void UserInterface::DrawMainInterface()
 {
 	if (g_pState->forceMenuReset.load())
 	{
-		ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(1000, 600), ImGuiCond_Always);
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		
+		ImVec2 screenSize = viewport->Size;
+		ImVec2 windowSize = ImVec2(1000, 600);
+
+		ImGui::SetNextWindowPos(
+			ImVec2(screenSize.x * 0.5f, screenSize.y * 0.5f),
+			ImGuiCond_Always,
+			ImVec2(0.5f, 0.5f)
+		);
+
+		ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+
 		g_pState->forceMenuReset.store(false);
 	}
 
@@ -92,7 +158,7 @@ void UserInterface::DrawMainInterface()
 	ImGui::SetNextWindowSize(ImVec2(1000, 600), ImGuiCond_FirstUseEver);
 
 	bool open = g_pState->showMenu.load();
-	if (ImGui::Begin("AutoTheater - Control Panel", &open, ImGuiWindowFlags_MenuBar))
+	if (ImGui::Begin("AutoTheater - Control Panel", &open))
 	{
 		g_pState->showMenu.store(open);
 
@@ -115,16 +181,27 @@ void UserInterface::DrawMainInterface()
 				DirectorTab::Draw();
 				ImGui::EndTabItem();
 			}
-			if (ImGui::BeginTabItem("Event Registry"))
-			{
-				EventRegistryTab::Draw();
-				ImGui::EndTabItem();
-			}
 			if (ImGui::BeginTabItem("Configuration"))
 			{
 				ConfigurationTab::Draw();
 				ImGui::EndTabItem();
 			}
+
+			bool useAppData = g_pState->useAppData.load();
+
+			if (!useAppData) ImGui::BeginDisabled();
+			if (ImGui::BeginTabItem("Replay Manager"))
+			{
+				ReplayManagerTab::Draw();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Event Registry"))
+			{
+				EventRegistryTab::Draw();
+				ImGui::EndTabItem();
+			}
+			if (!useAppData) ImGui::EndDisabled();
+
 			if (ImGui::BeginTabItem("Logs"))
 			{
 				LogsTab::Draw();

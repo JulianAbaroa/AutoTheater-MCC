@@ -415,7 +415,7 @@ static float SafeGetCurrentTime()
 
 void Director::Update()
 {
-	if (!g_pState->pReplayTime.load() || g_pState->currentPhase.load() != Phase::ExecuteDirector) {
+	if (!g_pState->pReplayTime.load() || g_pState->currentPhase.load() != AutoTheaterPhase::Director) {
 		return;
 	}
 

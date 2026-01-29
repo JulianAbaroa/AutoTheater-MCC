@@ -8,4 +8,5 @@ namespace MainThread
 {
 	void Run();
 	void ShutdownAndEject();
+	void UpdateToPhase(AutoTheaterPhase targetPhase);
 }

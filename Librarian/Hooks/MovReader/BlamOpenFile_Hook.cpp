@@ -2,7 +2,9 @@
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
 #include "Core/Scanner/Scanner.h"
+#include "Core/Threads/MainThread.h"
 #include "Core/Common/GlobalState.h"
+#include "Core/Common/PersistenceManager.h"
 #include "External/minhook/include/MinHook.h"
 #include "Hooks/MovReader/BlamOpenFile_Hook.h"
 #include <fstream>
@@ -20,31 +22,61 @@ void hkBlam_OpenFile(
 
 	const char* filePath = (const char*)((uintptr_t)fileContext + 0x8);
 
-	if (filePath != nullptr && !IsBadReadPtr(filePath, 4)) {
+	if (filePath != nullptr && !IsBadReadPtr(filePath, 4)) 
+	{
 		std::string pathStr(filePath);
-		if (pathStr.find(".mov") != std::string::npos) {
+		if (pathStr.find(".mov") != std::string::npos) 
+		{
 			{
-				std::lock_guard lock(g_pState->configMutex);
+				std::lock_guard lock(g_pState->replayManagerMutex);
 				g_pState->filmPath = filePath;
 			}
 
-			Logger::LogAppend((std::string("Film path: ") + filePath).c_str());
-
-			Logger::LogAppend("=== Analyzing CHDR from Disk ===");
-
 			std::ifstream file(pathStr, std::ios::binary);
-			if (file.is_open()) {
+			char author[17] = { 0 };
+			wchar_t* wFullInfo{};
+
+			if (file.is_open())
+			{
 				char buffer[0x400] = { 0 };
 				file.read(buffer, sizeof(buffer));
 
-				char author[17] = { 0 };
 				memcpy(author, buffer + 0x88, 16);
-				Logger::LogAppend((std::string("Recorded by: ") + author).c_str());
 
-				wchar_t* wFullInfo = reinterpret_cast<wchar_t*>(buffer + 0x1C0);
-				Logger::LogAppend((std::string("Info: ") + Formatting::WStringToString(wFullInfo)).c_str());
+				wFullInfo = reinterpret_cast<wchar_t*>(buffer + 0x1C0);
+
+				{
+					std::lock_guard lock(g_pState->replayManagerMutex);
+					g_pState->currentMetadata.Author = author;
+					g_pState->currentMetadata.Info = Formatting::WStringToString(wFullInfo);
+				}
 
 				file.close();
+			}
+
+			if (g_pState->currentPhase == AutoTheaterPhase::Timeline)
+			{
+				Logger::LogAppend((std::string("Film path: ") + filePath).c_str());
+				Logger::LogAppend("=== Analyzing CHDR from Disk ===");
+				Logger::LogAppend((std::string("Recorded by: ") + author).c_str());
+				Logger::LogAppend((std::string("Info: ") + Formatting::WStringToString(wFullInfo)).c_str());
+			}
+			else if (g_pState->currentPhase == AutoTheaterPhase::Director)
+			{
+				std::string currentFileHash = PersistenceManager::CalculateFileHash(filePath);
+				std::string requiredHash;
+
+				{
+					std::lock_guard lock(g_pState->replayManagerMutex);
+					requiredHash = g_pState->activeReplayHash;
+				}
+
+				if (!requiredHash.empty() && currentFileHash != requiredHash)
+				{
+					Logger::LogAppend("WARNING: Replay mismatch! This timeline is not compatible with the opened film.");
+
+					MainThread::UpdateToPhase(AutoTheaterPhase::Default);
+				}
 			}
 		}
 	}

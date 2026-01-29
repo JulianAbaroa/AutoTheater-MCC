@@ -11,12 +11,11 @@ static EventType GetEventType(const std::wstring& templateStr)
 {
 	std::lock_guard lock(g_pState->configMutex);
 
-	for (const auto& er : g_EventRegistry)
+	auto it = g_pState->eventRegistry.find(templateStr);
+
+	if (it != g_pState->eventRegistry.end())
 	{
-		if (templateStr.find(er.first) != std::wstring::npos)
-		{
-			return er.second.Type;
-		}
+		return it->second.Type;
 	}
 
 	return EventType::Unknown;
@@ -104,10 +103,10 @@ static bool IsRepeatedEvent(GameEvent gameEvent)
 void Timeline::AddGameEvent(float timestamp, std::wstring& templateStr, EventData* eventData)
 {
 	if (g_pState->isLastEvent.load()) return;
-	
+
 	EventType currentType = GetEventType(templateStr);
 	std::vector<PlayerInfo> currentPlayers = GetPlayers(eventData);
-	Teams teams = { eventData->CauseTeam, eventData->EffectTeam };
+	EventTeams teams = { eventData->CauseTeam, eventData->EffectTeam };
 	
 	GameEvent gameEvent;
 	gameEvent.Timestamp = timestamp;

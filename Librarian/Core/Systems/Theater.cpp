@@ -5,6 +5,7 @@
 #include "Core/Scanner/Scanner.h"
 #include "Core/Common/GlobalState.h"
 #include "Hooks/Telemetry/Telemetry.h"
+#include <sstream>
 
 void Theater::SetReplaySpeed(float speed)
 {
@@ -39,7 +40,7 @@ void Theater::SetReplaySpeed(float speed)
 void Theater::UpdateRealTimeScale()
 {
 	float* pTimePtr = g_pState->pReplayTime.load();
-	if (!pTimePtr) return;
+	if (!pTimePtr) return; 
 
 	auto now = std::chrono::steady_clock::now();
 	double currentWallClock = std::chrono::duration<double>(now.time_since_epoch()).count();
@@ -84,9 +85,9 @@ static bool RawReadSinglePlayer(
 
 		checkpoint = 1;
 		rawPlayer.SlotID = *(uint32_t*)(playerAddress + 0x0);
-		rawPlayer.CurrentBipedHandle = *(uint32_t*)(playerAddress + 0x28);
-		rawPlayer.PreviousBipedHandle = *(uint32_t*)(playerAddress + 0x2C);
-		rawPlayer.BipedHandle = *(uint32_t*)(playerAddress + 0x34);
+		rawPlayer.hCurrentBiped = *(uint32_t*)(playerAddress + 0x28);
+		rawPlayer.hPreviousBiped = *(uint32_t*)(playerAddress + 0x2C);
+		rawPlayer.hBiped = *(uint32_t*)(playerAddress + 0x34);
 		memcpy(rawPlayer.Position, (void*)(playerAddress + 0x38), 12);
 		memcpy(rawPlayer.Name, (void*)(playerAddress + 0xB0), 56);
 		memcpy(rawPlayer.Tag, (void*)(playerAddress + 0xF4), 16);

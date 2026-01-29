@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Core/Common/GlobalState.h"
+#include "Core/Common/PersistenceManager.h"
 #include "Core/UserInterface/Tabs/ConfigurationTab.h"
 #include "External/imgui/imgui.h"
 
@@ -9,13 +10,13 @@ void ConfigurationTab::Draw()
 
 	ImGui::BulletText("Toggle Menu:");
 	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(0.2f, 0.7f, 1.0f, 1.0f), "CTRL + A");
+	ImGui::TextColored(ImVec4(0.2f, 0.7f, 1.0f, 1.0f), "CTRL + 1");
 
 	ImGui::Spacing();
 
-	ImGui::BulletText("Emergency Reset:");
+	ImGui::BulletText("Emergency Reset (centers the window):");
 	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(0.2f, 0.7f, 1.0f, 1.0f), "CTRL + R");
+	ImGui::TextColored(ImVec4(0.2f, 0.7f, 1.0f, 1.0f), "CTRL + 2");
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Recover the window if it goes off-screen.");
@@ -34,6 +35,69 @@ void ConfigurationTab::Draw()
 			"Prevents the game camera from moving while the Control Panel is open.\n"
 			"Useful for precise UI interaction during Theater mode."
 		);
+	}
+
+	ImGui::Spacing();
+
+	bool useAppData = g_pState->useAppData.load();
+
+	bool checkVal = useAppData;
+	if (ImGui::Checkbox("Use AppData", &checkVal))
+	{
+		if (!checkVal)
+		{
+			ImGui::OpenPopup("Confirm Disable AppData");
+		}
+		else
+		{
+			g_pState->useAppData.store(true);
+			PersistenceManager::CreateAppData();
+			PersistenceManager::SavePreferences();
+		}
+	}
+
+	if (ImGui::BeginPopupModal("Confirm Disable AppData", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Are you sure you want to disable local storage?\n\n"
+			"All custom event weights, saved timelines, and\n"
+			"preferences will be lost.");
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		float widthBtn = 120.0f;
+		float spacing = ImGui::GetStyle().ItemSpacing.x;
+		float totalButtonWidth = (widthBtn * 2) + spacing;
+
+		float posX = (ImGui::GetContentRegionAvail().x - totalButtonWidth) * 0.5f;
+		if (posX > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + posX);
+
+		if (ImGui::Button("Yes", ImVec2(widthBtn, 0)))
+		{
+			g_pState->useAppData.store(false);
+			PersistenceManager::SavePreferences();
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Cancel", ImVec2(widthBtn, 0)))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Allows AutoTheater to save your custom event weights, \ntimelines, and preferences permanently to disk.");
+	}
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Delete AppData"))
+	{
+		PersistenceManager::DeleteAppData();
 	}
 
 	ImGui::Spacing();
@@ -78,8 +142,9 @@ void ConfigurationTab::Draw()
 			ImGui::Spacing();
 		};
 
-		PathField("Base Directory", g_pState->baseDirectory);
-		PathField("Logger Path", g_pState->loggerPath);
-		PathField("Film Path", g_pState->filmPath);
+		PathField("Base", g_pState->baseDirectory);
+		PathField("Logger", g_pState->loggerPath);
+		PathField("AppData", g_pState->appDataDirectory);
+		PathField("MCC Temp", g_pState->mccTempDirectory);
 	}
 }

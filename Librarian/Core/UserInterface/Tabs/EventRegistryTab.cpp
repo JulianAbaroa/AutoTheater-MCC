@@ -126,7 +126,7 @@ void EventRegistryTab::Draw()
 
 			if (ImGui::IsItemDeactivatedAfterEdit()) {
 				needsRefresh = true;
-				g_pState->SaveToAppData();
+				//g_pState->SaveToAppData();
 			}
 
 			ImGui::EndGroup();

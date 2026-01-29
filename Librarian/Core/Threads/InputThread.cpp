@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Utils/Logger.h"
+#include "Utils/ThreadUtils.h"
 #include "Core/Systems/Theater.h"
 #include "Core/Common/GlobalState.h"
 #include "Core/Threads/InputThread.h"
@@ -51,7 +52,7 @@ void InputThread::Run()
     while (g_pState->running.load())
     {
         if (!g_pState->isTheaterMode.load()) {
-            std::this_thread::sleep_for(100ms);
+            ThreadUtils::WaitOrExit(100ms);
             continue;
         }
 
@@ -99,7 +100,7 @@ void InputThread::Run()
         }
         else
         {
-            std::this_thread::sleep_for(5ms);
+            ThreadUtils::WaitOrExit(5ms);
         }
 
         for (const auto& [key, speed] : speedMap)
@@ -107,7 +108,7 @@ void InputThread::Run()
             if (GetAsyncKeyState(key) & 0x8000)
             {
                 Theater::SetReplaySpeed(speed);
-                std::this_thread::sleep_for(100ms);
+                ThreadUtils::WaitOrExit(100ms);
                 break;
             }
         }

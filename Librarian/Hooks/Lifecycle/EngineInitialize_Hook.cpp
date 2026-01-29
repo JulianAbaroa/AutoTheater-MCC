@@ -24,26 +24,38 @@ void __fastcall hkEngineInitialize(void)
 
 	if (!g_pState->isTheaterMode.load()) return;
 
-	if (g_pState->currentPhase.load() == Phase::BuildTimeline)
+	BlamOpenFile_Hook::Install();						// Gets the selected film path
+
+	if (g_pState->currentPhase.load() == AutoTheaterPhase::Timeline)
 	{
-		Logger::LogAppend("=== Build timeline ===");
+		Logger::LogAppend("[Timeline Phase]");
 		
-		BlamOpenFile_Hook::Install();                   // Gets the selected film path
 		FilmInitializeState_Hook::Install();            // Gets the FLMH data
 		UpdateTelemetryTimer_Hook::Install();           // Gets the current ReplayTime
 		UIBuildDynamicMessage_Hook::Install();          // Gets the GameEvents
 		SpectatorHandleInput_Hook::Install();           // Gets the ReplayModule
-	}
-	else if (g_pState->currentPhase.load() == Phase::ExecuteDirector)
-	{
-		Logger::LogAppend("=== Execute Director ===");
 
-		std::this_thread::sleep_for(200ms);
+		{
+			std::lock_guard lock(g_pState->timelineMutex);
+			if (g_pState->timeline.size() > 0) g_pState->timeline.clear(); 
+			if (g_pState->processedCount > 0) g_pState->processedCount.store(0);
+		}
+	}
+	else if (g_pState->currentPhase.load() == AutoTheaterPhase::Director)
+	{
+		Logger::LogAppend("[Director Phase]");
+
 		UpdateTelemetryTimer_Hook::Install();
 		SpectatorHandleInput_Hook::Install();
 		GetButtonState_Hook::Install();
 
 		g_pState->directorHooksReady.store(true);
+	}
+	else if (g_pState->currentPhase.load() == AutoTheaterPhase::Default)
+	{
+		Logger::LogAppend("[Default Phase]");
+
+		UpdateTelemetryTimer_Hook::Install();
 	}
 
 	g_pState->engineStatus.store({ EngineStatus::Running });

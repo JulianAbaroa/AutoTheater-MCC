@@ -186,6 +186,15 @@
     <ClInclude Include="External\imgui\backends\imgui_impl_win32.h">
       <Filter>External\imgui\backends</Filter>
     </ClInclude>
+    <ClInclude Include="Utils\ThreadUtils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UserInterface\Tabs\ReplayManagerTab.h">
+      <Filter>Core\UserInterface\Tabs</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\PersistenceManager.h">
+      <Filter>Core\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\DllMain.cpp">
@@ -325,6 +334,15 @@
     </ClCompile>
     <ClCompile Include="External\minhook\src\hde\hde64.c">
       <Filter>External\minhook\hde</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\ThreadUtils.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UserInterface\Tabs\ReplayManagerTab.cpp">
+      <Filter>Core\UserInterface\Tabs</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Common\PersistenceManager.cpp">
+      <Filter>Core\Common</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

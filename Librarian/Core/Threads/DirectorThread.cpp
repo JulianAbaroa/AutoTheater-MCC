@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Utils/Logger.h"
+#include "Utils/ThreadUtils.h"
 #include "Core/Systems/Director.h"
 #include "Core/Common/GlobalState.h"
 #include "Core/Threads/DirectorThread.h"
@@ -18,7 +19,7 @@ void DirectorThread::Run()
     
     while (g_pState->running.load())
     {
-        if (g_pState->currentPhase.load() == Phase::ExecuteDirector)
+        if (g_pState->currentPhase.load() == AutoTheaterPhase::Director)
         {
             if (!g_pState->directorInitialized.load())
             {
@@ -36,9 +37,9 @@ void DirectorThread::Run()
                 }
             }
 
-            std::this_thread::sleep_for(16ms);
+            ThreadUtils::WaitOrExit(16ms);
         }
-        else if (g_pState->currentPhase.load() == Phase::BuildTimeline) {
+        else {
             g_pState->directorHooksReady.store(false);
         }
     }

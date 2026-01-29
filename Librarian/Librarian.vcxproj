@@ -149,6 +149,7 @@
     <ClInclude Include="Core\Common\GlobalState.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Core\Common\PersistenceManager.h" />
     <ClInclude Include="Core\Common\Registry.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
@@ -186,6 +187,7 @@
     <ClInclude Include="Core\UserInterface\Tabs\DirectorTab.h" />
     <ClInclude Include="Core\UserInterface\Tabs\EventRegistryTab.h" />
     <ClInclude Include="Core\UserInterface\Tabs\LogsTab.h" />
+    <ClInclude Include="Core\UserInterface\Tabs\ReplayManagerTab.h" />
     <ClInclude Include="Core\UserInterface\Tabs\TheaterTab.h" />
     <ClInclude Include="Core\UserInterface\Tabs\TimelineTab.h" />
     <ClInclude Include="Core\UserInterface\UserInterface.h">
@@ -241,11 +243,13 @@
     <ClInclude Include="Utils\Logger.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Utils\ThreadUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Common\GlobalState.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Core\Common\PersistenceManager.cpp" />
     <ClCompile Include="Core\Common\Registry.cpp" />
     <ClCompile Include="Core\DllMain.cpp" />
     <ClCompile Include="Core\Scanner\Scanner.cpp">
@@ -276,6 +280,7 @@
     <ClCompile Include="Core\UserInterface\Tabs\DirectorTab.cpp" />
     <ClCompile Include="Core\UserInterface\Tabs\EventRegistryTab.cpp" />
     <ClCompile Include="Core\UserInterface\Tabs\LogsTab.cpp" />
+    <ClCompile Include="Core\UserInterface\Tabs\ReplayManagerTab.cpp" />
     <ClCompile Include="Core\UserInterface\Tabs\TheaterTab.cpp" />
     <ClCompile Include="Core\UserInterface\Tabs\TimelineTab.cpp" />
     <ClCompile Include="Core\UserInterface\UserInterface.cpp">
@@ -365,6 +370,7 @@
     <ClCompile Include="Utils\Logger.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Utils\ThreadUtils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
