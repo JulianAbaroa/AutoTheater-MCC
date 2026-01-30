@@ -2,7 +2,7 @@
 #include "Utils/Formatting.h"
 #include "Core/Common/GlobalState.h"
 #include "Core/Common/PersistenceManager.h"
-#include "Core/UserInterface/Tabs/EventRegistryTab.h"
+#include "Core/UserInterface/Tabs/Optional/EventRegistryTab.h"
 #include "External/imgui/imgui_internal.h"
 #include "External/imgui/imgui.h"
 #include <algorithm>
@@ -30,35 +30,36 @@ std::string GetEventCategory(EventType type) {
 void EventRegistryTab::Draw()
 {
 	static char filter[64] = "";
-	
-	if (ImGui::InputTextWithHint("##filter", "Search events...", filter, IM_ARRAYSIZE(filter), ImGuiInputTextFlags_EnterReturnsTrue))
-	{
-		ImGui::SetWindowFocus(NULL);
-	}
-
-	if (ImGui::IsMouseClicked(0) && !ImGui::IsItemHovered() && ImGui::IsItemActivated())
-	{
-		ImGui::ClearActiveID();
-	}
-
-	ImGui::SameLine();
-	if (ImGui::Button("Clear")) filter[0] = '\0';
-	ImGui::Separator();
-
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 12));
-
 	static std::vector<EventInfo> uniqueTypes;
 	static bool needsRefresh = true;
+
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextDisabled("Search:");
+	ImGui::SameLine();
+
+	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 100.0f);
+	if (ImGui::InputTextWithHint("##filter", "Type to filter events (e.g. 'OverKill')...", filter, IM_ARRAYSIZE(filter)))
+	{
+
+	}
+	ImGui::PopItemWidth();
+
+	ImGui::SameLine();
+	if (ImGui::Button("Clear", ImVec2(80.0f, 0.0f))) filter[0] = '\0';
+
+	ImGui::Separator();
+	ImGui::Spacing();
 
 	if (needsRefresh && !ImGui::IsAnyItemActive())
 	{
 		uniqueTypes.clear();
 		std::set<EventType> seen;
+		std::lock_guard<std::mutex> lock(g_pState->configMutex);
 
-		std::lock_guard lock(g_pState->configMutex);
 		for (auto& [name, info] : g_pState->eventRegistry)
 		{
-			if (seen.find(info.Type) == seen.end()) {
+			if (seen.find(info.Type) == seen.end())
+			{
 				uniqueTypes.push_back(info);
 				seen.insert(info.Type);
 			}
@@ -67,7 +68,7 @@ void EventRegistryTab::Draw()
 		needsRefresh = false;
 	}
 
-	if (ImGui::BeginChild("RegistryScroll", ImVec2(0, 0), false))
+	if (ImGui::BeginChild("RegistryScroll", ImVec2(0.0f, 0.0f), false))
 	{
 		std::string filterStr = filter;
 		std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(), ::tolower);
@@ -80,45 +81,38 @@ void EventRegistryTab::Draw()
 			if (!filterStr.empty() && nameLower.find(filterStr) == std::string::npos) return;
 
 			ImGui::PushID((int)item.Type);
-
 			ImGui::BeginGroup();
-
 			ImGui::AlignTextToFramePadding();
-			ImGui::TextUnformatted(name.c_str());
+
+			if (item.Weight > 50) ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), " %s", name.c_str());
+			else				  ImGui::Text(" %s", name.c_str());
 
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::BeginTooltip();
-
 				const auto& eventDb = Formatting::GetEventDb();
 				auto it = eventDb.find(item.Type);
-
 				if (it != eventDb.end())
 				{
-					ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "Event Description");
-
-					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+					ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Game Event Details");
+					ImGui::Separator();
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
 					ImGui::TextUnformatted(it->second.Description.c_str());
 					ImGui::PopTextWrapPos();
 
-					ImGui::Spacing();
-					ImGui::Separator();
-					ImGui::Spacing();
-
-					ImGui::TextColored(ImVec4(0.4f, 0.7f, 1.0f, 1.0f), "Internal Templates:");
-					for (const auto& t : it->second.InternalTemplates)
-					{
-						ImGui::BulletText("%ls", t.c_str());
+					if (!it->second.InternalTemplates.empty()) {
+						ImGui::Spacing();
+						ImGui::TextDisabled("Engine Templates:");
+						for (const auto& t : it->second.InternalTemplates) ImGui::BulletText("%ls", t.c_str());
 					}
 				}
-
 				ImGui::EndTooltip();
 			}
 
-			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 240.0f);
-			ImGui::SetNextItemWidth(240.0f);
+			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 220.0f);
+			ImGui::SetNextItemWidth(210.0f);
 
-			if (ImGui::SliderInt("##slider", &item.Weight, 0, 100)) {
+			if (ImGui::SliderInt("##slider", &item.Weight, 0, 100, "Weight: %d")) {
 				std::lock_guard lock(g_pState->configMutex);
 				for (auto& [regName, regInfo] : g_pState->eventRegistry) {
 					if (regInfo.Type == item.Type) regInfo.Weight = item.Weight;
@@ -132,9 +126,8 @@ void EventRegistryTab::Draw()
 
 			ImGui::EndGroup();
 			ImGui::Separator();
-
 			ImGui::PopID();
-			};
+		};
 
 		if (!filterStr.empty())
 		{
@@ -143,32 +136,25 @@ void EventRegistryTab::Draw()
 		else
 		{
 			const char* categories[] = {
-				"Server", "Match", "Custom",
-				"CTF", "Assault", "Slayer",
-				"Juggernaut", "Race", "KOTH",
-				"Territories", "Infection",
-				"Oddball", "Kills/Medals",
-				"Others"
+				"Server", "Match", "CTF", "Assault", "Slayer", "Juggernaut",
+				"Race", "KOTH", "Territories", "Infection", "Oddball",
+				"Kills/Medals", "Custom"
 			};
 
 			for (const char* catName : categories)
 			{
-				if (ImGui::CollapsingHeader(catName))
+				if (ImGui::CollapsingHeader(catName, ImGuiTreeNodeFlags_None))
 				{
 					ImGui::Indent(10.0f);
 					for (auto& item : uniqueTypes)
 					{
 						if (GetEventCategory(item.Type) == catName) DrawRow(item);
 					}
-
 					ImGui::Unindent(10.0f);
-					ImGui::Spacing();
 				}
 			}
 		}
 
 		ImGui::EndChild();
 	}
-
-	ImGui::PopStyleVar();
 }

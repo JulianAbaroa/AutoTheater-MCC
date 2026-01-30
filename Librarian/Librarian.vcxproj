@@ -186,13 +186,13 @@
     <ClInclude Include="Core\Threads\LogThread.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\ConfigurationTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\DirectorTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\EventRegistryTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\LogsTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\ReplayManagerTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\TheaterTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\TimelineTab.h" />
+    <ClInclude Include="Core\UserInterface\Tabs\Logs\LogsTab.h" />
+    <ClInclude Include="Core\UserInterface\Tabs\Optional\EventRegistryTab.h" />
+    <ClInclude Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.h" />
+    <ClInclude Include="Core\UserInterface\Tabs\Primary\ConfigurationTab.h" />
+    <ClInclude Include="Core\UserInterface\Tabs\Primary\DirectorTab.h" />
+    <ClInclude Include="Core\UserInterface\Tabs\Primary\TheaterTab.h" />
+    <ClInclude Include="Core\UserInterface\Tabs\Primary\TimelineTab.h" />
     <ClInclude Include="Core\UserInterface\UserInterface.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
@@ -281,13 +281,13 @@
     <ClCompile Include="Core\Threads\LogThread.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\ConfigurationTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\DirectorTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\EventRegistryTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\LogsTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\ReplayManagerTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\TheaterTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\TimelineTab.cpp" />
+    <ClCompile Include="Core\UserInterface\Tabs\Logs\LogsTab.cpp" />
+    <ClCompile Include="Core\UserInterface\Tabs\Optional\EventRegistryTab.cpp" />
+    <ClCompile Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.cpp" />
+    <ClCompile Include="Core\UserInterface\Tabs\Primary\ConfigurationTab.cpp" />
+    <ClCompile Include="Core\UserInterface\Tabs\Primary\DirectorTab.cpp" />
+    <ClCompile Include="Core\UserInterface\Tabs\Primary\TheaterTab.cpp" />
+    <ClCompile Include="Core\UserInterface\Tabs\Primary\TimelineTab.cpp" />
     <ClCompile Include="Core\UserInterface\UserInterface.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>

@@ -7,7 +7,7 @@
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
-#include "Hooks/UserInterface//ResizeBuffers_Hook.h"
+#include "Hooks/UserInterface/ResizeBuffers_Hook.h"
 #include "Hooks/UserInterface/Present_Hook.h"
 #include <sstream>
 #include <chrono>
@@ -182,7 +182,7 @@ void MainThread::Run() {
                 return;
             }
 
-            g_pState->engineStatus.store({ EngineStatus::Idle });
+            g_pState->engineStatus.store({ EngineStatus::Awaiting });
             g_pState->isTheaterMode.store(false);
         }
 

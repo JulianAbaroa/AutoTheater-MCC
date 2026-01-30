@@ -52,7 +52,6 @@ bool HandleHotKeys(WPARAM wParam)
 LRESULT __stdcall WndProc_Hook::hkWndProc(
 	const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 ) {
-	// 1. Closure Management.
 	if (uMsg == WM_CLOSE || uMsg == WM_DESTROY || uMsg == WM_QUIT)
 	{
 		if (g_pState->running.load())
@@ -65,22 +64,18 @@ LRESULT __stdcall WndProc_Hook::hkWndProc(
 		return CallWindowProc(original_WndProc, hWnd, uMsg, wParam, lParam);
 	}
 
-	// 2. Hotkey Management.
 	if (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN)
 	{
 		if (HandleHotKeys(wParam)) return 0;
 	}
 
-	// 3. Interface Management (ImGui).
 	if (g_pState->showMenu.load())
 	{
-		// Send to ImGui.
 		if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
 		{
 			return 1;
 		}
 
-		// Block game input if ImGui requires it
 		if (ImGui::GetIO().WantCaptureKeyboard && (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST))
 		{
 			return 0;
@@ -98,6 +93,5 @@ LRESULT __stdcall WndProc_Hook::hkWndProc(
 		}
 	}
 	
-	// 4. Send to the game.
 	return CallWindowProc(original_WndProc, hWnd, uMsg, wParam, lParam);
 }

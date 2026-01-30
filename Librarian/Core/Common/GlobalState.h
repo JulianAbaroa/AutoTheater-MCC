@@ -187,7 +187,7 @@ struct AppState
 	std::atomic<HMODULE> handleModule{ nullptr };
 
 	/** @brief Current lifecycle state of the Blam! engine. */
-	std::atomic<EngineStatus> engineStatus{ EngineStatus::Idle };
+	std::atomic<EngineStatus> engineStatus{ EngineStatus::Awaiting };
 
 	/** @brief The operational mode of AutoTheater (Timeline, Director, Default). */
 	std::atomic<AutoTheaterPhase> currentPhase{ AutoTheaterPhase::Default };

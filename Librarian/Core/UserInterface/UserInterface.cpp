@@ -3,15 +3,14 @@
 #include "Core/Common/GlobalState.h"
 #include "Core/Threads/MainThread.h"
 #include "Core/UserInterface/UserInterface.h"
-#include "Core/UserInterface/Tabs/LogsTab.h"
-#include "Core/UserInterface/Tabs/TimelineTab.h"
-#include "Core/UserInterface/Tabs/TheaterTab.h"
-#include "Core/UserInterface/Tabs/DirectorTab.h"
-#include "Core/UserInterface/Tabs/ConfigurationTab.h"
-#include "Core/UserInterface/Tabs/ReplayManagerTab.h"
-#include "Core/UserInterface/Tabs/EventRegistryTab.h"
+#include "Core/UserInterface/Tabs/Logs/LogsTab.h"
+#include "Core/UserInterface/Tabs/Primary/TimelineTab.h"
+#include "Core/UserInterface/Tabs/Primary/TheaterTab.h"
+#include "Core/UserInterface/Tabs/Primary/DirectorTab.h"
+#include "Core/UserInterface/Tabs/Primary/ConfigurationTab.h"
+#include "Core/UserInterface/Tabs/Optional/ReplayManagerTab.h"
+#include "Core/UserInterface/Tabs/Optional/EventRegistryTab.h"
 #include "External/imgui/imgui_internal.h"
-#include "External/imgui/imgui.h"
 #include <algorithm>
 #include <vector>
 
@@ -36,17 +35,18 @@ static void DrawStatusBar()
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(15, 0));
 
-	// Section: Phase Selector
-	ImGui::TextDisabled("Phase:");
-	ImGui::SameLine();
-
 	AutoTheaterPhase currentPhase = g_pState->currentPhase.load();
 	PhaseUI ui = GetPhaseUI(currentPhase);
-	
 	bool isTheater = g_pState->isTheaterMode.load();
-	if (isTheater) ImGui::BeginDisabled();
 
+	// Section: Phase Selector
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextDisabled("Phase:");
+	ImGui::SameLine();
+	
+	if (isTheater) ImGui::BeginDisabled();
 	ImGui::PushStyleColor(ImGuiCol_Text, ui.Color);
+
 	if (ImGui::Selectable(ui.Name, false, 0, ImGui::CalcTextSize(ui.Name)))
 	{
 		ImGui::OpenPopup("PhaseSelectorPopup");
@@ -58,8 +58,11 @@ static void DrawStatusBar()
 		ImGui::SetTooltip(isTheater ? "Disabled during Theater mode." : "Click to change phase.");
 	}
 
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
 	if (ImGui::BeginPopup("PhaseSelectorPopup"))
 	{
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 10));
+
 		auto AddPhaseItem = [&](const char* label, AutoTheaterPhase phase) {
 			if (ImGui::MenuItem(label, nullptr, currentPhase == phase))
 			{
@@ -70,16 +73,27 @@ static void DrawStatusBar()
 		AddPhaseItem("Default", AutoTheaterPhase::Default);
 		AddPhaseItem("Timeline", AutoTheaterPhase::Timeline);
 		AddPhaseItem("Director", AutoTheaterPhase::Director);
+
+		ImGui::PopStyleVar();
+		ImGui::EndPopup();
 	}
+	ImGui::PopStyleVar();
 
 	if (isTheater) ImGui::EndDisabled();
 
 	// Section: Toggles
-	ImGui::SameLine();
-	bool autoUpdatePhase = g_pState->autoUpdatePhase.load();
-	if (ImGui::Checkbox("Auto-Update Phase", &autoUpdatePhase))
+	if (currentPhase != AutoTheaterPhase::Default)
 	{
-		g_pState->autoUpdatePhase.store(autoUpdatePhase);
+		ImGui::SameLine();
+		bool autoUpdatePhase = g_pState->autoUpdatePhase.load();
+		if (ImGui::Checkbox("Auto-Update Phase", &autoUpdatePhase))
+		{
+			g_pState->autoUpdatePhase.store(autoUpdatePhase);	
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Toggle automatic transitions between Timeline and Director phases.");
+		}
 	}
 
 	// Section: Engine Status
@@ -87,22 +101,34 @@ static void DrawStatusBar()
 	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 	ImGui::SameLine();
 
+	ImGui::AlignTextToFramePadding();
 	ImGui::Text("Game Engine:");
 	ImGui::SameLine();
 
 	auto status = g_pState->engineStatus.load();
-	if (status == EngineStatus::Awaiting) 
-	{
-		ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "AWAITING...");
+	ImVec4 statusColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+	const char* statusText = "UNKNOWN";
+
+	switch (status) {
+	case EngineStatus::Awaiting:  
+		statusText = "AWAITING..."; 
+		statusColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f); 
+		break;
+
+	case EngineStatus::Running:   
+		statusText = "RUNNING";     
+		statusColor = ImVec4(0.0f, 1.0f, 0.0f, 1.0f); 
+		break;
+
+	case EngineStatus::Destroyed: 
+		statusText = "DESTROYED";   
+		statusColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); 
+		break;
 	}
-	else if (status == EngineStatus::Running)
-	{
-		ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "RUNNING");
-	}
-	else if (status == EngineStatus::Destroyed)
-	{
-		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "DESTROYED");
-	}
+
+	ImGui::TextColored(statusColor, statusText);
+
+	ImGui::ItemSize(ImVec2(0, 10.0f));
 
 	ImGui::PopStyleVar();
 	ImGui::Separator();
@@ -113,29 +139,54 @@ void HandleWindowReset()
 {
 	if (!g_pState->forceMenuReset.load()) return;
 
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImVec2 screenSize = viewport->Size;
+	ImVec2 windowSize = ImVec2(1000, 600);
 
+	ImGui::SetNextWindowPos(
+		ImVec2(screenSize.x * 0.5f, screenSize.y * 0.5f),
+		ImGuiCond_Always,
+		ImVec2(0.5f, 0.5f)
+	);
+
+	ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+	g_pState->forceMenuReset.store(false);
+}
+
+void DrawTabs()
+{
+	if (!ImGui::BeginTabBar("MainTabs")) return;
+
+	auto AddTab = [](const char* label, void (*drawFn)()) {
+		if (ImGui::BeginTabItem(label))
+		{
+			drawFn();
+			ImGui::EndTabItem();
+		}
+	};
+
+	// Primary Tabs
+	AddTab("Timeline", TimelineTab::Draw);
+	AddTab("Theater", TheaterTab::Draw);
+	AddTab("Director", DirectorTab::Draw);
+	AddTab("Configuration", ConfigurationTab::Draw);
+
+	// Optional Tabs
+	bool useAppData = g_pState->useAppData.load();
+	if (!useAppData) ImGui::BeginDisabled();
+	AddTab("Replay Manager", ReplayManagerTab::Draw);
+	AddTab("Event Registry", EventRegistryTab::Draw);
+	if (!useAppData) ImGui::EndDisabled();
+
+	// Log Tab
+	AddTab("Logs", LogsTab::Draw);
+
+	ImGui::EndTabBar();
 }
 
 void UserInterface::DrawMainInterface()
 {
-	if (g_pState->forceMenuReset.load())
-	{
-		ImGuiViewport* viewport = ImGui::GetMainViewport();
-		
-		ImVec2 screenSize = viewport->Size;
-		ImVec2 windowSize = ImVec2(1000, 600);
-
-		ImGui::SetNextWindowPos(
-			ImVec2(screenSize.x * 0.5f, screenSize.y * 0.5f),
-			ImGuiCond_Always,
-			ImVec2(0.5f, 0.5f)
-		);
-
-		ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-
-		g_pState->forceMenuReset.store(false);
-	}
-
+	// 1. Pre-render: Visibility and Input Management
 	if (!g_pState->showMenu.load())
 	{
 		ImGui::GetIO().ClearInputMouse();
@@ -143,66 +194,25 @@ void UserInterface::DrawMainInterface()
 		return;
 	}
 
-	if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
-	{
-		ImGui::GetIO().MouseDown[0] = false;
-	}
+	// 2. Pre-render: Position reset if requested
+	HandleWindowReset();
 
+	// 3. Default window settings
 	ImGui::SetNextWindowSize(ImVec2(1000, 600), ImGuiCond_FirstUseEver);
 
-	bool open = g_pState->showMenu.load();
-	if (ImGui::Begin("AutoTheater - Control Panel", &open))
+	bool open = true;
+	bool isVisible = ImGui::Begin("AutoTheater - Control Panel", &open, ImGuiWindowFlags_None);
+
+	if (!open)
 	{
-		g_pState->showMenu.store(open);
-
-		DrawStatusBar();
-
-		if (ImGui::BeginTabBar("MainTabs"))
-		{
-			if (ImGui::BeginTabItem("Timeline"))
-			{
-				TimelineTab::Draw();
-				ImGui::EndTabItem();
-			}
-			if (ImGui::BeginTabItem("Theater"))
-			{
-				TheaterTab::Draw();
-				ImGui::EndTabItem();
-			}
-			if (ImGui::BeginTabItem("Director"))
-			{
-				DirectorTab::Draw();
-				ImGui::EndTabItem();
-			}
-			if (ImGui::BeginTabItem("Configuration"))
-			{
-				ConfigurationTab::Draw();
-				ImGui::EndTabItem();
-			}
-
-			bool useAppData = g_pState->useAppData.load();
-
-			if (!useAppData) ImGui::BeginDisabled();
-			if (ImGui::BeginTabItem("Replay Manager"))
-			{
-				ReplayManagerTab::Draw();
-				ImGui::EndTabItem();
-			}
-			if (ImGui::BeginTabItem("Event Registry"))
-			{
-				EventRegistryTab::Draw();
-				ImGui::EndTabItem();
-			}
-			if (!useAppData) ImGui::EndDisabled();
-
-			if (ImGui::BeginTabItem("Logs"))
-			{
-				LogsTab::Draw();
-				ImGui::EndTabItem();
-			}
-			ImGui::EndTabBar();
-		}
+		g_pState->showMenu.store(false);
 	}
-	
+
+	if (isVisible)
+	{
+		DrawStatusBar();
+		DrawTabs();
+	}
+
 	ImGui::End();
 }

@@ -64,6 +64,15 @@
     <Filter Include="Core\Common\Types">
       <UniqueIdentifier>{5531854e-c72f-494f-a512-8c1593459fbb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\UserInterface\Tabs\Primary">
+      <UniqueIdentifier>{3f848fcc-6784-4a6a-a181-cded28d12082}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\UserInterface\Tabs\Optional">
+      <UniqueIdentifier>{71d9ddcf-008b-48f6-8fa4-d78e70585b12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\UserInterface\Tabs\Logs">
+      <UniqueIdentifier>{914cb15e-9a6c-46dd-ba62-5a0afc6e83ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Systems\Director.h">
@@ -150,24 +159,6 @@
     <ClInclude Include="Hooks\UserInterface\WndProc_Hook.h">
       <Filter>Hooks\UserInterface</Filter>
     </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\TimelineTab.h">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\DirectorTab.h">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\EventRegistryTab.h">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\TheaterTab.h">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\ConfigurationTab.h">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\LogsTab.h">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClInclude>
     <ClInclude Include="Hooks\UserInterface\GetRawInputData_Hook.h">
       <Filter>Hooks\UserInterface</Filter>
     </ClInclude>
@@ -188,9 +179,6 @@
     </ClInclude>
     <ClInclude Include="Utils\ThreadUtils.h">
       <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\ReplayManagerTab.h">
-      <Filter>Core\UserInterface\Tabs</Filter>
     </ClInclude>
     <ClInclude Include="Core\Common\PersistenceManager.h">
       <Filter>Core\Common</Filter>
@@ -218,6 +206,27 @@
     </ClInclude>
     <ClInclude Include="Core\Common\Types\AutoTheaterTypes.h">
       <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UserInterface\Tabs\Logs\LogsTab.h">
+      <Filter>Core\UserInterface\Tabs\Logs</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.h">
+      <Filter>Core\UserInterface\Tabs\Optional</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UserInterface\Tabs\Optional\EventRegistryTab.h">
+      <Filter>Core\UserInterface\Tabs\Optional</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UserInterface\Tabs\Primary\TimelineTab.h">
+      <Filter>Core\UserInterface\Tabs\Primary</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UserInterface\Tabs\Primary\ConfigurationTab.h">
+      <Filter>Core\UserInterface\Tabs\Primary</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UserInterface\Tabs\Primary\DirectorTab.h">
+      <Filter>Core\UserInterface\Tabs\Primary</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UserInterface\Tabs\Primary\TheaterTab.h">
+      <Filter>Core\UserInterface\Tabs\Primary</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -302,24 +311,6 @@
     <ClCompile Include="Hooks\UserInterface\WndProc_Hook.cpp">
       <Filter>Hooks\UserInterface</Filter>
     </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\DirectorTab.cpp">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\EventRegistryTab.cpp">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\TheaterTab.cpp">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\TimelineTab.cpp">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\ConfigurationTab.cpp">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\LogsTab.cpp">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClCompile>
     <ClCompile Include="Hooks\UserInterface\GetRawInputData_Hook.cpp">
       <Filter>Hooks\UserInterface</Filter>
     </ClCompile>
@@ -362,9 +353,6 @@
     <ClCompile Include="Utils\ThreadUtils.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\ReplayManagerTab.cpp">
-      <Filter>Core\UserInterface\Tabs</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Common\PersistenceManager.cpp">
       <Filter>Core\Common</Filter>
     </ClCompile>
@@ -373,6 +361,27 @@
     </ClCompile>
     <ClCompile Include="Utils\DXUtils.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UserInterface\Tabs\Logs\LogsTab.cpp">
+      <Filter>Core\UserInterface\Tabs\Logs</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UserInterface\Tabs\Optional\EventRegistryTab.cpp">
+      <Filter>Core\UserInterface\Tabs\Optional</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.cpp">
+      <Filter>Core\UserInterface\Tabs\Optional</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UserInterface\Tabs\Primary\ConfigurationTab.cpp">
+      <Filter>Core\UserInterface\Tabs\Primary</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UserInterface\Tabs\Primary\DirectorTab.cpp">
+      <Filter>Core\UserInterface\Tabs\Primary</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UserInterface\Tabs\Primary\TheaterTab.cpp">
+      <Filter>Core\UserInterface\Tabs\Primary</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UserInterface\Tabs\Primary\TimelineTab.cpp">
+      <Filter>Core\UserInterface\Tabs\Primary</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
