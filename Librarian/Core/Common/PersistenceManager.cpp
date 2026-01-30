@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Utils/Logger.h"
+#include "Utils/Formatting.h"
 #include "Core/Common/GlobalState.h"
 #include "Core/Common/PersistenceManager.h"
 #include <shlobj.h>
@@ -12,7 +13,7 @@ void PersistenceManager::InitializePaths()
 	{
 		std::filesystem::path base(localLowPath);
 
-		g_pState->mccTempDirectory = (base / "MCC/Temporary/UserContent/HaloReach/Movie").string();
+		g_pState->mccTempMovieDirectory = (base / "MCC/Temporary/UserContent/HaloReach/Movie").string();
 		CoTaskMemFree(localLowPath);
 	}
 
@@ -37,6 +38,8 @@ void PersistenceManager::SavePreferences()
 
 void PersistenceManager::LoadPreferences()
 {
+	g_pState->useAppData.store(false);
+
 	std::string configPath = g_pState->baseDirectory + "\\config.ini";
 	std::ifstream file(configPath);
 	if (file.is_open())
@@ -47,10 +50,6 @@ void PersistenceManager::LoadPreferences()
 			if (line.find("useAppData=1") != std::string::npos)
 			{
 				g_pState->useAppData.store(true);
-			}
-			else
-			{
-				g_pState->useAppData.store(false);
 			}
 		}
 
@@ -305,12 +304,12 @@ std::vector<SavedReplay> PersistenceManager::GetSavedReplays()
 
 void PersistenceManager::RestoreReplay(const SavedReplay& replay)
 {
-	if (g_pState->mccTempDirectory.empty()) return;
+	if (g_pState->mccTempMovieDirectory.empty()) return;
 
 	try
 	{
 		std::filesystem::path src = replay.FullPath / replay.MovFileName;
-		std::filesystem::path dest = std::filesystem::path(g_pState->mccTempDirectory) / replay.MovFileName;
+		std::filesystem::path dest = std::filesystem::path(g_pState->mccTempMovieDirectory) / replay.MovFileName;
 
 		if (std::filesystem::exists(dest))
 		{
@@ -542,6 +541,75 @@ void PersistenceManager::LoadTimeline(const std::string& hash)
 	}
 	catch (const std::exception& e) {
 		Logger::LogAppend((std::string("Crash prevented in LoadTimeline: ") + e.what()).c_str());
+	}
+
+	file.close();
+}
+
+
+void PersistenceManager::SaveEventRegistry()
+{
+	std::string path;
+	std::unordered_map<std::wstring, EventInfo> eventRegistryCopy;
+
+	{
+		std::lock_guard<std::mutex> lockConfig(g_pState->configMutex);
+		path = g_pState->appDataDirectory + "\\event_weights.cfg";
+		eventRegistryCopy = g_pState->eventRegistry;
+	}
+
+	std::ofstream file(path);
+	if (!file.is_open()) return;
+
+	file << "# AutoTheater Event Weights\n";
+	for (const auto& [name, info] : eventRegistryCopy)
+	{
+		file << Formatting::WStringToString(name) << "=" << info.Weight << "\n";
+	}
+
+	file.close();
+}
+
+void PersistenceManager::LoadEventRegistry()
+{
+	std::string path;
+	std::unordered_map<std::wstring, EventInfo> eventRegistryCopy;
+
+	{
+		std::lock_guard<std::mutex> lockConfig(g_pState->configMutex);
+		path = g_pState->appDataDirectory + "\\event_weights.cfg";
+		eventRegistryCopy = g_pState->eventRegistry;
+	}
+
+	std::ifstream file(path);
+	if (!file.is_open()) return;
+
+	std::string line;
+	while (std::getline(file, line))
+	{
+		if (line.empty() || line[0] == '#') continue;
+
+		size_t delimiterPos = line.find_last_of('=');
+		if (delimiterPos != std::string::npos)
+		{
+			std::string nameStr = line.substr(0, delimiterPos);
+			std::string weightStr = line.substr(delimiterPos + 1);
+
+			std::wstring eventName = Formatting::StringToWString(nameStr);
+
+			if (eventRegistryCopy.count(eventName))
+			{
+				try {
+					eventRegistryCopy[eventName].Weight = std::stoi(weightStr);
+				}
+				catch (...) { }
+			}
+		}
+	}
+
+	{
+		std::lock_guard<std::mutex> lockConfig(g_pState->configMutex);
+		g_pState->eventRegistry = eventRegistryCopy;
 	}
 
 	file.close();

@@ -61,6 +61,9 @@
     <Filter Include="External\minhook\hde">
       <UniqueIdentifier>{17d6e520-dc78-4668-b388-5010c61e167d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Common\Types">
+      <UniqueIdentifier>{5531854e-c72f-494f-a512-8c1593459fbb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Systems\Director.h">
@@ -135,9 +138,6 @@
     <ClInclude Include="Core\Common\GlobalState.h">
       <Filter>Core\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Common\Types.h">
-      <Filter>Core\Common</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Common\Registry.h">
       <Filter>Core\Common</Filter>
     </ClInclude>
@@ -194,6 +194,30 @@
     </ClInclude>
     <ClInclude Include="Core\Common\PersistenceManager.h">
       <Filter>Core\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks\UserInterface\ResizeBuffers_Hook.h">
+      <Filter>Hooks\UserInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\DXUtils.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\BlamTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\TimelineTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\UserInterfaceTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\DirectorTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\InputTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\AutoTheaterTypes.h">
+      <Filter>Core\Common\Types</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -343,6 +367,12 @@
     </ClCompile>
     <ClCompile Include="Core\Common\PersistenceManager.cpp">
       <Filter>Core\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks\UserInterface\ResizeBuffers_Hook.cpp">
+      <Filter>Hooks\UserInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\DXUtils.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

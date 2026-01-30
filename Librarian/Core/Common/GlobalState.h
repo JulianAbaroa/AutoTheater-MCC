@@ -5,12 +5,16 @@
  * @brief Centralized Synchronized State Manager.
  * * This file defines the AppState structure, which serves as the "Single Source of Truth"
  * for the entire mod. It facilitates communication between specialized threads
- * and ensures data consistency across the Timeline, Director, and Input systems.
+ * and ensures data consistency across the different systems.
  */
 
-#include "External/imgui/imgui.h"
 #include "Core/Common/Registry.h"
-#include "Core/Common/Types.h"
+#include "External/imgui/imgui.h"
+#include "Core/Common/Types/InputTypes.h"
+#include "Core/Common/Types/TimelineTypes.h"
+#include "Core/Common/Types/DirectorTypes.h"
+#include "Core/Common/Types/AutoTheaterTypes.h"
+#include "Core/Common/Types/UserInterfaceTypes.h"
 #include <condition_variable>
 #include <unordered_map>
 #include <d3d11.h>
@@ -68,7 +72,7 @@ struct AppState
 	/** @brief Base address of the module responsible for replay data. */
 	std::atomic<uintptr_t> pReplayModule{ 0 };	
 
-	/** @brief State for calculating the actual playback speed via differential sampling. */
+	/** @brief State for calculating the "real" playback speed via differential sampling. */
 	std::atomic<float> realTimeScale{ 1.0f };
 	std::atomic<double> anchorSystemTime{ 0.0f };
 	std::atomic<float> anchorReplayTime{ 0.0f };
@@ -89,7 +93,7 @@ struct AppState
 	/** @brief Iterator index for the generated script execution. */
 	std::atomic<size_t> currentCommandIndex{ 0 };	
 
-	/** @brief Cache of the last known replay timestamp to detect jumps/rewinds. */
+	/** @brief Cache of the last known replay timestamp to detect jumps/rewinds on playback. */
 	std::atomic<float> lastReplayTime{ 0.0f };			
 	std::mutex directorMutex;
 
@@ -100,7 +104,7 @@ struct AppState
 	/** @brief Lock flag to prevent overlapping input requests. */
 	std::atomic<bool> inputProcessing{ false };		
 
-	/** @brief Queue  of pending input actions (e.g., Switch Player, Toggle UI). */
+	/** @brief Queue  of pending input actions (e.g., Switch Player). */
 	std::queue<InputRequest> inputQueue{};
 	std::mutex inputMutex;
 
@@ -110,12 +114,6 @@ struct AppState
 	/** @brief Rolling buffer of strings for the in-game ImGui console. */
 	std::vector<std::string> debugLogs{};
 	std::mutex logMutex;
-
-
-
-	// Game Metadata
-	/** @brief Map for translating engine events IDs to human-readable Info/Weights. */
-	std::unordered_map<std::wstring, EventInfo> eventRegistry = g_EventRegistry;
 
 
 
@@ -145,7 +143,6 @@ struct AppState
 	/** @brief Determines if the users allowed AutoTheater to use AppData */
 	std::atomic<bool> useAppData{ false };
 
-
 	/** @brief Toggles the visibility of the ImGui Overlay. */
 	std::atomic<bool> showMenu{ true };
 
@@ -155,11 +152,21 @@ struct AppState
 	/** @brief Freezes the in-game mouse when the ImGui overlay is opened. */
 	std::atomic<bool> freezeMouse{ true };
 
-	/** @brief Filesystem environment and storage paths for logs and replay data. */
+	/** @brief The AutoTheater DLL base directory. */
 	std::string baseDirectory{};
+
+	/** @brief User AppData directory (AppData/Local/AutoTheater) */
 	std::string appDataDirectory{};
-	std::string mccTempDirectory{};
+
+	/** @brief Halo Reach Movies directory (LocalLow/MCC/Temporary/UserContent/HaloReach/Movie) */
+	std::string mccTempMovieDirectory{};
+
+	/** @brief The path of the logger file (baseDirectory/AutoTheater.txt) */
 	std::string loggerPath{};
+	
+	// Game Metadata
+	/** @brief Map for translating engine events IDs to human-readable Info/Weights. */
+	std::unordered_map<std::wstring, EventInfo> eventRegistry = g_EventRegistry;
 	std::mutex configMutex;
 
 

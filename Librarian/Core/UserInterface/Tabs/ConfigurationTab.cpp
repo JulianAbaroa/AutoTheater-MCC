@@ -145,6 +145,6 @@ void ConfigurationTab::Draw()
 		PathField("Base", g_pState->baseDirectory);
 		PathField("Logger", g_pState->loggerPath);
 		PathField("AppData", g_pState->appDataDirectory);
-		PathField("MCC Temp", g_pState->mccTempDirectory);
+		PathField("MCC Temp", g_pState->mccTempMovieDirectory);
 	}
 }

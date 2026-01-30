@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Utils/Formatting.h"
 #include "Core/Common/GlobalState.h"
+#include "Core/Common/PersistenceManager.h"
 #include "Core/UserInterface/Tabs/EventRegistryTab.h"
 #include "External/imgui/imgui_internal.h"
 #include "External/imgui/imgui.h"
@@ -125,8 +126,8 @@ void EventRegistryTab::Draw()
 			}
 
 			if (ImGui::IsItemDeactivatedAfterEdit()) {
+				PersistenceManager::SaveEventRegistry();
 				needsRefresh = true;
-				//g_pState->SaveToAppData();
 			}
 
 			ImGui::EndGroup();

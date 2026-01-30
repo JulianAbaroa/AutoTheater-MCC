@@ -31,41 +31,20 @@ std::string Formatting::ToCompactAlpha(const std::wstring& ws) {
     return s;
 }
 
-std::wstring Formatting::ToCompactAlphaW(const std::string& s_in) {
-    std::wstring ws;
-    ws.reserve(s_in.length());
-    for (unsigned char c : s_in) {
-        if (c > 0 && c < 127 && isprint(c) && c != ' ') {
-            ws += static_cast<wchar_t>(std::tolower(c));
-        }
-    }
-    return ws;
+std::string Formatting::WStringToString(const std::wstring& wstr) {
+    if (wstr.empty()) return std::string();
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    std::string strTo(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+    return strTo;
 }
 
-std::wstring Formatting::ToCompactAlphaW(const std::wstring& ws) {
-    std::wstring s;
-    s.reserve(ws.length());
-    for (wchar_t wc : ws) {
-        if (wc > 0 && wc < 127 && iswprint(wc) && wc != L' ') {
-            s += static_cast<wchar_t>(std::tolower(static_cast<unsigned char>(wc)));
-        }
-    }
-    return s;
-}
-
-std::string Formatting::WStringToString(const wchar_t* wstr) {
-    if (!wstr) return "";
-    std::string result;
-
-    for (size_t i = 0; i < 256 && wstr[i] != L'\0'; ++i) {
-        if (iswprint(wstr[i])) {
-            result += static_cast<char>(wstr[i]);
-        }
-        else {
-            result += '?';
-        }
-    }
-    return result;
+std::wstring Formatting::StringToWString(const std::string& str) {
+    if (str.empty()) return std::wstring();
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    std::wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+    return wstrTo;
 }
 
 std::string Formatting::EventTypeToString(EventType type) {

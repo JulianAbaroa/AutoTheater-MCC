@@ -153,9 +153,12 @@
     <ClInclude Include="Core\Common\Registry.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Core\Common\Types.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="Core\Common\Types\AutoTheaterTypes.h" />
+    <ClInclude Include="Core\Common\Types\BlamTypes.h" />
+    <ClInclude Include="Core\Common\Types\DirectorTypes.h" />
+    <ClInclude Include="Core\Common\Types\InputTypes.h" />
+    <ClInclude Include="Core\Common\Types\TimelineTypes.h" />
+    <ClInclude Include="Core\Common\Types\UserInterfaceTypes.h" />
     <ClInclude Include="Core\Scanner\Scanner.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
@@ -231,12 +234,14 @@
     </ClInclude>
     <ClInclude Include="Hooks\UserInterface\GetRawInputData_Hook.h" />
     <ClInclude Include="Hooks\UserInterface\Present_Hook.h" />
+    <ClInclude Include="Hooks\UserInterface\ResizeBuffers_Hook.h" />
     <ClInclude Include="Hooks\UserInterface\WndProc_Hook.h" />
     <ClInclude Include="Ignore\BaseHook.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Proxy\ProxyExports.h" />
+    <ClInclude Include="Utils\DXUtils.h" />
     <ClInclude Include="Utils\Formatting.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
@@ -354,6 +359,7 @@
     </ClCompile>
     <ClCompile Include="Hooks\UserInterface\GetRawInputData_Hook.cpp" />
     <ClCompile Include="Hooks\UserInterface\Present_Hook.cpp" />
+    <ClCompile Include="Hooks\UserInterface\ResizeBuffers_Hook.cpp" />
     <ClCompile Include="Hooks\UserInterface\WndProc_Hook.cpp" />
     <ClCompile Include="Ignore\BaseHook.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -364,6 +370,7 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Utils\DXUtils.cpp" />
     <ClCompile Include="Utils\Formatting.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>

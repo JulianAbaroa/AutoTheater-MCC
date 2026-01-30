@@ -15,81 +15,66 @@
 #include <algorithm>
 #include <vector>
 
+static PhaseUI GetPhaseUI(AutoTheaterPhase phase)
+{
+	switch (phase)
+	{
+	case AutoTheaterPhase::Timeline:
+		return { "Timeline", ImVec4(0.4f, 0.7f, 1.0f, 1.0f) };
+
+	case AutoTheaterPhase::Director:
+		return { "Director", ImVec4(0.4f, 1.0f, 0.4f, 1.0f) };
+
+	case AutoTheaterPhase::Default:
+	default:
+		return { "Default", ImVec4(0.7f, 0.7f, 0.7f, 1.0f) };
+	}
+}
+
+
 static void DrawStatusBar()
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(15, 0));
 
-	ImGui::Text("Phase:");
+	// Section: Phase Selector
+	ImGui::TextDisabled("Phase:");
 	ImGui::SameLine();
 
-	AutoTheaterPhase current = g_pState->currentPhase.load();
-	ImVec4 phaseColor;
-	std::string phaseName;
-
-	switch (current)
-	{
-	case AutoTheaterPhase::Timeline: 
-		phaseColor = ImVec4(0.4f, 0.7f, 1.0f, 1.0f);
-		phaseName = "Timeline";
-		break;
-
-	case AutoTheaterPhase::Director:
-		phaseColor = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
-		phaseName = "Director";
-		break;
-
-	default: 
-		phaseColor = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
-		phaseName = "Default";
-	}
-
+	AutoTheaterPhase currentPhase = g_pState->currentPhase.load();
+	PhaseUI ui = GetPhaseUI(currentPhase);
+	
 	bool isTheater = g_pState->isTheaterMode.load();
 	if (isTheater) ImGui::BeginDisabled();
 
-	ImGui::PushStyleColor(ImGuiCol_Text, phaseColor);
-	if (ImGui::Selectable(phaseName.c_str(), false, 0, ImGui::CalcTextSize(phaseName.c_str())))
+	ImGui::PushStyleColor(ImGuiCol_Text, ui.Color);
+	if (ImGui::Selectable(ui.Name, false, 0, ImGui::CalcTextSize(ui.Name)))
 	{
 		ImGui::OpenPopup("PhaseSelectorPopup");
 	}
 	ImGui::PopStyleColor();
 
-	if (!ImGui::IsPopupOpen("PhaseSelectorPopup"))
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 	{
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		{
-			if (isTheater)
-			{
-				ImGui::SetTooltip("Manual phase change disabled during Theater mode.");
-			}
-			else
-			{
-				ImGui::SetTooltip("Click to change phase manually.");
-			}
-		}
+		ImGui::SetTooltip(isTheater ? "Disabled during Theater mode." : "Click to change phase.");
 	}
 
 	if (ImGui::BeginPopup("PhaseSelectorPopup"))
 	{
-		if (ImGui::MenuItem("Default", nullptr, current == AutoTheaterPhase::Default))
-		{
-			MainThread::UpdateToPhase(AutoTheaterPhase::Default);
-		}
+		auto AddPhaseItem = [&](const char* label, AutoTheaterPhase phase) {
+			if (ImGui::MenuItem(label, nullptr, currentPhase == phase))
+			{
+				MainThread::UpdateToPhase(phase);
+			}
+		};
 
-		if (ImGui::MenuItem("Timeline", nullptr, current == AutoTheaterPhase::Timeline))
-		{
-			MainThread::UpdateToPhase(AutoTheaterPhase::Timeline);
-		}
-
-		if (ImGui::MenuItem("Director", nullptr, current == AutoTheaterPhase::Director))
-		{
-			MainThread::UpdateToPhase(AutoTheaterPhase::Director);
-		}
-
-		ImGui::EndPopup();
+		AddPhaseItem("Default", AutoTheaterPhase::Default);
+		AddPhaseItem("Timeline", AutoTheaterPhase::Timeline);
+		AddPhaseItem("Director", AutoTheaterPhase::Director);
 	}
 
 	if (isTheater) ImGui::EndDisabled();
 
+	// Section: Toggles
 	ImGui::SameLine();
 	bool autoUpdatePhase = g_pState->autoUpdatePhase.load();
 	if (ImGui::Checkbox("Auto-Update Phase", &autoUpdatePhase))
@@ -97,30 +82,38 @@ static void DrawStatusBar()
 		g_pState->autoUpdatePhase.store(autoUpdatePhase);
 	}
 
+	// Section: Engine Status
 	ImGui::SameLine();
 	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 	ImGui::SameLine();
 
 	ImGui::Text("Game Engine:");
 	ImGui::SameLine();
-	switch (g_pState->engineStatus.load())
+
+	auto status = g_pState->engineStatus.load();
+	if (status == EngineStatus::Awaiting) 
 	{
-	case EngineStatus::Idle:
-		ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "AWAITING..."); 
-		break;
-
-	case EngineStatus::Running:
-		ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "ONLINE");  
-		break;
-
-	case EngineStatus::Destroyed:
-		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "OFFLINE");  
-		break;
+		ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "AWAITING...");
+	}
+	else if (status == EngineStatus::Running)
+	{
+		ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "RUNNING");
+	}
+	else if (status == EngineStatus::Destroyed)
+	{
+		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "DESTROYED");
 	}
 
 	ImGui::PopStyleVar();
 	ImGui::Separator();
 	ImGui::Spacing();
+}
+
+void HandleWindowReset()
+{
+	if (!g_pState->forceMenuReset.load()) return;
+
+
 }
 
 void UserInterface::DrawMainInterface()

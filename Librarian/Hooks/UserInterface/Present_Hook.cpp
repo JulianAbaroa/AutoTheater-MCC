@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Utils/Logger.h"
+#include "Utils/DXUtils.h"
 #include "Core/Systems/Theater.h"
 #include "Core/Common/GlobalState.h"
 #include "Core/UserInterface/UserInterface.h"
@@ -111,8 +112,20 @@ static HRESULT __stdcall hkPresent(
 	UserInterface::DrawMainInterface();
 
 	ImGui::Render();
-	g_pState->pContext->OMSetRenderTargets(1, &g_pState->pMainRenderTargetView, NULL);
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+	if (g_pState->pMainRenderTargetView)
+	{
+		ID3D11RenderTargetView* oldRTV = nullptr;
+		ID3D11DepthStencilView* oldDSV = nullptr;
+		g_pState->pContext->OMGetRenderTargets(1, &oldRTV, &oldDSV);
+
+		g_pState->pContext->OMSetRenderTargets(1, &g_pState->pMainRenderTargetView, NULL);
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+		g_pState->pContext->OMSetRenderTargets(1, &oldRTV, oldDSV);
+		if (oldRTV) oldRTV->Release();
+		if (oldDSV) oldDSV->Release();
+	}
 
 	if (g_pState->isTheaterMode)
 	{
@@ -122,85 +135,16 @@ static HRESULT __stdcall hkPresent(
 	return original_Present(pSwapChain, SyncInterval, Flags);
 }
 
-static void* LocateDX11PresentAddress() {
-	void** pVMT = nullptr;
-	std::stringstream ss;
-
-	WNDCLASSEX wc = {};
-	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = DefWindowProc;
-	wc.hInstance = GetModuleHandle(NULL);
-	wc.lpszClassName = L"DummyWindowClass";
-
-	if (!RegisterClassEx(&wc)) {
-		Logger::LogAppend("ERROR: RegisterClassEx failed");
-		return nullptr;
-	}
-
-	HWND hWnd = CreateWindowEx(
-		0, wc.lpszClassName, L"Dummy Window",
-		WS_OVERLAPPEDWINDOW, 0, 0, 100, 100,
-		NULL, NULL, wc.hInstance, NULL
-	);
-
-	if (!hWnd) {
-		Logger::LogAppend("ERROR: CreateWindowEx failed");
-		UnregisterClass(wc.lpszClassName, wc.hInstance);
-		return nullptr;
-	}
-
-	DXGI_SWAP_CHAIN_DESC sd = {};
-	sd.BufferCount = 1;
-	sd.BufferDesc.Width = 800;
-	sd.BufferDesc.Height = 600;
-	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	sd.OutputWindow = hWnd;
-	sd.SampleDesc.Count = 1;
-	sd.Windowed = TRUE;
-	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-
-	ID3D11Device* pDevice = nullptr;
-	IDXGISwapChain* pSwapChain = nullptr;
-	ID3D11DeviceContext* pContext = nullptr;
-	void* presentAddress = nullptr;
-
-	HRESULT hr = D3D11CreateDeviceAndSwapChain(
-		NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,                       
-		0, NULL, 0, D3D11_SDK_VERSION, &sd, 
-		&pSwapChain, &pDevice, NULL, &pContext                   
-	);
-
-	if (FAILED(hr)) {
-		Logger::LogAppend("ERROR: D3D11CreateDeviceAndSwapChain failed");
-		goto cleanup;
-	}
-
-	pVMT = *reinterpret_cast<void***>(pSwapChain);
-	presentAddress = pVMT[PRESENT_VMT_INDEX];
-
-cleanup:
-	if (pContext) pContext->Release();
-	if (pDevice) pDevice->Release();
-	if (pSwapChain) pSwapChain->Release();
-
-	DestroyWindow(hWnd);
-	UnregisterClass(wc.lpszClassName, wc.hInstance);
-
-	return presentAddress;
-}
-
 void Present_Hook::Install() {
     if (g_Present_Hook_Installed.load()) return;
 
-    void* presentAddress = LocateDX11PresentAddress();
-    if (!presentAddress) {
+    auto addresses = DXUtils::GetVtableAddresses();
+    if (!addresses.Present) {
         Logger::LogAppend("Failed to obtain the address of Present()");
         return;
     }
 
-    g_Present_Address = presentAddress;
+    g_Present_Address = addresses.Present;
     if (MH_CreateHook(g_Present_Address, &hkPresent, reinterpret_cast<LPVOID*>(&original_Present)) != MH_OK) {
         Logger::LogAppend("Failed to create Present hook");
         return;

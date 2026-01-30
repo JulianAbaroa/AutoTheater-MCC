@@ -4,10 +4,11 @@
 #include "Core/Threads/MainThread.h"
 #include "Core/Common/GlobalState.h"
 #include "Core/Common/PersistenceManager.h"
-#include "Hooks/UserInterface/Present_Hook.h"
 #include "Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include "Hooks/Lifecycle/EngineInitialize_Hook.h"
 #include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
+#include "Hooks/UserInterface//ResizeBuffers_Hook.h"
+#include "Hooks/UserInterface/Present_Hook.h"
 #include <sstream>
 #include <chrono>
 
@@ -128,11 +129,15 @@ void MainThread::Run() {
 
     Logger::LogAppend("Installing DX11 Present Hook...");
     Present_Hook::Install();
+    ResizeBuffers_Hook::Install();
 
     g_pState->currentPhase.store(AutoTheaterPhase::Timeline);
     g_pState->logGameEvents.store(true);
 
     PersistenceManager::InitializePaths();
+    PersistenceManager::LoadEventRegistry();
+
+    Logger::LogAppend("Configuration and EventRegistry loaded");
 
     while (g_pState->running.load())
     {
@@ -186,7 +191,9 @@ void MainThread::Run() {
 
     Logger::LogAppend("=== Main Thread Stopped ===");
 
+    ResizeBuffers_Hook::Uninstall();
     Present_Hook::Uninstall();
+
     EngineInitialize_Hook::Uninstall();
     DestroySubsystems_Hook::Uninstall();
     GameEngineStart_Hook::Uninstall();

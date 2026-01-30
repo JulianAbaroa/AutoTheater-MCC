@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Common/Types/AutoTheaterTypes.h"
 #include <thread>
 
 extern std::thread g_MainThread;
