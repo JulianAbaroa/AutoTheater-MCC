@@ -47,6 +47,28 @@ std::wstring Formatting::StringToWString(const std::string& str) {
     return wstrTo;
 }
 
+const char* Formatting::GetEventClassName(EventClass eventClass)
+{
+    switch (eventClass)
+    {
+    case EventClass::Fallback:              return "FallBack";
+    case EventClass::Server:                return "Server";
+    case EventClass::Match:                 return "Match";
+    case EventClass::Custom:                return "Custom";
+    case EventClass::CaptureTheFlag:        return "CaptureTheFlag";
+    case EventClass::Assault:               return "Assault";
+    case EventClass::Slayer:                return "Slayer";
+    case EventClass::Juggernaut:            return "Juggernaut";
+    case EventClass::Race:                  return "Race";
+    case EventClass::KingOfTheHill:         return "KingOfTheHill";
+    case EventClass::Territories:           return "Territories";
+    case EventClass::Infection:             return "Infection";
+    case EventClass::Oddball:               return "Oddball";
+    case EventClass::KillRelated:           return "KillRelated";
+    default:                                return "Unknown";
+    }
+}
+
 std::string Formatting::EventTypeToString(EventType type) {
     switch (type) {
         // Server types

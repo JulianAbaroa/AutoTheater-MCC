@@ -4,9 +4,28 @@
 #include <vector>
 #include <string>
 
-/** * @brief Categories all identifiable game occurrences captured from the engine.
- * These events serve as data points for the Timeline.
- */
+// Groups different EventTypes into logical classes.
+enum class EventClass
+{
+	Unknown,
+	Fallback,
+	Server,
+	Match,
+	Custom,
+	CaptureTheFlag,
+	Assault,
+	Slayer,
+	Juggernaut,
+	Race,
+	KingOfTheHill,
+	Territories,
+	Infection,
+	Oddball,
+	KillRelated
+};
+
+// Categorizes all identifiable game occurrences captured from the engine.
+// These events serve as data points for the Timeline.
 enum class EventType
 {
 	// Fallback and internal logic.
@@ -84,6 +103,9 @@ struct EventInfo
 	// The priority score assigned to this event.
 	// Higher weights increase the likelihood of the Director focusing on this event.
 	int Weight;
+
+	// The class where this event belongs.
+	EventClass Class;
 };
 
 /** * @brief Simplified structure to represent team interactions within an event.

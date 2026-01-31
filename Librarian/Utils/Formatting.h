@@ -14,5 +14,6 @@ namespace Formatting
     std::wstring StringToWString(const std::string& str);
 
     std::string EventTypeToString(EventType type);
+    const char* GetEventClassName(EventClass eventClass);
     const std::unordered_map<EventType, EventMetadata>& GetEventDb();
 }

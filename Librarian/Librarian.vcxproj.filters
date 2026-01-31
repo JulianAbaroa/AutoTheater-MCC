@@ -147,9 +147,6 @@
     <ClInclude Include="Core\Common\GlobalState.h">
       <Filter>Core\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Common\Registry.h">
-      <Filter>Core\Common</Filter>
-    </ClInclude>
     <ClInclude Include="Core\UserInterface\UserInterface.h">
       <Filter>Core\UserInterface</Filter>
     </ClInclude>
@@ -228,6 +225,9 @@
     <ClInclude Include="Core\UserInterface\Tabs\Primary\TheaterTab.h">
       <Filter>Core\UserInterface\Tabs\Primary</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Common\EventRegistry.h">
+      <Filter>Core\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\DllMain.cpp">
@@ -295,9 +295,6 @@
     </ClCompile>
     <ClCompile Include="Hooks\Lifecycle\GameEngineStart_Hook.cpp">
       <Filter>Hooks\Lifecycle</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Common\Registry.cpp">
-      <Filter>Core\Common</Filter>
     </ClCompile>
     <ClCompile Include="Core\Common\GlobalState.cpp">
       <Filter>Core\Common</Filter>
@@ -382,6 +379,9 @@
     </ClCompile>
     <ClCompile Include="Core\UserInterface\Tabs\Primary\TimelineTab.cpp">
       <Filter>Core\UserInterface\Tabs\Primary</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Common\EventRegistry.cpp">
+      <Filter>Core\Common</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

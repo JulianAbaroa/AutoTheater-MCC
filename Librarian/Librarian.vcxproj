@@ -146,13 +146,11 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Core\Common\EventRegistry.h" />
     <ClInclude Include="Core\Common\GlobalState.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Core\Common\PersistenceManager.h" />
-    <ClInclude Include="Core\Common\Registry.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="Core\Common\Types\AutoTheaterTypes.h" />
     <ClInclude Include="Core\Common\Types\BlamTypes.h" />
     <ClInclude Include="Core\Common\Types\DirectorTypes.h" />
@@ -251,11 +249,11 @@
     <ClInclude Include="Utils\ThreadUtils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Core\Common\EventRegistry.cpp" />
     <ClCompile Include="Core\Common\GlobalState.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Core\Common\PersistenceManager.cpp" />
-    <ClCompile Include="Core\Common\Registry.cpp" />
     <ClCompile Include="Core\DllMain.cpp" />
     <ClCompile Include="Core\Scanner\Scanner.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>

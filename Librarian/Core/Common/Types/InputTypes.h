@@ -1,8 +1,7 @@
 #pragma once
 
-/** * @brief Maps specific game actions to their internal engine Button IDs.
- * These values correspond to the IDs expected by the engine's input polling logic.
- */
+// Maps specific game actions to their internal engine Button IDs.
+// These values correspond to the IDs expected by the engine's input polling logic.
 enum class InputAction
 {
 	Unknown = -1,
@@ -30,9 +29,8 @@ enum class InputAction
 	TheaterPanning,			// I didn't get this one.
 };
 
-/** * @brief Defines the operational scope for inputs.
- * Ensures the Director only injects commands when the engine is in the correct state.
- */
+// Defines the operational scope for inputs.
+// Ensures the Director only injects commands when the engine is in the correct state.
 enum class InputContext
 {
 	Unknown, Communication, Movement,
@@ -40,16 +38,14 @@ enum class InputContext
 	Theater, Forge,
 };
 
-/** * @brief Represents a paired action and context for the injection queue.
- */
+// Represents a paired action and context for the injection queue.
 struct GameInput
 {
 	InputContext InputContext;
 	InputAction InputAction;
 };
 
-/** * @brief Data structure used to request an input injection with specific parameters.
- */
+// Data structure used to request an input injection with specific parameters.
 struct InputRequest
 {
 	InputAction Action;

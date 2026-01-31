@@ -5,9 +5,7 @@
 
 #pragma pack(push, 1)
 
-/** * @brief Player structure within the global PlayerTable.
- * Contains spatial, networking and state data for each player.
- */
+// Player structure within the global PlayerTable.
 struct RawPlayer
 {
 	// Unique Identifier, likely networking-related.
@@ -44,8 +42,7 @@ struct RawPlayer
 	std::byte _pad5[908];
 };
 
-/** * @brief Physical biped representation in the game world.
- */
+// Physical biped object in the game world.
 struct RawBiped
 {
 	// Dynamic Class ID: Session-specific indentifier for the biped.
@@ -59,9 +56,8 @@ struct RawBiped
 	// ... additional fields.
 };
 
-/** * @brief Weapon object data.
- * Note: Structure may vary across different weapon classes.
- */
+// Weapon object data. 
+// Note: Structure may vary across different weapon classes.
 struct RawWeapon
 {
 	// Dynamic Class ID: Session-specific identifier for this weapon type.
@@ -90,9 +86,8 @@ struct RawWeapon
 	// ... additional fields.
 };
 
-/** * @brief Base data structure for Game Events used by UIBuildDynamicMessage.
- * Defines interaction between a source (Cause) and a target (Effect).
- */
+// Base data structure for Game Events used by UIBuildDynamicMessage.
+// Defines interaction between a source (Cause) and a target (Effect).
 struct EventData
 {
 	// Cause data (The instigator of the event).

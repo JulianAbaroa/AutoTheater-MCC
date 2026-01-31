@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
-#include "Core/Common/Registry.h"
+#include "Core/Common/EventRegistry.h"
 #include "Core/Common/GlobalState.h"
 #include "Core/Common/Types/TimelineTypes.h"
 #include "Core/Systems/Timeline.h"

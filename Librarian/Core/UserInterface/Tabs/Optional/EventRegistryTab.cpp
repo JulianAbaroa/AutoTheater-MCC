@@ -9,24 +9,6 @@
 #include <string>
 #include <set>
 
-// TODO: Maybe do a special struct instead of this
-std::string GetEventCategory(EventType type) {
-	if (type >= EventType::Join && type <= EventType::JoinedTeam) return "Server";
-	if (type >= EventType::TookLead && type <= EventType::Wins) return "Match";
-	if (type >= EventType::Custom && type <= EventType::Custom) return "Custom";
-	if (type >= EventType::CaptureTheFlag && type <= EventType::FlagDropped) return "CTF";
-	if (type >= EventType::Assault && type <= EventType::BombReset) return "Assault";
-	if (type >= EventType::Slayer && type <= EventType::Slayer) return "Slayer";
-	if (type >= EventType::Juggernaut && type <= EventType::YouKilledTheJuggernaut) return "Juggernaut";
-	if (type >= EventType::Race && type <= EventType::Race) return "Race";
-	if (type >= EventType::KingOfTheHill && type <= EventType::HillMoved) return "KOTH";
-	if (type >= EventType::Territories && type <= EventType::TerritoryLost) return "Territories";
-	if (type >= EventType::Infection && type <= EventType::YouAreAZombie) return "Infection";
-	if (type >= EventType::Oddball && type <= EventType::BallDropped) return "Oddball";
-	if (type >= EventType::Headshot && type <= EventType::Broseidon) return "Kills/Medals";
-	return "Others";
-}
-
 void EventRegistryTab::Draw()
 {
 	static char filter[64] = "";
@@ -135,20 +117,35 @@ void EventRegistryTab::Draw()
 		}
 		else
 		{
-			const char* categories[] = {
-				"Server", "Match", "CTF", "Assault", "Slayer", "Juggernaut",
-				"Race", "KOTH", "Territories", "Infection", "Oddball",
-				"Kills/Medals", "Custom"
+			static const EventClass categories[] = {
+				EventClass::Server,
+				EventClass::Match,
+				EventClass::Custom,
+				EventClass::CaptureTheFlag,
+				EventClass::Assault,
+				EventClass::Slayer,
+				EventClass::Juggernaut,
+				EventClass::Race,
+				EventClass::KingOfTheHill,
+				EventClass::Territories,
+				EventClass::Infection,
+				EventClass::Oddball,
+				EventClass::KillRelated
 			};
 
-			for (const char* catName : categories)
-			{
-				if (ImGui::CollapsingHeader(catName, ImGuiTreeNodeFlags_None))
+			for (EventClass cat : categories)
+			{ 
+				const char* catName = Formatting::GetEventClassName(cat);
+
+				if (ImGui::CollapsingHeader(catName))
 				{
 					ImGui::Indent(10.0f);
 					for (auto& item : uniqueTypes)
 					{
-						if (GetEventCategory(item.Type) == catName) DrawRow(item);
+						if (item.Class == cat)
+						{
+							DrawRow(item);
+						}
 					}
 					ImGui::Unindent(10.0f);
 				}
