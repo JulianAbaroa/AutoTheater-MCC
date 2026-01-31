@@ -13,13 +13,13 @@ void PersistenceManager::InitializePaths()
 	{
 		std::filesystem::path base(localLowPath);
 
-		g_pState->mccTempMovieDirectory = (base / "MCC/Temporary/UserContent/HaloReach/Movie").string();
+		g_pState->MCCTempMovieDirectory = (base / "MCC/Temporary/UserContent/HaloReach/Movie").string();
 		CoTaskMemFree(localLowPath);
 	}
 
 	LoadPreferences();
 
-	if (g_pState->useAppData.load())
+	if (g_pState->UseAppData.load())
 	{
 		CreateAppData();
 	}
@@ -27,20 +27,20 @@ void PersistenceManager::InitializePaths()
 
 void PersistenceManager::SavePreferences()
 {
-	std::string configPath = g_pState->baseDirectory + "\\config.ini";
+	std::string configPath = g_pState->BaseDirectory + "\\config.ini";
 	std::ofstream file(configPath);
 	if (file.is_open())
 	{
-		file << "useAppData=" << (g_pState->useAppData.load() ? "1" : "0") << "\n";
+		file << "useAppData=" << (g_pState->UseAppData.load() ? "1" : "0") << "\n";
 		file.close();
 	}
 }
 
 void PersistenceManager::LoadPreferences()
 {
-	g_pState->useAppData.store(false);
+	g_pState->UseAppData.store(false);
 
-	std::string configPath = g_pState->baseDirectory + "\\config.ini";
+	std::string configPath = g_pState->BaseDirectory + "\\config.ini";
 	std::ifstream file(configPath);
 	if (file.is_open())
 	{
@@ -49,7 +49,7 @@ void PersistenceManager::LoadPreferences()
 		{
 			if (line.find("useAppData=1") != std::string::npos)
 			{
-				g_pState->useAppData.store(true);
+				g_pState->UseAppData.store(true);
 			}
 		}
 
@@ -59,8 +59,8 @@ void PersistenceManager::LoadPreferences()
 
 void PersistenceManager::CreateAppData()
 {
-	if (!g_pState->useAppData.load() ||
-		!g_pState->appDataDirectory.empty()) return;
+	if (!g_pState->UseAppData.load() ||
+		!g_pState->AppDataDirectory.empty()) return;
 
 	PWSTR pathTemp = NULL;
 
@@ -76,7 +76,7 @@ void PersistenceManager::CreateAppData()
 		if (std::filesystem::create_directories(basePath, errorCode) ||
 			std::filesystem::exists(basePath)
 			) {
-			g_pState->appDataDirectory = basePath.string();
+			g_pState->AppDataDirectory = basePath.string();
 		}
 
 		CoTaskMemFree(pathTemp);
@@ -85,13 +85,13 @@ void PersistenceManager::CreateAppData()
 
 void PersistenceManager::DeleteAppData()
 {
-	if (g_pState->appDataDirectory.empty()) return;
+	if (g_pState->AppDataDirectory.empty()) return;
 
 	std::error_code errorCode;
 
-	if (std::filesystem::remove_all(g_pState->appDataDirectory, errorCode) > 0)
+	if (std::filesystem::remove_all(g_pState->AppDataDirectory, errorCode) > 0)
 	{
-		g_pState->appDataDirectory.clear();
+		g_pState->AppDataDirectory.clear();
 	}
 
 	if (errorCode)
@@ -147,7 +147,7 @@ std::string PersistenceManager::CalculateFileHash(const std::string& sourceFilmP
 
 void PersistenceManager::SaveReplay(const std::string& sourceFilmPath)
 {
-	if (sourceFilmPath.empty() || g_pState->appDataDirectory.empty()) return;
+	if (sourceFilmPath.empty() || g_pState->AppDataDirectory.empty()) return;
 
 	try
 	{
@@ -158,8 +158,8 @@ void PersistenceManager::SaveReplay(const std::string& sourceFilmPath)
 
 		std::filesystem::path destDir;
 		{
-			std::lock_guard lock(g_pState->configMutex);
-			destDir = std::filesystem::path(g_pState->appDataDirectory) / "Replays" / fileHash;
+			std::lock_guard lock(g_pState->ConfigMutex);
+			destDir = std::filesystem::path(g_pState->AppDataDirectory) / "Replays" / fileHash;
 		}
 
 		std::filesystem::create_directories(destDir);
@@ -173,11 +173,11 @@ void PersistenceManager::SaveReplay(const std::string& sourceFilmPath)
 		SaveMetadata(fileHash, fileHash);
 
 		{
-			std::lock_guard lock(g_pState->replayManagerMutex);
-			g_pState->activeReplayHash = fileHash;
+			std::lock_guard lock(g_pState->ReplayManagerMutex);
+			g_pState->ActiveReplayHash = fileHash;
 		}
 
-		g_pState->refreshReplayList.store(true);
+		g_pState->RefreshReplayList.store(true);
 		Logger::LogAppend(("Replay indexed by hash: " + fileHash.substr(0, 8) + "...").c_str());
 	}
 	catch (const std::exception& e)
@@ -192,14 +192,14 @@ void PersistenceManager::DeleteReplay(const std::string& hash)
 	{
 		std::filesystem::path dir;
 		{
-			std::lock_guard lock(g_pState->configMutex);
-			dir = std::filesystem::path(g_pState->appDataDirectory) / "Replays" / hash;
+			std::lock_guard lock(g_pState->ConfigMutex);
+			dir = std::filesystem::path(g_pState->AppDataDirectory) / "Replays" / hash;
 		}
 			
 		if (std::filesystem::exists(dir))
 		{
 			std::filesystem::remove_all(dir);
-			g_pState->refreshReplayList.store(true);
+			g_pState->RefreshReplayList.store(true);
 			Logger::LogAppend(("Replay deleted: " + hash).c_str());
 		}
 	}
@@ -215,8 +215,8 @@ void PersistenceManager::SaveMetadata(const std::string& hash, const std::string
 {
 	std::filesystem::path path;
 	{
-		std::lock_guard lock(g_pState->configMutex);
-		path = std::filesystem::path(g_pState->appDataDirectory) / "Replays" / hash / "metadata.txt";
+		std::lock_guard lock(g_pState->ConfigMutex);
+		path = std::filesystem::path(g_pState->AppDataDirectory) / "Replays" / hash / "metadata.txt";
 	}
 
 	std::string finalName = defaultName;
@@ -236,9 +236,9 @@ void PersistenceManager::SaveMetadata(const std::string& hash, const std::string
 		inFile.close();
 	}
 	else {
-		std::lock_guard lock(g_pState->replayManagerMutex);
-		author = g_pState->currentMetadata.Author;
-		info = g_pState->currentMetadata.Info;
+		std::lock_guard lock(g_pState->ReplayManagerMutex);
+		author = g_pState->CurrentMetadata.Author;
+		info = g_pState->CurrentMetadata.Info;
 	}
 
 	std::ofstream file(path, std::ios::trunc);
@@ -256,7 +256,7 @@ void PersistenceManager::SaveMetadata(const std::string& hash, const std::string
 std::vector<SavedReplay> PersistenceManager::GetSavedReplays()
 {
 	std::vector<SavedReplay> replays;
-	std::filesystem::path root = std::filesystem::path(g_pState->appDataDirectory) / "Replays";
+	std::filesystem::path root = std::filesystem::path(g_pState->AppDataDirectory) / "Replays";
 
 	if (!std::filesystem::exists(root)) return replays;
 
@@ -304,12 +304,12 @@ std::vector<SavedReplay> PersistenceManager::GetSavedReplays()
 
 void PersistenceManager::RestoreReplay(const SavedReplay& replay)
 {
-	if (g_pState->mccTempMovieDirectory.empty()) return;
+	if (g_pState->MCCTempMovieDirectory.empty()) return;
 
 	try
 	{
 		std::filesystem::path src = replay.FullPath / replay.MovFileName;
-		std::filesystem::path dest = std::filesystem::path(g_pState->mccTempMovieDirectory) / replay.MovFileName;
+		std::filesystem::path dest = std::filesystem::path(g_pState->MCCTempMovieDirectory) / replay.MovFileName;
 
 		if (std::filesystem::exists(dest))
 		{
@@ -335,8 +335,8 @@ void PersistenceManager::RenameReplay(const std::string& hash, const std::string
 	std::string author = "Unknown", info = "N/A";
 
 	{
-		std::lock_guard lock(g_pState->configMutex);
-		metaPath = std::filesystem::path(g_pState->appDataDirectory) / "Replays" / hash / "metadata.txt";
+		std::lock_guard lock(g_pState->ConfigMutex);
+		metaPath = std::filesystem::path(g_pState->AppDataDirectory) / "Replays" / hash / "metadata.txt";
 	}
 
 	if (std::filesystem::exists(metaPath)) {
@@ -355,7 +355,7 @@ void PersistenceManager::RenameReplay(const std::string& hash, const std::string
 		outFile << "Info=" << info << "\n";
 		outFile.close();
 
-		g_pState->refreshReplayList.store(true); 
+		g_pState->RefreshReplayList.store(true); 
 		Logger::LogAppend(("Replay renamed to: " + newName).c_str());
 	}
 }
@@ -379,10 +379,10 @@ float GetLastTimestampFromFile(const std::string& timelinePath)
 
 void PersistenceManager::SaveTimeline(const std::string& replayHash)
 {
-	if (!g_pState->useAppData.load() || g_pState->appDataDirectory.empty()) return;
+	if (!g_pState->UseAppData.load() || g_pState->AppDataDirectory.empty()) return;
 
 	std::filesystem::path timelinePath = 
-		std::filesystem::path(g_pState->appDataDirectory) / "Replays" / replayHash / "events.timeline";
+		std::filesystem::path(g_pState->AppDataDirectory) / "Replays" / replayHash / "events.timeline";
 
 	if (std::filesystem::exists(timelinePath))
 	{
@@ -390,10 +390,10 @@ void PersistenceManager::SaveTimeline(const std::string& replayHash)
 
 		float currentTimestamp = 0.0f;
 		{
-			std::lock_guard lock(g_pState->timelineMutex);
-			if (!g_pState->timeline.empty())
+			std::lock_guard lock(g_pState->TimelineMutex);
+			if (!g_pState->Timeline.empty())
 			{
-				currentTimestamp = g_pState->timeline.back().Timestamp;
+				currentTimestamp = g_pState->Timeline.back().Timestamp;
 			}
 		}
 
@@ -416,8 +416,8 @@ void PersistenceManager::SaveTimeline(const std::string& replayHash)
 	std::vector<GameEvent> timelineCopy;
 
 	{
-		std::lock_guard lock(g_pState->timelineMutex);
-		timelineCopy = g_pState->timeline;
+		std::lock_guard lock(g_pState->TimelineMutex);
+		timelineCopy = g_pState->Timeline;
 	}
 
 	size_t eventCount = timelineCopy.size();
@@ -456,7 +456,7 @@ void PersistenceManager::SaveTimeline(const std::string& replayHash)
 	}
 
 	file.close();
-	g_pState->refreshReplayList.store(true);
+	g_pState->RefreshReplayList.store(true);
 	Logger::LogAppend("Timeline synchronized successfully.");
 }
 
@@ -464,8 +464,8 @@ void PersistenceManager::LoadTimeline(const std::string& hash)
 {
 	std::filesystem::path path;
 	{
-		std::lock_guard lock(g_pState->configMutex);
-		path = std::filesystem::path(g_pState->appDataDirectory) / "Replays" / hash / "events.timeline";
+		std::lock_guard lock(g_pState->ConfigMutex);
+		path = std::filesystem::path(g_pState->AppDataDirectory) / "Replays" / hash / "events.timeline";
 	}
 
 	std::ifstream file(path, std::ios::binary);
@@ -526,13 +526,13 @@ void PersistenceManager::LoadTimeline(const std::string& hash)
 		}
 
 		{
-			std::lock_guard lock(g_pState->timelineMutex);
-			g_pState->timeline = std::move(tempTimeline);
+			std::lock_guard lock(g_pState->TimelineMutex);
+			g_pState->Timeline = std::move(tempTimeline);
 		}
 
 		{
-			std::lock_guard lock(g_pState->replayManagerMutex);
-			g_pState->activeReplayHash = hash;
+			std::lock_guard lock(g_pState->ReplayManagerMutex);
+			g_pState->ActiveReplayHash = hash;
 		}
 
 		std::stringstream ss;
@@ -553,9 +553,9 @@ void PersistenceManager::SaveEventRegistry()
 	std::unordered_map<std::wstring, EventInfo> eventRegistryCopy;
 
 	{
-		std::lock_guard<std::mutex> lockConfig(g_pState->configMutex);
-		path = g_pState->appDataDirectory + "\\event_weights.cfg";
-		eventRegistryCopy = g_pState->eventRegistry;
+		std::lock_guard<std::mutex> lockConfig(g_pState->ConfigMutex);
+		path = g_pState->AppDataDirectory + "\\event_weights.cfg";
+		eventRegistryCopy = g_pState->EventRegistry;
 	}
 
 	std::ofstream file(path);
@@ -576,9 +576,9 @@ void PersistenceManager::LoadEventRegistry()
 	std::unordered_map<std::wstring, EventInfo> eventRegistryCopy;
 
 	{
-		std::lock_guard<std::mutex> lockConfig(g_pState->configMutex);
-		path = g_pState->appDataDirectory + "\\event_weights.cfg";
-		eventRegistryCopy = g_pState->eventRegistry;
+		std::lock_guard<std::mutex> lockConfig(g_pState->ConfigMutex);
+		path = g_pState->AppDataDirectory + "\\event_weights.cfg";
+		eventRegistryCopy = g_pState->EventRegistry;
 	}
 
 	std::ifstream file(path);
@@ -608,8 +608,8 @@ void PersistenceManager::LoadEventRegistry()
 	}
 
 	{
-		std::lock_guard<std::mutex> lockConfig(g_pState->configMutex);
-		g_pState->eventRegistry = eventRegistryCopy;
+		std::lock_guard<std::mutex> lockConfig(g_pState->ConfigMutex);
+		g_pState->EventRegistry = eventRegistryCopy;
 	}
 
 	file.close();

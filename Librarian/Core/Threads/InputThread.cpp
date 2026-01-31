@@ -14,8 +14,8 @@ std::thread g_InputThread;
 
 static bool ExecuteInputWithFeedback(InputRequest req, std::function<bool()> successCondition, int timeoutMs, int stabilizeMs)
 {
-    g_pState->inputProcessing.store(true);
-    g_pState->nextInput.store({req.Context, req.Action });
+    g_pState->InputProcessing.store(true);
+    g_pState->NextInput.store({req.Context, req.Action });
 
     auto startWait = std::chrono::steady_clock::now();
     bool success = false;
@@ -30,12 +30,12 @@ static bool ExecuteInputWithFeedback(InputRequest req, std::function<bool()> suc
         std::this_thread::yield();
     }
 
-    g_pState->nextInput.store({ InputContext::Theater, InputAction::Unknown });
+    g_pState->NextInput.store({ InputContext::Theater, InputAction::Unknown });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(stabilizeMs));
 
-    std::lock_guard lock(g_pState->inputMutex);
-    g_pState->inputProcessing.store(false);
+    std::lock_guard lock(g_pState->InputMutex);
+    g_pState->InputProcessing.store(false);
     return success;
 }
 
@@ -49,9 +49,9 @@ void InputThread::Run()
         {'4', 0.1f},   {'3', 0.0f},
     };
 
-    while (g_pState->running.load())
+    while (g_pState->Running.load())
     {
-        if (!g_pState->isTheaterMode.load()) {
+        if (!g_pState->IsTheaterMode.load()) {
             ThreadUtils::WaitOrExit(100ms);
             continue;
         }
@@ -59,11 +59,11 @@ void InputThread::Run()
         InputRequest currentReq = { InputAction::Unknown, InputContext::Unknown };
 
         {
-            std::lock_guard<std::mutex> lock(g_pState->inputMutex);
-            if (!g_pState->inputQueue.empty())
+            std::lock_guard<std::mutex> lock(g_pState->InputMutex);
+            if (!g_pState->InputQueue.empty())
             {
-                currentReq = g_pState->inputQueue.front();
-                g_pState->inputQueue.pop();
+                currentReq = g_pState->InputQueue.front();
+                g_pState->InputQueue.pop();
             }
         }
 
@@ -71,20 +71,20 @@ void InputThread::Run()
         {
             if (currentReq.Action == InputAction::NextPlayer || currentReq.Action == InputAction::PreviousPlayer)
             {
-                uint8_t initialIdx = g_pState->followedPlayerIdx.load();
+                uint8_t initialIdx = g_pState->FollowedPlayerIdx.load();
 
                 auto condition = [initialIdx]() {
-                    return g_pState->followedPlayerIdx.load() != initialIdx;
+                    return g_pState->FollowedPlayerIdx.load() != initialIdx;
                 };
 
                 ExecuteInputWithFeedback(currentReq, condition, 500, 20);
             }
             else if (currentReq.Action == InputAction::ToggleFreecam)
             {
-                uint8_t initialCamState = g_pState->cameraAttached.load();
+                uint8_t initialCamState = g_pState->CameraAttached.load();
 
                 auto condition = [initialCamState]() {
-                    return g_pState->cameraAttached.load() != initialCamState;
+                    return g_pState->CameraAttached.load() != initialCamState;
                 };
 
                 if (!ExecuteInputWithFeedback(currentReq, condition, 500, 50)) {

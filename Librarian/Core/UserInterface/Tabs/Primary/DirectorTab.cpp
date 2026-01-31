@@ -6,8 +6,8 @@
 
 static void DrawDirectorSystemStatus()
 {
-	bool init = g_pState->directorInitialized.load();
-	bool hooks = g_pState->directorHooksReady.load();
+	bool init = g_pState->DirectorInitialized.load();
+	bool hooks = g_pState->DirectorHooksReady.load();
 
 	ImGui::AlignTextToFramePadding();
 	ImGui::TextDisabled("System Status:");
@@ -32,15 +32,15 @@ static void DrawDirectorSystemStatus()
 	}
 }
 
-static void DrawDirectorProgress(bool autoScroll)
+static void DrawDirectorProgress(bool& autoScroll)
 {
-	float lastTime = g_pState->lastReplayTime.load();
-	size_t currentIndex = g_pState->currentCommandIndex.load();
+	float lastTime = g_pState->LastReplayTime.load();
+	size_t currentIndex = g_pState->CurrentCommandIndex.load();
 	size_t totalCommands = 0;
 
 	{
-		std::lock_guard<std::mutex> lock(g_pState->directorMutex);
-		totalCommands = g_pState->script.size();
+		std::lock_guard<std::mutex> lock(g_pState->DirectorMutex);
+		totalCommands = g_pState->Script.size();
 	}
 
 	ImGui::AlignTextToFramePadding();
@@ -92,9 +92,9 @@ void DirectorTab::Draw()
 			ImGui::TableSetupColumn("Reason", ImGuiTableColumnFlags_WidthStretch);
 			ImGui::TableHeadersRow();
 
-			std::lock_guard<std::mutex> lock(g_pState->directorMutex);
-			const auto& script = g_pState->script;
-			size_t currentIndex = g_pState->currentCommandIndex.load();
+			std::lock_guard<std::mutex> lock(g_pState->DirectorMutex);
+			const auto& script = g_pState->Script;
+			size_t currentIndex = g_pState->CurrentCommandIndex.load();
 
 			for (size_t i = 0; i < script.size(); i++)
 			{

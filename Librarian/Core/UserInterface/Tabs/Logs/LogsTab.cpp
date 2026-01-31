@@ -32,16 +32,16 @@ void LogsTab::Draw()
 
     if (ImGui::Button("Clear Logs"))
     {
-        std::lock_guard lock(g_pState->logMutex);
-        g_pState->debugLogs.clear();
+        std::lock_guard lock(g_pState->LogMutex);
+        g_pState->DebugLogs.clear();
     }
 
     ImGui::SameLine();
     if (ImGui::Button("Copy to Clipboard"))
     {
         std::string allLogs;
-        std::lock_guard lock(g_pState->logMutex);
-        for (const auto& log : g_pState->debugLogs) allLogs += log + "\n";
+        std::lock_guard lock(g_pState->LogMutex);
+        for (const auto& log : g_pState->DebugLogs) allLogs += log + "\n";
         ImGui::SetClipboardText(allLogs.c_str());
     }
 
@@ -56,12 +56,12 @@ void LogsTab::Draw()
     ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
     {
-        std::lock_guard lock(g_pState->logMutex);
+        std::lock_guard lock(g_pState->LogMutex);
 
         std::string searchStr = searchBuffer;
         std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
 
-        for (const auto& log : g_pState->debugLogs)
+        for (const auto& log : g_pState->DebugLogs)
         {
             if (!searchStr.empty())
             {

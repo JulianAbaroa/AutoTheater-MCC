@@ -11,8 +11,8 @@ void Logger::LogAppend(const char* format) {
 
 	// 1. Crea una copia del logger path.
 	{
-		std::lock_guard<std::mutex> lock(g_pState->configMutex);
-		loggerPathCopy = g_pState->loggerPath;
+		std::lock_guard<std::mutex> lock(g_pState->ConfigMutex);
+		loggerPathCopy = g_pState->LoggerPath;
 	}
 
 	// 2. Abre el archivo y se va a la ultima linea escrita.
@@ -32,11 +32,11 @@ void Logger::LogAppend(const char* format) {
 
 	// 4. Añade el log actual al vector de logs.
 	{
-		std::lock_guard lock(g_pState->logMutex);
-		g_pState->debugLogs.push_back(std::string(format));
-		if (g_pState->debugLogs.size() > 500)
+		std::lock_guard lock(g_pState->LogMutex);
+		g_pState->DebugLogs.push_back(std::string(format));
+		if (g_pState->DebugLogs.size() > 500)
 		{
-			g_pState->debugLogs.erase(g_pState->debugLogs.begin());
+			g_pState->DebugLogs.erase(g_pState->DebugLogs.begin());
 		}
 	}
 }

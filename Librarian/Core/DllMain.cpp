@@ -22,7 +22,7 @@ static DWORD WINAPI InitializeLibrarian(LPVOID lpParam)
 
     // 2. Store the Module Handle of the main process (MCC-Win64-Shipping.exe).
     HMODULE handleModule = (HMODULE)lpParam;
-    g_pState->handleModule.store(handleModule);
+    g_pState->HandleModule.store(handleModule);
 
     // 3. Get the base directory where the main process is running.
     char buffer[MAX_PATH];
@@ -31,23 +31,23 @@ static DWORD WINAPI InitializeLibrarian(LPVOID lpParam)
 
     // 4. Store the base directory and logger path, and creates the logger file.
     {
-        std::lock_guard<std::mutex> lock(g_pState->configMutex);
-        g_pState->baseDirectory = std::string(buffer);
-        g_pState->loggerPath = g_pState->baseDirectory + "\\AutoTheater.txt";
-        std::ofstream ofs(g_pState->loggerPath, std::ios::trunc);
+        std::lock_guard<std::mutex> lock(g_pState->ConfigMutex);
+        g_pState->BaseDirectory = std::string(buffer);
+        g_pState->LoggerPath = g_pState->BaseDirectory + "\\AutoTheater.txt";
+        std::ofstream ofs(g_pState->LoggerPath, std::ios::trunc);
     }
 
-    Logger::LogAppend("AutoTheater Initializing...");
+    Logger::LogAppend("AutoTheater Initializing.");
 
     // 5. Attempt to initialize MinHook.
     if (MH_Initialize() != MH_OK)
     {
-        Logger::LogAppend("ERROR: MH_Initialize failed");
+        Logger::LogAppend("ERROR: MH_Initialize failed.");
         return 0;
     }
 
     // 6. Signal that the application started running.
-    g_pState->running.store(true);
+    g_pState->Running.store(true);
 
     // 7. Initialize main worker threads.
     
@@ -75,7 +75,7 @@ static void DeinitializeLibrarian(LPVOID lpReserved)
         Logger::LogAppend("[DLL_PROCESS_DETACH]");
 
         // 2. Signal that the application has stopped running.
-        g_pState->running.store(false);
+        g_pState->Running.store(false);
 
         std::this_thread::sleep_for(100ms);
 

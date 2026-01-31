@@ -34,14 +34,14 @@ static bool IsHookIntact(void* address)
 static void MainThread::ShutdownAndEject()
 {
     Logger::LogAppend("Critical Error: Initiating emergency shutdown.");
-    g_pState->running.store(false);
+    g_pState->Running.store(false);
 }
 
 static bool TryInstallLifecycleHooks(const char* context)
 {
     std::stringstream ss;
 
-    while (g_pState->running.load())
+    while (g_pState->Running.load())
     {
         if (EngineInitialize_Hook::Install(true) &&
              DestroySubsystems_Hook::Install(true) &&
@@ -61,29 +61,29 @@ static bool TryInstallLifecycleHooks(const char* context)
 
 void MainThread::UpdateToPhase(AutoTheaterPhase targetPhase)
 {
-    if (targetPhase == g_pState->currentPhase) return;
+    if (targetPhase == g_pState->CurrentPhase.load()) return;
 
     // Reset timeline
     if (targetPhase == AutoTheaterPhase::Timeline)
     {
-        g_pState->logGameEvents.store(true);
-        g_pState->isLastEvent.store(false);
+        g_pState->LogGameEvents.store(true);
+        g_pState->IsLastEvent.store(false);
         {
-            std::lock_guard lock(g_pState->timelineMutex);
-            g_pState->timeline.clear();
+            std::lock_guard lock(g_pState->TimelineMutex);
+            g_pState->Timeline.clear();
         }
     }
     else if (targetPhase == AutoTheaterPhase::Director)
     {
-        g_pState->logGameEvents.store(false);
-        g_pState->isLastEvent.store(true);
+        g_pState->LogGameEvents.store(false);
+        g_pState->IsLastEvent.store(true);
     }
-    g_pState->processedCount.store(0);
+    g_pState->ProcessedCount.store(0);
 
     // Reset theater
     {
-        std::lock_guard lock(g_pState->theaterMutex);
-        for (auto& player : g_pState->playerList)
+        std::lock_guard lock(g_pState->TheaterMutex);
+        for (auto& player : g_pState->PlayerList)
         {
             player.Name.clear();
             player.Tag.clear();
@@ -95,24 +95,24 @@ void MainThread::UpdateToPhase(AutoTheaterPhase targetPhase)
     }
 
     // Reset director
-    g_pState->directorInitialized.store(false);
-    g_pState->directorHooksReady.store(false);
-    g_pState->currentCommandIndex.store(0);
-    g_pState->lastReplayTime.store(0.0f);
+    g_pState->DirectorInitialized.store(false);
+    g_pState->DirectorHooksReady.store(false);
+    g_pState->CurrentCommandIndex.store(0);
+    g_pState->LastReplayTime.store(0.0f);
     {
-        std::lock_guard lock(g_pState->directorMutex);
-        g_pState->script.clear();
+        std::lock_guard lock(g_pState->DirectorMutex);
+        g_pState->Script.clear();
     }
 
     // Reset input
-    g_pState->nextInput.store({ InputContext::Unknown, InputAction::Unknown });
-    g_pState->inputProcessing.store(false);
+    g_pState->NextInput.store({ InputContext::Unknown, InputAction::Unknown });
+    g_pState->InputProcessing.store(false);
     {
-        std::lock_guard lock(g_pState->inputMutex);
-        g_pState->inputQueue = std::queue<InputRequest>();
+        std::lock_guard lock(g_pState->InputMutex);
+        g_pState->InputQueue = std::queue<InputRequest>();
     }
 
-    g_pState->currentPhase = targetPhase;
+    g_pState->CurrentPhase.store(targetPhase);
 }
 
 void MainThread::Run() {
@@ -131,38 +131,38 @@ void MainThread::Run() {
     Present_Hook::Install();
     ResizeBuffers_Hook::Install();
 
-    g_pState->currentPhase.store(AutoTheaterPhase::Timeline);
-    g_pState->logGameEvents.store(true);
+    g_pState->CurrentPhase.store(AutoTheaterPhase::Timeline);
+    g_pState->LogGameEvents.store(true);
 
     PersistenceManager::InitializePaths();
     PersistenceManager::LoadEventRegistry();
 
     Logger::LogAppend("Configuration and EventRegistry loaded");
 
-    while (g_pState->running.load())
+    while (g_pState->Running.load())
     {
         if (!IsHookIntact(g_EngineInitialize_Address) ||
             !IsHookIntact(g_DestroySubsystems_Address) ||
             !IsHookIntact(g_GameEngineStart_Address)
         ) {
-            if (g_pState->running.load())
+            if (g_pState->Running.load())
             {
                 Logger::LogAppend("Watchdog: Hook corrupted or memory restored. Rebooting...");
-                g_pState->engineStatus.store({ EngineStatus::Destroyed });
+                g_pState->EngineStatus.store({ EngineStatus::Destroyed });
             }
         }
 
-        if (g_pState->engineStatus.load() == EngineStatus::Destroyed)
+        if (g_pState->EngineStatus.load() == EngineStatus::Destroyed)
         {
             Logger::LogAppend("Game engine destruction detected, resetting lifecycle...");
 
             ThreadUtils::WaitOrExit(1000ms);
-            if (!g_pState->running.load()) break;
+            if (!g_pState->Running.load()) break;
 
-            if (g_pState->autoUpdatePhase.load() && g_pState->currentPhase != AutoTheaterPhase::Default)
+            if (g_pState->AutoUpdatePhase.load() && g_pState->CurrentPhase.load() != AutoTheaterPhase::Default)
             {
-                AutoTheaterPhase targetPhase = g_pState->currentPhase == AutoTheaterPhase::Timeline ? AutoTheaterPhase::Director : AutoTheaterPhase::Timeline;
-                if (g_pState->isTheaterMode.load()) MainThread::UpdateToPhase(targetPhase);
+                AutoTheaterPhase targetPhase = g_pState->CurrentPhase.load() == AutoTheaterPhase::Timeline ? AutoTheaterPhase::Director : AutoTheaterPhase::Timeline;
+                if (g_pState->IsTheaterMode.load()) MainThread::UpdateToPhase(targetPhase);
             }
 
             EngineInitialize_Hook::Uninstall();
@@ -170,7 +170,7 @@ void MainThread::Run() {
             GameEngineStart_Hook::Uninstall();
 
             ThreadUtils::WaitOrExit(1000ms);
-            if (!g_pState->running.load())
+            if (!g_pState->Running.load())
             {
                 Logger::LogAppend("MainThread: Shutdown in progress, skipping re-installation.");
                 break;
@@ -182,8 +182,8 @@ void MainThread::Run() {
                 return;
             }
 
-            g_pState->engineStatus.store({ EngineStatus::Awaiting });
-            g_pState->isTheaterMode.store(false);
+            g_pState->EngineStatus.store({ EngineStatus::Awaiting });
+            g_pState->IsTheaterMode.store(false);
         }
 
         ThreadUtils::WaitOrExit(1000ms);
@@ -202,7 +202,7 @@ void MainThread::Run() {
 
     Logger::LogAppend("=== Cleanup complete. Ejecting mod... ===");
 
-    HMODULE hMod = g_pState->handleModule.load();
+    HMODULE hMod = g_pState->HandleModule.load();
 
     if (hMod != nullptr)
     {

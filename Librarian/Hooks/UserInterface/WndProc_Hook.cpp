@@ -27,14 +27,14 @@ bool HandleHotKeys(WPARAM wParam)
 
 	if (ctrlPressed && wParam == '1')
 	{
-		g_pState->showMenu.store(!g_pState->showMenu.load());
+		g_pState->ShowMenu.store(!g_pState->ShowMenu.load());
 		return true;
 	}
 
 	if (ctrlPressed && wParam == '2')
 	{
-		g_pState->showMenu.store(true);
-		g_pState->forceMenuReset.store(true);
+		g_pState->ShowMenu.store(true);
+		g_pState->ForceMenuReset.store(true);
 		return true;
 	}
 
@@ -54,11 +54,11 @@ LRESULT __stdcall WndProc_Hook::hkWndProc(
 ) {
 	if (uMsg == WM_CLOSE || uMsg == WM_DESTROY || uMsg == WM_QUIT)
 	{
-		if (g_pState->running.load())
+		if (g_pState->Running.load())
 		{
 			Logger::LogAppend("EMERGENCY: App shutdown detected!");
-			g_pState->running.store(false);
-			g_pState->shutdownCV.notify_all();
+			g_pState->Running.store(false);
+			g_pState->ShutdownCV.notify_all();
 		}
 		
 		return CallWindowProc(original_WndProc, hWnd, uMsg, wParam, lParam);
@@ -69,7 +69,7 @@ LRESULT __stdcall WndProc_Hook::hkWndProc(
 		if (HandleHotKeys(wParam)) return 0;
 	}
 
-	if (g_pState->showMenu.load())
+	if (g_pState->ShowMenu.load())
 	{
 		if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
 		{

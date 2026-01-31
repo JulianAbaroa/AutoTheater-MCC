@@ -27,7 +27,7 @@ void __fastcall hkDestroySubsystems(void)
 	g_pState->pReplayTime.store(nullptr);
 	g_pState->pReplayTimeScale.store(nullptr);
 
-	g_pState->engineStatus.store({ EngineStatus::Destroyed });
+	g_pState->EngineStatus.store({ EngineStatus::Destroyed });
 
 	original_DestroySubsystems();
 }

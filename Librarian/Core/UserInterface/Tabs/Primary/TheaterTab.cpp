@@ -8,7 +8,7 @@
 
 static void DrawTheaterStatus()
 {
-	bool active = g_pState->isTheaterMode.load();
+	bool active = g_pState->IsTheaterMode.load();
 	ImGui::AlignTextToFramePadding();
 	if (active) ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "THEATER ACTIVE");
 	else		ImGui::TextDisabled("THEATER INACTIVE");
@@ -17,10 +17,10 @@ static void DrawTheaterStatus()
 	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 	ImGui::SameLine();
 
-	bool attachPOV = g_pState->attachThirdPersonPOV.load();
+	bool attachPOV = g_pState->AttachThirdPersonPOV.load();
 	if (ImGui::Checkbox("Lock Third-Person POV (Director Phase)", &attachPOV))
 	{
-		g_pState->attachThirdPersonPOV.store(attachPOV);
+		g_pState->AttachThirdPersonPOV.store(attachPOV);
 	}
 
 	if (ImGui::IsItemHovered())
@@ -29,7 +29,7 @@ static void DrawTheaterStatus()
 	}
 }
 
-static void DrawPlaybackControls(bool autoScroll)
+static void DrawPlaybackControls(bool& autoScroll)
 {
 	float* pTime = g_pState->pReplayTime.load();
 
@@ -40,7 +40,7 @@ static void DrawPlaybackControls(bool autoScroll)
 	ImGui::SameLine(0, 30.0f);
 
 	float* pScale = g_pState->pReplayTimeScale.load();
-	float realScale = g_pState->realTimeScale.load();
+	float realScale = g_pState->RealTimeScale.load();
 
 	if (pScale)
 	{
@@ -112,10 +112,10 @@ void TheaterTab::Draw()
 			ImGui::TableSetupColumn("Last Known World Position (X, Y, Z)", ImGuiTableColumnFlags_WidthStretch);
 			ImGui::TableHeadersRow();
 
-			std::lock_guard<std::mutex> lock(g_pState->theaterMutex);
-			uint8_t followedIdx = g_pState->followedPlayerIdx.load();
+			std::lock_guard<std::mutex> lock(g_pState->TheaterMutex);
+			uint8_t followedIdx = g_pState->FollowedPlayerIdx.load();
 
-			for (const auto& player : g_pState->playerList)
+			for (const auto& player : g_pState->PlayerList)
 			{
 				if (player.Name.empty()) continue;
 

@@ -46,26 +46,26 @@ void Theater::UpdateRealTimeScale()
 	double currentWallClock = std::chrono::duration<double>(now.time_since_epoch()).count();
 	float currentReplayTime = *pTimePtr;
 
-	double elapsedWall = currentWallClock - g_pState->anchorSystemTime.load();
+	double elapsedWall = currentWallClock - g_pState->AnchorSystemTime.load();
 
 	if (elapsedWall >= 0.1f)
 	{
-		float deltaReplay = currentReplayTime - g_pState->anchorReplayTime.load();
+		float deltaReplay = currentReplayTime - g_pState->AnchorReplayTime.load();
 
 		if (elapsedWall > 0)
 		{
 			float actualSpeed = static_cast<float>(deltaReplay / elapsedWall);
 
-			float lastScale = g_pState->realTimeScale.load();
+			float lastScale = g_pState->RealTimeScale.load();
 			float smoothed = (lastScale * 0.7f) + (actualSpeed * 0.3f);
 
 			if (smoothed < 0.01f) smoothed = 0.0f;
 
-			g_pState->realTimeScale.store(smoothed);
+			g_pState->RealTimeScale.store(smoothed);
 		}
 
-		g_pState->anchorSystemTime.store(currentWallClock);
-		g_pState->anchorReplayTime.store(currentReplayTime);
+		g_pState->AnchorSystemTime.store(currentWallClock);
+		g_pState->AnchorReplayTime.store(currentReplayTime);
 	}
 }
 
@@ -185,8 +185,8 @@ void Theater::RebuildPlayerListFromMemory()
 		}
 	}
 
-	std::lock_guard lock(g_pState->theaterMutex);
-	g_pState->playerList = nextPlayerList;
+	std::lock_guard lock(g_pState->TheaterMutex);
+	g_pState->PlayerList = nextPlayerList;
 }
 
 bool Theater::TryGetFollowedPlayerIdx(uint64_t pReplayModule)
@@ -197,7 +197,7 @@ bool Theater::TryGetFollowedPlayerIdx(uint64_t pReplayModule)
 
 		if (currentPlayer >= 0 && currentPlayer < 16)
 		{
-			g_pState->followedPlayerIdx.store(currentPlayer);
+			g_pState->FollowedPlayerIdx.store(currentPlayer);
 			return true;
 		}
 	}

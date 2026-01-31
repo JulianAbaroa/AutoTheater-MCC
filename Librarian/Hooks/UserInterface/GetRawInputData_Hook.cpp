@@ -18,7 +18,7 @@ UINT WINAPI GetRawInputData_Hook::hkGetRawInputData(
 	UINT dwSize = original_GetRawInputData(hRawInput, uiCommand, pData, pcbSize, cbSizeHeader);
 
 	if (dwSize != (UINT)-1 && pData != NULL && 
-		g_pState->showMenu.load() && g_pState->freezeMouse.load()
+		g_pState->ShowMenu.load() && g_pState->FreezeMouse.load()
 	) {
 		RAWINPUT* raw = (RAWINPUT*)pData;
 		if (raw->header.dwType == RIM_TYPEMOUSE)

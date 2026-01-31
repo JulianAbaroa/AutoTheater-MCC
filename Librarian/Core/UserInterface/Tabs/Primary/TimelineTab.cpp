@@ -22,17 +22,17 @@ static void DrawTimelineControls(bool& autoScroll)
 		if (ImGui::IsItemHovered()) ImGui::SetTooltip(tooltip);
 	};
 
-	AtomicCheckBox("Log Events", g_pState->logGameEvents, 
+	AtomicCheckBox("Log Events", g_pState->LogGameEvents,
 		"Enable/Disable writing events to the log file and Logs Tab.");
 	ImGui::SameLine();
 
-	AtomicCheckBox("Last Event", g_pState->isLastEvent,
+	AtomicCheckBox("Last Event", g_pState->IsLastEvent,
 		"Stop capturing any new GameEvents from the engine.");
 	ImGui::SameLine();
 
 	{
-		std::lock_guard<std::mutex> lock(g_pState->timelineMutex);
-		ImGui::TextDisabled("| Events: %zu", g_pState->timeline.size());
+		std::lock_guard<std::mutex> lock(g_pState->TimelineMutex);
+		ImGui::TextDisabled("| Events: %zu", g_pState->Timeline.size());
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::SetTooltip("Total number of events currently stored in memory.");
@@ -40,7 +40,7 @@ static void DrawTimelineControls(bool& autoScroll)
 	}
 
 	ImGui::SameLine();
-	ImGui::TextDisabled("| Processed: %zu", g_pState->processedCount.load());
+	ImGui::TextDisabled("| Processed: %zu", g_pState->ProcessedCount.load());
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Number of events successfully written to the disk/logs.");
@@ -87,8 +87,8 @@ void TimelineTab::Draw()
 			ImGui::TableHeadersRow();
 
 			{
-				std::lock_guard lock(g_pState->timelineMutex);
-				const auto& timeline = g_pState->timeline;
+				std::lock_guard lock(g_pState->TimelineMutex);
+				const auto& timeline = g_pState->Timeline;
 
 				ImGuiListClipper clipper;
 				clipper.Begin(static_cast<int>(timeline.size()));

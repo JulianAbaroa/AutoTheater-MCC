@@ -36,9 +36,9 @@ void EventRegistryTab::Draw()
 	{
 		uniqueTypes.clear();
 		std::set<EventType> seen;
-		std::lock_guard<std::mutex> lock(g_pState->configMutex);
+		std::lock_guard<std::mutex> lock(g_pState->ConfigMutex);
 
-		for (auto& [name, info] : g_pState->eventRegistry)
+		for (auto& [name, info] : g_pState->EventRegistry)
 		{
 			if (seen.find(info.Type) == seen.end())
 			{
@@ -95,8 +95,8 @@ void EventRegistryTab::Draw()
 			ImGui::SetNextItemWidth(210.0f);
 
 			if (ImGui::SliderInt("##slider", &item.Weight, 0, 100, "Weight: %d")) {
-				std::lock_guard lock(g_pState->configMutex);
-				for (auto& [regName, regInfo] : g_pState->eventRegistry) {
+				std::lock_guard lock(g_pState->ConfigMutex);
+				for (auto& [regName, regInfo] : g_pState->EventRegistry) {
 					if (regInfo.Type == item.Type) regInfo.Weight = item.Weight;
 				}
 			}

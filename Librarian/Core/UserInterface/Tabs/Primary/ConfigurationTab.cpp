@@ -61,10 +61,10 @@ void ConfigurationTab::Draw()
 
 	ImGui::Spacing();
 
-	bool blockMouse = g_pState->freezeMouse.load();
+	bool blockMouse = g_pState->FreezeMouse.load();
 	if (ImGui::Checkbox("Freeze Mouse Input", &blockMouse))
 	{
-		g_pState->freezeMouse.store(blockMouse);
+		g_pState->FreezeMouse.store(blockMouse);
 	}
 	if (ImGui::IsItemHovered())
 	{
@@ -78,7 +78,7 @@ void ConfigurationTab::Draw()
 	ImGui::TextDisabled("DATA PERSISTENCE");
 	ImGui::Spacing();
 
-	bool useAppData = g_pState->useAppData.load();
+	bool useAppData = g_pState->UseAppData.load();
 	if (ImGui::Checkbox("Enable Local Storage (AppData)", &useAppData))
 	{
 		if (!useAppData)
@@ -87,7 +87,7 @@ void ConfigurationTab::Draw()
 		}
 		else
 		{
-			g_pState->useAppData.store(true);
+			g_pState->UseAppData.store(true);
 			PersistenceManager::CreateAppData();
 			PersistenceManager::SavePreferences();
 		}
@@ -107,7 +107,7 @@ void ConfigurationTab::Draw()
 
 		if (ImGui::Button("Yes", ImVec2(buttonWidth, 0.0f)))
 		{
-			g_pState->useAppData.store(false);
+			g_pState->UseAppData.store(false);
 			PersistenceManager::SavePreferences();
 			ImGui::CloseCurrentPopup();
 		}
@@ -140,7 +140,7 @@ void ConfigurationTab::Draw()
 
 		ImGui::Text(
 			"This will permanently delete:\n"
-			" - All saved Replays."
+			" - All saved Replays.\n"
 			" - All saved Timelines.\n"
 			" - Custom Event Registry.\n"
 			" - All user preferences."
@@ -163,6 +163,7 @@ void ConfigurationTab::Draw()
 		if (ImGui::Button("Confirm Wipe", ImVec2(btnWidth, 0.0f)))
 		{
 			PersistenceManager::DeleteAppData();
+			g_pState->RefreshReplayList.store(true);
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::PopStyleColor();
@@ -184,12 +185,12 @@ void ConfigurationTab::Draw()
 	ImGui::Spacing();
 
 	{
-		std::lock_guard<std::mutex> lock(g_pState->configMutex);
+		std::lock_guard<std::mutex> lock(g_pState->ConfigMutex);
 		ImGui::Indent(10.0f);
-		DrawPathField("Base Installation", g_pState->baseDirectory);
-		DrawPathField("Log File Output", g_pState->loggerPath);
-		DrawPathField("Storage Folder", g_pState->appDataDirectory);
-		DrawPathField("MCC Temporary Movies", g_pState->mccTempMovieDirectory);
+		DrawPathField("Base Installation", g_pState->BaseDirectory);
+		DrawPathField("Log File Output", g_pState->LoggerPath);
+		DrawPathField("Storage Folder", g_pState->AppDataDirectory);
+		DrawPathField("MCC Temporary Movies", g_pState->MCCTempMovieDirectory);
 		ImGui::Unindent(10.0f);
 	}
 }

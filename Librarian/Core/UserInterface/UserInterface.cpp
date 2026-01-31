@@ -35,9 +35,9 @@ static void DrawStatusBar()
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(15, 0));
 
-	AutoTheaterPhase currentPhase = g_pState->currentPhase.load();
+	AutoTheaterPhase currentPhase = g_pState->CurrentPhase.load();
 	PhaseUI ui = GetPhaseUI(currentPhase);
-	bool isTheater = g_pState->isTheaterMode.load();
+	bool isTheater = g_pState->IsTheaterMode.load();
 
 	// Section: Phase Selector
 	ImGui::AlignTextToFramePadding();
@@ -85,10 +85,10 @@ static void DrawStatusBar()
 	if (currentPhase != AutoTheaterPhase::Default)
 	{
 		ImGui::SameLine();
-		bool autoUpdatePhase = g_pState->autoUpdatePhase.load();
+		bool autoUpdatePhase = g_pState->AutoUpdatePhase.load();
 		if (ImGui::Checkbox("Auto-Update Phase", &autoUpdatePhase))
 		{
-			g_pState->autoUpdatePhase.store(autoUpdatePhase);	
+			g_pState->AutoUpdatePhase.store(autoUpdatePhase);	
 		}
 		if (ImGui::IsItemHovered())
 		{
@@ -105,7 +105,7 @@ static void DrawStatusBar()
 	ImGui::Text("Game Engine:");
 	ImGui::SameLine();
 
-	auto status = g_pState->engineStatus.load();
+	auto status = g_pState->EngineStatus.load();
 	ImVec4 statusColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
 	const char* statusText = "UNKNOWN";
 
@@ -137,7 +137,7 @@ static void DrawStatusBar()
 
 void HandleWindowReset()
 {
-	if (!g_pState->forceMenuReset.load()) return;
+	if (!g_pState->ForceMenuReset.load()) return;
 
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImVec2 screenSize = viewport->Size;
@@ -150,15 +150,19 @@ void HandleWindowReset()
 	);
 
 	ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-	g_pState->forceMenuReset.store(false);
+	g_pState->ForceMenuReset.store(false);
 }
 
 void DrawTabs()
 {
 	if (!ImGui::BeginTabBar("MainTabs")) return;
 
-	auto AddTab = [](const char* label, void (*drawFn)()) {
-		if (ImGui::BeginTabItem(label))
+	static bool firstLaunch = true;
+
+	auto AddTab = [](const char* label, void (*drawFn)(), bool forceOpen = false) {
+		ImGuiTabItemFlags flags = forceOpen ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
+
+		if (ImGui::BeginTabItem(label, nullptr, flags))
 		{
 			drawFn();
 			ImGui::EndTabItem();
@@ -169,10 +173,10 @@ void DrawTabs()
 	AddTab("Timeline", TimelineTab::Draw);
 	AddTab("Theater", TheaterTab::Draw);
 	AddTab("Director", DirectorTab::Draw);
-	AddTab("Configuration", ConfigurationTab::Draw);
+	AddTab("Configuration", ConfigurationTab::Draw, firstLaunch);
 
 	// Optional Tabs
-	bool useAppData = g_pState->useAppData.load();
+	bool useAppData = g_pState->UseAppData.load();
 	if (!useAppData) ImGui::BeginDisabled();
 	AddTab("Replay Manager", ReplayManagerTab::Draw);
 	AddTab("Event Registry", EventRegistryTab::Draw);
@@ -181,13 +185,14 @@ void DrawTabs()
 	// Log Tab
 	AddTab("Logs", LogsTab::Draw);
 
+	firstLaunch = false;
 	ImGui::EndTabBar();
 }
 
 void UserInterface::DrawMainInterface()
 {
 	// 1. Pre-render: Visibility and Input Management
-	if (!g_pState->showMenu.load())
+	if (!g_pState->ShowMenu.load())
 	{
 		ImGui::GetIO().ClearInputMouse();
 		ImGui::GetIO().ClearInputKeys();
@@ -205,7 +210,7 @@ void UserInterface::DrawMainInterface()
 
 	if (!open)
 	{
-		g_pState->showMenu.store(false);
+		g_pState->ShowMenu.store(false);
 	}
 
 	if (isVisible)

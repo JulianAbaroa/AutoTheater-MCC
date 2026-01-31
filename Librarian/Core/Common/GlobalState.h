@@ -14,205 +14,207 @@
 #include <queue>
 #include <mutex>
 
-// Estructura que contiene todos los datos globales de AutoTheater.
+// Structure containing all global data for AutoTheater.
 struct AppState
 {
 	// Timeline Data
 
-	// Vector utilizado para guardar todos los GameEvents registrados en una repeticion.
-	std::vector<GameEvent> timeline{};
+	// Vector used to store all GameEvents recorded during the Timeline phase.
+	std::vector<GameEvent> Timeline{};
 
-	// Flag utilizada para definir cuando loguear los GameEvents.
-	std::atomic<bool> logGameEvents{ true };	
+	// Flag used to determine when to log GameEvents.
+	std::atomic<bool> LogGameEvents{ true };	
 
-	// Flag utilizada para decidir cuando parar de guardar GameEvents dentro de la Timeline.
-	std::atomic<bool> isLastEvent{ false };
+	// Flag used to decide when to stop saving GameEvents into the Timeline.
+	std::atomic<bool> IsLastEvent{ false };
 
-	// Contador que contiene todos los GameEvents que ya han sido logueados.
-	std::atomic<size_t> processedCount{ 0 };		
+	// Counter containing the number of GameEvents already logged.
+	std::atomic<size_t> ProcessedCount{ 0 };		
 
-	// Mutex para modificar la Timeline de forma segura.
-	std::mutex timelineMutex;
+	// Mutex for thread-safe Timeline modification.
+	std::mutex TimelineMutex;
 
 
 
 	// Theater Engine State
 
-	// Vector utilizado para guardar la informacion de los jugadores actuales.
-	std::vector<PlayerInfo> playerList{ 16 };
+	// Vector used to store current player information.
+	std::vector<PlayerInfo> PlayerList{ 16 };
 
-	// Flag utilizada forzar el seguimiento de la camara del jugador que se esta espectando.
-	std::atomic<bool> attachThirdPersonPOV{ false };
+	// Flag used to force camera attachment to the spectated player's POV.
+	std::atomic<bool> AttachThirdPersonPOV{ false };
 
-	// El index actual del jugador que esta siendo seguido por el especador.
-	std::atomic<uint8_t> followedPlayerIdx{ 255 };	
+	// Current index of the player being followed by the spectator.
+	std::atomic<uint8_t> FollowedPlayerIdx{ 255 };	
 
-	// Byte que determina el estado de la camara del especador en cuanto a estar en modo libre o en modo bloqueado.
-	std::atomic<uint8_t> cameraAttached{ 0xFF };	
+	// Byte determining the spectator camera state (free mode vs. locked mode).
+	std::atomic<uint8_t> CameraAttached{ 0xFF };	
 
-	// Flag utilizada para saber si el modo teatro esta activado.
-	std::atomic<bool> isTheaterMode{ false };		
+	// Flag used to track if theater mode is currently active.
+	std::atomic<bool> IsTheaterMode{ false };		
 
-	// Puntero hacia la Timescale del modo teatro.
+	// Pointer to the theater mode Timescale.
 	std::atomic<float*> pReplayTimeScale{ nullptr };	
 
-	// Puntero hacia el ReplayTime del modo teatro. 
+	// Pointer to the theater mode ReplayTime.
 	std::atomic<float*> pReplayTime{ nullptr };		
 
-	// Puntero hacia el struct del ReplayModule.
+	// Pointer to the ReplayModule structure.
 	std::atomic<uintptr_t> pReplayModule{ 0 };	
 
-	// Float que guarda la estimacion calculada del Timescale.
-	std::atomic<float> realTimeScale{ 1.0f };
+	// Float storing the calculated estimation of the Timescale.
+	std::atomic<float> RealTimeScale{ 1.0f };
 
-	// Float que guarda el ultimo SystemTime.
-	std::atomic<double> anchorSystemTime{ 0.0f };
+	// Float storing the last SystemTime anchor.
+	std::atomic<double> AnchorSystemTime{ 0.0f };
 
-	// Float que guarda el ultimo ReplayTime.
-	std::atomic<float> anchorReplayTime{ 0.0f };
+	// Float storing the last ReplayTime anchor.
+	std::atomic<float> AnchorReplayTime{ 0.0f };
 
-	// Mutex para modificar la PlayerList de form segura.
-	std::mutex theaterMutex;
+	// Mutex for thread-safe PlayerList modification.
+	std::mutex TheaterMutex;
 
 
 
 	// Director Data
 	
-	// Vector utilizado para guardar todos los comandos del Director generados a partir de la Timeline.
-	std::vector<DirectorCommand> script{};
+	// Vector used to store all Director commands generated from the Timeline.
+	std::vector<DirectorCommand> Script{};
 
-	// Flag que determina si el director fue inicializado.
-	std::atomic<bool> directorInitialized{ false };		
+	// Flag determining if the director has been initialized.
+	std::atomic<bool> DirectorInitialized{ false };		
 
-	// Flag que determina si los hooks del director estan listos.
-	std::atomic<bool> directorHooksReady{ false };	
+	// Flag determining if the director hooks are ready.
+	std::atomic<bool> DirectorHooksReady{ false };	
 
-	// Contador del indice del comando actual.
-	std::atomic<size_t> currentCommandIndex{ 0 };	
+	// Index counter for the current active command.
+	std::atomic<size_t> CurrentCommandIndex{ 0 };	
 
-	// Float que contiene el ultimo ReplayTime.
-	std::atomic<float> lastReplayTime{ 0.0f };		
+	// Float containing the last recorded ReplayTime.
+	std::atomic<float> LastReplayTime{ 0.0f };		
 
-	// Mutex para modificar el script de forma segura.
-	std::mutex directorMutex;
+	// Mutex for thread-safe script modification.
+	std::mutex DirectorMutex;
+
+
 
 	// Input Injection
 	
-	// GameInput utilizado para definir el siguiente input a injectar.
-	std::atomic<GameInput> nextInput{ { InputContext::Unknown, InputAction::Unknown } };
+	// GameInput used to define the next input to be injected.
+	std::atomic<GameInput> NextInput{ { InputContext::Unknown, InputAction::Unknown } };
 
-	// Flag que determina si un input inyectado esta siendo procesado.
-	std::atomic<bool> inputProcessing{ false };		
+	// Flag determining if an injected input is currently being processed.
+	std::atomic<bool> InputProcessing{ false };		
 
-	// Queue utilizado para poder manejar multiples inputs en orden.
-	std::queue<InputRequest> inputQueue{};
+	// Queue used to handle multiple inputs in sequential order.
+	std::queue<InputRequest> InputQueue{};
 
-	// Mutex para modificar el inputQueue de forma segura.
-	std::mutex inputMutex;
+	// Mutex for thread-safe inputQueue modification.
+	std::mutex InputMutex;
 
 
 
 	// Debugging
 	
-	// Vector utilizado para guardar los logs que tienen que ser escritos a la LogTab.
-	std::vector<std::string> debugLogs{};
-	std::mutex logMutex;
+	// Vector used to store logs that need to be written to the LogTab.
+	std::vector<std::string> DebugLogs{};
+	std::mutex LogMutex;
 
 
 
 	// Replay Manager
 	
-	// Vector que funciona como cache para las replays guardadas.
-	std::vector<SavedReplay> savedReplaysCache;
+	// Vector serving as a cache for saved replays.
+	std::vector<SavedReplay> SavedReplaysCache;
 
-	// Flag que determina si la lista de replays deberia de ser actualizada.
-	std::atomic<bool> refreshReplayList{ true };
+	// Flag determining if the replay list should be refreshed.
+	std::atomic<bool> RefreshReplayList{ true };
 
-	// Objeto que contiene la metadata del ultimo replay abierto.
-	CurrentFilmMetadata currentMetadata{};
+	// Object containing metadata for the currently opened replay.
+	CurrentFilmMetadata CurrentMetadata{};
 
-	// String que contiene el path hacia el anterior replay abierto.
-	std::string lastProcessedPath{};
+	// String containing the path to the previously opened replay.
+	std::string LastProcessedPath{};
 
-	// String que contiene el ultime replay hash utilizado.
-	std::string activeReplayHash{};
+	// String containing the last used replay hash.
+	std::string ActiveReplayHash{};
 
-	// String que contiene el path hacia el ultimo replay abierto.
-	std::string filmPath{};
+	// String containing the path to the current replay file.
+	std::string FilmPath{};
 
-	// Mutex para modificar variables del ReplayManager de forma segura.
-	std::mutex replayManagerMutex;
+	// Mutex for thread-safe ReplayManager variable modification.
+	std::mutex ReplayManagerMutex;
 
 
 
 	// UI and Configuration
 	
-	// Flag que determina si AutoTheater tiene permitido utilizar el AppData.
-	std::atomic<bool> useAppData{ false };
+	// Flag determining if AutoTheater is allowed to use AppData storage.
+	std::atomic<bool> UseAppData{ false };
 
-	// Flag que determina si el menu de ImGui deberia de mostrarse.
-	std::atomic<bool> showMenu{ true };
+	// Flag determining if the ImGui menu should be displayed.
+	std::atomic<bool> ShowMenu{ true };
 
-	// Flag que determina si el menu de ImGui deberia de resetearse.
-	std::atomic<bool> forceMenuReset{ false };
+	// Flag determining if the ImGui menu should be forced to reset.
+	std::atomic<bool> ForceMenuReset{ false };
 
-	// Flag que determina si se deberia de congelar el movimiento del mouse en el juego cuando el menu de ImGui esta abierto.
-	std::atomic<bool> freezeMouse{ true };
+	// Flag determining if game mouse movement should be frozen when the ImGui menu is open.
+	std::atomic<bool> FreezeMouse{ true };
 
-	// String que contiene el directorio base donde se encuentra el DLL de AutoTheater.
-	std::string baseDirectory{};
+	// String containing the base directory where the AutoTheater DLL is located.
+	std::string BaseDirectory{};
 
-	// String que contiene el directorio hacia el AppData del usuario (AppData/Local/AutoTheater).
-	std::string appDataDirectory{};
+	// String containing the path to the user's AppData directory (AppData/Local/AutoTheater).
+	std::string AppDataDirectory{};
 
-	// String que contiene el directorio hacia las repeticiones del modo teatro de Halo Reach.
-	std::string mccTempMovieDirectory{};
+	// String containing the path to the Halo Reach theater temporary movie directory.
+	std::string MCCTempMovieDirectory{};
 
-	// String que contiene el path hacia el archivo de texto del logger.
-	std::string loggerPath{};
+	// String containing the path to the logger text file.
+	std::string LoggerPath{};
 	
 	// Game Metadata
 
-	// Objeto que contiene todos los eventos registrados, con sus pesos.
-	std::unordered_map<std::wstring, EventInfo> eventRegistry = g_EventRegistry;
+	// Object containing all registered events and their respective weights.
+	std::unordered_map<std::wstring, EventInfo> EventRegistry = g_EventRegistry;
 
-	// // Mutex para modificar variables del 'UI and Configuration' de forma segura.
-	std::mutex configMutex;
+	// Mutex for thread-safe 'UI and Configuration' variable modification.	
+	std::mutex ConfigMutex;
 
 
 
 	// Direct3D 11 Render State
 	ID3D11Device* pDevice{ nullptr };
 	ID3D11DeviceContext* pContext{ nullptr };
-	HWND gameHWND{ nullptr };
+	HWND GameHWND{ nullptr };
 	ID3D11RenderTargetView* pMainRenderTargetView{ nullptr };
 
 
 
 	// System Lifecycle
 
-	// Flag que determina si AutoTheater esta corriendo.
-	std::atomic<bool> running{ false };					
+	// Flag determining if AutoTheater is currently running.
+	std::atomic<bool> Running{ false };
 
-	// Direccion de memoria base del ejecutable principal (MCC-Win64-Shipping.exe).
-	std::atomic<HMODULE> handleModule{ nullptr };
+	// Base memory address of the main executable (MCC-Win64-Shipping.exe).
+	std::atomic<HMODULE> HandleModule{ nullptr };
 
-	// Estado actual del game engine Blam! (Halo Reach).
-	std::atomic<EngineStatus> engineStatus{ EngineStatus::Awaiting };
+	// Current status of the Blam! game engine (Halo Reach).
+	std::atomic<EngineStatus> EngineStatus{ EngineStatus::Awaiting };
 
-	// La fase actual de AutoTheater (Default, Timeline, Director).
-	std::atomic<AutoTheaterPhase> currentPhase{ AutoTheaterPhase::Default };
+	// Current phase of AutoTheater (Default, Timeline, Director).
+	std::atomic<AutoTheaterPhase> CurrentPhase{ AutoTheaterPhase::Default };
 
-	// Flag que determina si se actualiza de fase automaticamente al salir de una repeticion.
-	std::atomic<bool> autoUpdatePhase{ true };
+	// Flag determining if the phase should automatically update upon exiting a replay.
+	std::atomic<bool> AutoUpdatePhase{ true };
 
-	/** @brief Mechanism to block the unload process until threads finish cleanup. */
-	std::condition_variable shutdownCV;
-	std::mutex shutdownMutex;
+	// Mechanism to block the unload process until threads finish cleanup.
+	std::condition_variable ShutdownCV;
+	std::mutex ShutdownMutex;
 };
 
-/** @brief Global pointer to the singleton AppState instance. */
+// Global pointer to the singleton AppState instance.
 extern AppState* g_pState; 
 
-/** @brief Helper macro for cleaner access to the global state. */
+// Helper macro for cleaner access to the global state.
 #define g_State (*g_pState)

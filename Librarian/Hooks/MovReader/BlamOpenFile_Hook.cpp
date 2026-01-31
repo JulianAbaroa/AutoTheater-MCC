@@ -28,8 +28,8 @@ void hkBlam_OpenFile(
 		if (pathStr.find(".mov") != std::string::npos) 
 		{
 			{
-				std::lock_guard lock(g_pState->replayManagerMutex);
-				g_pState->filmPath = filePath;
+				std::lock_guard lock(g_pState->ReplayManagerMutex);
+				g_pState->FilmPath = filePath;
 			}
 
 			std::ifstream file(pathStr, std::ios::binary);
@@ -46,29 +46,29 @@ void hkBlam_OpenFile(
 				wFullInfo = reinterpret_cast<wchar_t*>(buffer + 0x1C0);
 
 				{
-					std::lock_guard lock(g_pState->replayManagerMutex);
-					g_pState->currentMetadata.Author = author;
-					g_pState->currentMetadata.Info = Formatting::WStringToString(wFullInfo);
+					std::lock_guard lock(g_pState->ReplayManagerMutex);
+					g_pState->CurrentMetadata.Author = author;
+					g_pState->CurrentMetadata.Info = Formatting::WStringToString(wFullInfo);
 				}
 
 				file.close();
 			}
 
-			if (g_pState->currentPhase == AutoTheaterPhase::Timeline)
+			if (g_pState->CurrentPhase.load() == AutoTheaterPhase::Timeline)
 			{
 				Logger::LogAppend((std::string("Film path: ") + filePath).c_str());
 				Logger::LogAppend("=== Analyzing CHDR from Disk ===");
 				Logger::LogAppend((std::string("Recorded by: ") + author).c_str());
 				Logger::LogAppend((std::string("Info: ") + Formatting::WStringToString(wFullInfo)).c_str());
 			}
-			else if (g_pState->currentPhase == AutoTheaterPhase::Director)
+			else if (g_pState->CurrentPhase.load() == AutoTheaterPhase::Director)
 			{
 				std::string currentFileHash = PersistenceManager::CalculateFileHash(filePath);
 				std::string requiredHash;
 
 				{
-					std::lock_guard lock(g_pState->replayManagerMutex);
-					requiredHash = g_pState->activeReplayHash;
+					std::lock_guard lock(g_pState->ReplayManagerMutex);
+					requiredHash = g_pState->ActiveReplayHash;
 				}
 
 				if (!requiredHash.empty() && currentFileHash != requiredHash)

@@ -21,24 +21,24 @@ void __fastcall hkSpectatorHandleInput(
 	if (pReplayModule != nullptr)
 	{
 		g_pState->pReplayModule.store(reinterpret_cast<uintptr_t>(pReplayModule));
-		g_pState->cameraAttached.store(*reinterpret_cast<uint8_t*>(g_pState->pReplayModule.load() + 0x190));
+		g_pState->CameraAttached.store(*reinterpret_cast<uint8_t*>(g_pState->pReplayModule.load() + 0x190));
 
 		Theater::TryGetFollowedPlayerIdx(g_pState->pReplayModule.load());
 
-		if (g_pState->followedPlayerIdx.load() < 16)
+		if (g_pState->FollowedPlayerIdx.load() < 16)
 		{
 			static uint8_t lastID = 255;
 
-			if (g_pState->followedPlayerIdx.load() != lastID)
+			if (g_pState->FollowedPlayerIdx.load() != lastID)
 			{
-				lastID = g_pState->followedPlayerIdx.load();
+				lastID = g_pState->FollowedPlayerIdx.load();
 
 				wchar_t bufferNombre[32] = { 0 };
-				if (Theater::TryGetPlayerName(g_pState->followedPlayerIdx.load(), bufferNombre, 32)) {
+				if (Theater::TryGetPlayerName(g_pState->FollowedPlayerIdx.load(), bufferNombre, 32)) {
 					std::string sName = Formatting::WStringToString(bufferNombre);
 
 					std::stringstream ss;
-					ss << ">>> Changed to: [" << (int)g_pState->followedPlayerIdx.load() << "] " << sName;
+					ss << ">>> Changed to: [" << (int)g_pState->FollowedPlayerIdx.load() << "] " << sName;
 					Logger::LogAppend(ss.str().c_str());
 				}
 			}

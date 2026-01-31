@@ -11,10 +11,10 @@ void* g_GetButtonState_Address = nullptr;
 
 char __fastcall hkGetButtonState(short buttonID)
 {
-    if (g_pState->nextInput.load().InputContext == InputContext::Theater &&
-        g_pState->nextInput.load().InputAction != InputAction::Unknown)
+    if (g_pState->NextInput.load().InputContext == InputContext::Theater &&
+        g_pState->NextInput.load().InputAction != InputAction::Unknown)
     {
-        if (static_cast<short>(g_pState->nextInput.load().InputAction) == buttonID)
+        if (static_cast<short>(g_pState->NextInput.load().InputAction) == buttonID)
         {
             return 1;
         }

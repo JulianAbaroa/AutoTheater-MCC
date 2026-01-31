@@ -16,9 +16,9 @@ void LogThread::Run()
 {
     Logger::LogAppend("=== Log Thread Started ===");
 
-    while (g_pState->running.load())
+    while (g_pState->Running.load())
     {
-        if (!g_pState->logGameEvents.load() || !g_pState->isTheaterMode.load()) {
+        if (!g_pState->LogGameEvents.load() || !g_pState->IsTheaterMode.load()) {
             ThreadUtils::WaitOrExit(100ms);
             continue;
         }
@@ -26,15 +26,15 @@ void LogThread::Run()
         std::vector<GameEvent> eventsToProcess;
 
         {
-            std::lock_guard<std::mutex> lock(g_pState->timelineMutex);
+            std::lock_guard<std::mutex> lock(g_pState->TimelineMutex);
 
-            size_t currentSize = g_pState->timeline.size();
-            size_t lastProcessed = g_pState->processedCount.load();
+            size_t currentSize = g_pState->Timeline.size();
+            size_t lastProcessed = g_pState->ProcessedCount.load();
 
             if (lastProcessed < currentSize)
             {
-                eventsToProcess.assign(g_pState->timeline.begin() + lastProcessed, g_pState->timeline.end());
-                g_pState->processedCount.store(currentSize);
+                eventsToProcess.assign(g_pState->Timeline.begin() + lastProcessed, g_pState->Timeline.end());
+                g_pState->ProcessedCount.store(currentSize);
             }
         }
 

@@ -60,7 +60,7 @@ static HRESULT __stdcall hkPresent(
 
 			DXGI_SWAP_CHAIN_DESC sd;
 			pSwapChain->GetDesc(&sd);
-			g_pState->gameHWND = sd.OutputWindow;
+			g_pState->GameHWND = sd.OutputWindow;
 
 			ImGui::CreateContext();
 
@@ -69,8 +69,8 @@ static HRESULT __stdcall hkPresent(
 			ImGuiIO& io = ImGui::GetIO();
 
 			float width = (float)sd.BufferDesc.Width;
-
 			float baseFontSize = 22.0f;
+
 			if (width >= 2560) baseFontSize = 30.0f;
 			if (width >= 3840) baseFontSize = 38.0f;
 
@@ -81,10 +81,12 @@ static HRESULT __stdcall hkPresent(
 				font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", baseFontSize);
 			}
 
-			ImGui_ImplWin32_Init(g_pState->gameHWND);
+			g_pState->ForceMenuReset.store(true);
+
+			ImGui_ImplWin32_Init(g_pState->GameHWND);
 			ImGui_ImplDX11_Init(g_pState->pDevice, g_pState->pContext);
 
-			original_WndProc = (WNDPROC)SetWindowLongPtr(g_State.gameHWND, GWLP_WNDPROC, (LONG_PTR)WndProc_Hook::hkWndProc);
+			original_WndProc = (WNDPROC)SetWindowLongPtr(g_State.GameHWND, GWLP_WNDPROC, (LONG_PTR)WndProc_Hook::hkWndProc);
 
 			init = true;
 			Logger::LogAppend("ImGui Initialized inside hkPresent");
@@ -96,10 +98,10 @@ static HRESULT __stdcall hkPresent(
 	
 	ImGui::NewFrame();
 
-	if (g_pState->showMenu.load() && g_pState->freezeMouse.load())
+	if (g_pState->ShowMenu.load() && g_pState->FreezeMouse.load())
 	{
 		RECT rect;
-		GetWindowRect(g_pState->gameHWND, &rect);
+		GetWindowRect(g_pState->GameHWND, &rect);
 		ClipCursor(&rect);
 	}
 	else
@@ -107,7 +109,7 @@ static HRESULT __stdcall hkPresent(
 		ClipCursor(NULL);
 	}
 
-	ImGui::GetIO().MouseDrawCursor = g_pState->showMenu.load();
+	ImGui::GetIO().MouseDrawCursor = g_pState->ShowMenu.load();
 
 	UserInterface::DrawMainInterface();
 
@@ -127,7 +129,7 @@ static HRESULT __stdcall hkPresent(
 		if (oldDSV) oldDSV->Release();
 	}
 
-	if (g_pState->isTheaterMode)
+	if (g_pState->IsTheaterMode.load())
 	{
 		Theater::UpdateRealTimeScale();
 	}
@@ -166,9 +168,9 @@ void Present_Hook::Uninstall() {
 
 	if (g_pState)
 	{
-		if (g_pState->gameHWND && original_WndProc)
+		if (g_pState->GameHWND && original_WndProc)
 		{
-			SetWindowLongPtr(g_pState->gameHWND, GWLP_WNDPROC, (LONG_PTR)original_WndProc);
+			SetWindowLongPtr(g_pState->GameHWND, GWLP_WNDPROC, (LONG_PTR)original_WndProc);
 			original_WndProc = nullptr;
 		}
 

@@ -17,13 +17,13 @@ void DirectorThread::Run()
 {
     Logger::LogAppend("=== Director Thread Started ===");
     
-    while (g_pState->running.load())
+    while (g_pState->Running.load())
     {
-        if (g_pState->currentPhase.load() == AutoTheaterPhase::Director)
+        if (g_pState->CurrentPhase.load() == AutoTheaterPhase::Director)
         {
-            if (!g_pState->directorInitialized.load())
+            if (!g_pState->DirectorInitialized.load())
             {
-                if (g_pState->directorHooksReady.load())
+                if (g_pState->DirectorHooksReady.load())
                 {
                     Logger::LogAppend("DirectorThread: Phase match and Engine ready. Initializing...");
                     Director::Initialize();
@@ -31,7 +31,7 @@ void DirectorThread::Run()
             }
             else
             {
-                if (g_pState->engineStatus.load() != EngineStatus::Destroyed  && g_pState->isTheaterMode.load())
+                if (g_pState->EngineStatus.load() != EngineStatus::Destroyed  && g_pState->IsTheaterMode.load())
                 {
                     Director::Update();
                 }
@@ -40,7 +40,7 @@ void DirectorThread::Run()
             ThreadUtils::WaitOrExit(16ms);
         }
         else {
-            g_pState->directorHooksReady.store(false);
+            g_pState->DirectorHooksReady.store(false);
         }
     }
 
