@@ -147,31 +147,51 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Core\Common\EventRegistry.h" />
-    <ClInclude Include="Core\Common\GlobalState.h">
+    <ClInclude Include="Core\Common\AppCore.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Core\Common\PersistenceManager.h" />
     <ClInclude Include="Core\Common\Types\AutoTheaterTypes.h" />
     <ClInclude Include="Core\Common\Types\BlamTypes.h" />
     <ClInclude Include="Core\Common\Types\DirectorTypes.h" />
     <ClInclude Include="Core\Common\Types\InputTypes.h" />
     <ClInclude Include="Core\Common\Types\TimelineTypes.h" />
     <ClInclude Include="Core\Common\Types\UserInterfaceTypes.h" />
-    <ClInclude Include="Core\Scanner\Scanner.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Core\Scanner\Signatures.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Director.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Theater.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Timeline.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\GetButtonState_Hook.h" />
+    <ClInclude Include="Core\Hooks\Data\SpectatorHandleInput_Hook.h" />
+    <ClInclude Include="Core\Hooks\Data\Telemetry\Telemetry.h" />
+    <ClInclude Include="Core\Hooks\Data\UIBuildDynamicMessage_Hook.h" />
+    <ClInclude Include="Core\Hooks\Data\UpdateTelemetryTimer_Hook.h" />
+    <ClInclude Include="Core\Hooks\Lifecycle\DestroySubsystems_Hook.h" />
+    <ClInclude Include="Core\Hooks\Lifecycle\EngineInitialize_Hook.h" />
+    <ClInclude Include="Core\Hooks\Lifecycle\GameEngineStart_Hook.h" />
+    <ClInclude Include="Core\Hooks\MovReader\BlamOpenFile_Hook.h" />
+    <ClInclude Include="Core\Hooks\MovReader\FilmInitializeState_Hook.h" />
+    <ClInclude Include="Core\Hooks\Scanner\Scanner.h" />
+    <ClInclude Include="Core\Hooks\Scanner\Signatures.h" />
+    <ClInclude Include="Core\Hooks\UserInterface\GetRawInputData_Hook.h" />
+    <ClInclude Include="Core\Hooks\UserInterface\Present_Hook.h" />
+    <ClInclude Include="Core\Hooks\UserInterface\ResizeBuffers_Hook.h" />
+    <ClInclude Include="Core\Hooks\UserInterface\WndProc_Hook.h" />
+    <ClInclude Include="Core\States\Domain\DirectorState.h" />
+    <ClInclude Include="Core\States\Domain\EventRegistryState.h" />
+    <ClInclude Include="Core\States\Domain\TheaterState.h" />
+    <ClInclude Include="Core\States\Domain\TimelineState.h" />
+    <ClInclude Include="Core\States\Infrastructure\LifecycleState.h" />
+    <ClInclude Include="Core\States\Infrastructure\RenderState.h" />
+    <ClInclude Include="Core\States\Infrastructure\ReplayState.h" />
+    <ClInclude Include="Core\States\Infrastructure\SettingsState.h" />
+    <ClInclude Include="Core\States\Interface\DebugState.h" />
+    <ClInclude Include="Core\States\Interface\InputState.h" />
+    <ClInclude Include="Core\Systems\Domain\DirectorSystem.h" />
+    <ClInclude Include="Core\Systems\Domain\EventRegistrySystem.h" />
+    <ClInclude Include="Core\Systems\Domain\TheaterSystem.h" />
+    <ClInclude Include="Core\Systems\Domain\TimelineSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\LifecycleSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\RenderSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\ReplaySystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\SettingsSystem.h" />
+    <ClInclude Include="Core\Systems\Interface\DebugSystem.h" />
+    <ClInclude Include="Core\Systems\Interface\InputSystem.h" />
     <ClInclude Include="Core\Threads\DirectorThread.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
@@ -200,40 +220,6 @@
     <ClInclude Include="External\imgui\imgui_internal.h" />
     <ClInclude Include="External\minhook\include\MinHook.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="Hooks\Data\GetButtonState_Hook.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Hooks\Data\SpectatorHandleInput_Hook.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Hooks\Data\UIBuildDynamicMessage_Hook.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Hooks\Data\UpdateTelemetryTimer_Hook.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Hooks\Lifecycle\DestroySubsystems_Hook.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Hooks\Lifecycle\EngineInitialize_Hook.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Hooks\Lifecycle\GameEngineStart_Hook.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Hooks\MovReader\BlamOpenFile_Hook.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Hooks\MovReader\FilmInitializeState_Hook.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Hooks\Telemetry\Telemetry.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Hooks\UserInterface\GetRawInputData_Hook.h" />
-    <ClInclude Include="Hooks\UserInterface\Present_Hook.h" />
-    <ClInclude Include="Hooks\UserInterface\ResizeBuffers_Hook.h" />
-    <ClInclude Include="Hooks\UserInterface\WndProc_Hook.h" />
     <ClInclude Include="Ignore\BaseHook.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -250,23 +236,45 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Common\EventRegistry.cpp" />
-    <ClCompile Include="Core\Common\GlobalState.cpp">
+    <ClCompile Include="Core\Common\AppCore.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Core\Common\PersistenceManager.cpp" />
     <ClCompile Include="Core\DllMain.cpp" />
-    <ClCompile Include="Core\Scanner\Scanner.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Director.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Theater.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Timeline.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\GetButtonState_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\Data\SpectatorHandleInput_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\Data\Telemetry\Telemetry.cpp" />
+    <ClCompile Include="Core\Hooks\Data\UIBuildDynamicMessage_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\Data\UpdateTelemetryTimer_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\Lifecycle\DestroySubsystems_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\Lifecycle\EngineInitialize_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStart_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\MovReader\BlamOpenFile_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\MovReader\FilmInitializeState_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\Scanner\Scanner.cpp" />
+    <ClCompile Include="Core\Hooks\UserInterface\GetRawInputData_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\UserInterface\Present_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\UserInterface\ResizeBuffers_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\UserInterface\WndProc_Hook.cpp" />
+    <ClCompile Include="Core\States\Domain\DirectorState.cpp" />
+    <ClCompile Include="Core\States\Domain\EventRegistryState.cpp" />
+    <ClCompile Include="Core\States\Domain\TheaterState.cpp" />
+    <ClCompile Include="Core\States\Domain\TimelineState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\LifecycleState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\RenderState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\ReplayState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\SettingsState.cpp" />
+    <ClCompile Include="Core\States\Interface\DebugState.cpp" />
+    <ClCompile Include="Core\States\Interface\InputState.cpp" />
+    <ClCompile Include="Core\Systems\Domain\DirectorSystem.cpp" />
+    <ClCompile Include="Core\Systems\Domain\EventRegistrySystem.cpp" />
+    <ClCompile Include="Core\Systems\Domain\TheaterSystem.cpp" />
+    <ClCompile Include="Core\Systems\Domain\TimelineSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\LifecycleSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\RenderSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\ReplaySystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\SettingsSystem.cpp" />
+    <ClCompile Include="Core\Systems\Interface\DebugSystem.cpp" />
+    <ClCompile Include="Core\Systems\Interface\InputSystem.cpp" />
     <ClCompile Include="Core\Threads\DirectorThread.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
@@ -325,40 +333,6 @@
     <ClCompile Include="External\minhook\src\trampoline.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Hooks\Data\GetButtonState_Hook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Hooks\Data\SpectatorHandleInput_Hook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Hooks\Data\UIBuildDynamicMessage_Hook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Hooks\Data\UpdateTelemetryTimer_Hook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Hooks\Lifecycle\DestroySubsystems_Hook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Hooks\Lifecycle\EngineInitialize_Hook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Hooks\Lifecycle\GameEngineStart_Hook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Hooks\MovReader\BlamOpenFile_Hook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Hooks\MovReader\FilmInitializeState_Hook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Hooks\Telemetry\Telemetry.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Hooks\UserInterface\GetRawInputData_Hook.cpp" />
-    <ClCompile Include="Hooks\UserInterface\Present_Hook.cpp" />
-    <ClCompile Include="Hooks\UserInterface\ResizeBuffers_Hook.cpp" />
-    <ClCompile Include="Hooks\UserInterface\WndProc_Hook.cpp" />
     <ClCompile Include="Ignore\BaseHook.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>

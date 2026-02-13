@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Utils/Logger.h"
-#include "Core/Common/GlobalState.h"
+#include "Core/Common/AppCore.h"
 #include <sstream>
 #include <fstream>
 #include <iomanip>
@@ -10,10 +10,7 @@ void Logger::LogAppend(const char* format) {
 	std::string loggerPathCopy;
 
 	// 1. Crea una copia del logger path.
-	{
-		std::lock_guard<std::mutex> lock(g_pState->ConfigMutex);
-		loggerPathCopy = g_pState->LoggerPath;
-	}
+	loggerPathCopy = g_pState->Settings.GetLoggerPath();
 
 	// 2. Abre el archivo y se va a la ultima linea escrita.
 	std::ofstream ofs(loggerPathCopy, std::ios::app);
@@ -31,12 +28,5 @@ void Logger::LogAppend(const char* format) {
 	ofs.close();
 
 	// 4. Añade el log actual al vector de logs.
-	{
-		std::lock_guard lock(g_pState->LogMutex);
-		g_pState->DebugLogs.push_back(std::string(format));
-		if (g_pState->DebugLogs.size() > 500)
-		{
-			g_pState->DebugLogs.erase(g_pState->DebugLogs.begin());
-		}
-	}
+	g_pSystem->Debug.AddLog(std::string(format));
 }

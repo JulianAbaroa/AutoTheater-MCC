@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Utils/Formatting.h"
-#include "Core/Common/GlobalState.h"
+#include "Core/Common/AppCore.h"
 #include "Core/Common/PersistenceManager.h"
 #include "Core/UserInterface/Tabs/Optional/EventRegistryTab.h"
 #include "External/imgui/imgui_internal.h"
@@ -36,16 +36,15 @@ void EventRegistryTab::Draw()
 	{
 		uniqueTypes.clear();
 		std::set<EventType> seen;
-		std::lock_guard<std::mutex> lock(g_pState->ConfigMutex);
 
-		for (auto& [name, info] : g_pState->EventRegistry)
+		g_pState->EventRegistry.ForEachEvent([&](const std::wstring& name, const EventInfo& info)
 		{
 			if (seen.find(info.Type) == seen.end())
 			{
 				uniqueTypes.push_back(info);
 				seen.insert(info.Type);
 			}
-		}
+		});
 
 		needsRefresh = false;
 	}
@@ -94,15 +93,13 @@ void EventRegistryTab::Draw()
 			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 220.0f);
 			ImGui::SetNextItemWidth(210.0f);
 
-			if (ImGui::SliderInt("##slider", &item.Weight, 0, 100, "Weight: %d")) {
-				std::lock_guard lock(g_pState->ConfigMutex);
-				for (auto& [regName, regInfo] : g_pState->EventRegistry) {
-					if (regInfo.Type == item.Type) regInfo.Weight = item.Weight;
-				}
+			if (ImGui::SliderInt("##slider", &item.Weight, 0, 100, "Weight: %d")) 
+			{
+				g_pState->EventRegistry.UpdateWeightsByType(item.Type, item.Weight);
 			}
 
 			if (ImGui::IsItemDeactivatedAfterEdit()) {
-				PersistenceManager::SaveEventRegistry();
+				g_pSystem->EventRegistry.SaveEventRegistry();
 				needsRefresh = true;
 			}
 

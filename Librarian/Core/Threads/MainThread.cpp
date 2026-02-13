@@ -2,13 +2,13 @@
 #include "Utils/Logger.h"
 #include "Utils/ThreadUtils.h"
 #include "Core/Threads/MainThread.h"
-#include "Core/Common/GlobalState.h"
+#include "Core/Common/AppCore.h"
 #include "Core/Common/PersistenceManager.h"
-#include "Hooks/Lifecycle/GameEngineStart_Hook.h"
-#include "Hooks/Lifecycle/EngineInitialize_Hook.h"
-#include "Hooks/Lifecycle/DestroySubsystems_Hook.h"
-#include "Hooks/UserInterface/ResizeBuffers_Hook.h"
-#include "Hooks/UserInterface/Present_Hook.h"
+#include "Core/Hooks/Lifecycle/GameEngineStart_Hook.h"
+#include "Core/Hooks/Lifecycle/EngineInitialize_Hook.h"
+#include "Core/Hooks/Lifecycle/DestroySubsystems_Hook.h"
+#include "Core/Hooks/UserInterface/ResizeBuffers_Hook.h"
+#include "Core/Hooks/UserInterface/Present_Hook.h"
 #include <sstream>
 #include <chrono>
 
@@ -34,14 +34,14 @@ static bool IsHookIntact(void* address)
 static void MainThread::ShutdownAndEject()
 {
     Logger::LogAppend("Critical Error: Initiating emergency shutdown.");
-    g_pState->Running.store(false);
+    g_pState->Lifecycle.SetRunning(false);
 }
 
 static bool TryInstallLifecycleHooks(const char* context)
 {
     std::stringstream ss;
 
-    while (g_pState->Running.load())
+    while (g_pState->Lifecycle.IsRunning())
     {
         if (EngineInitialize_Hook::Install(true) &&
              DestroySubsystems_Hook::Install(true) &&
@@ -61,58 +61,38 @@ static bool TryInstallLifecycleHooks(const char* context)
 
 void MainThread::UpdateToPhase(AutoTheaterPhase targetPhase)
 {
-    if (targetPhase == g_pState->CurrentPhase.load()) return;
+    if (targetPhase == g_pState->Lifecycle.GetCurrentPhase()) return;
 
     // Reset timeline
     if (targetPhase == AutoTheaterPhase::Timeline)
     {
-        g_pState->LogGameEvents.store(true);
-        g_pState->IsLastEvent.store(false);
-        {
-            std::lock_guard lock(g_pState->TimelineMutex);
-            g_pState->Timeline.clear();
-        }
+        g_pState->Timeline.SetLoggingActive(true);
+        g_pSystem->Timeline.SetLastEventReached(false);
+
+        g_pState->Timeline.ClearTimeline();
     }
     else if (targetPhase == AutoTheaterPhase::Director)
     {
-        g_pState->LogGameEvents.store(false);
-        g_pState->IsLastEvent.store(true);
+        g_pState->Timeline.SetLoggingActive(false);
+        g_pSystem->Timeline.SetLastEventReached(true);
     }
-    g_pState->ProcessedCount.store(0);
+    g_pSystem->Timeline.SetLoggedEventsCount(0);
 
     // Reset theater
-    {
-        std::lock_guard lock(g_pState->TheaterMutex);
-        for (auto& player : g_pState->PlayerList)
-        {
-            player.Name.clear();
-            player.Tag.clear();
-            player.Id = 0;
-
-            player.RawPlayer = RawPlayer{};
-            player.Weapons.clear();
-        }
-    }
+    g_pState->Theater.ResetPlayerList();
 
     // Reset director
-    g_pState->DirectorInitialized.store(false);
-    g_pState->DirectorHooksReady.store(false);
-    g_pState->CurrentCommandIndex.store(0);
-    g_pState->LastReplayTime.store(0.0f);
-    {
-        std::lock_guard lock(g_pState->DirectorMutex);
-        g_pState->Script.clear();
-    }
+    g_pState->Director.SetInitialized(false);
+    g_pState->Director.SetHooksReady(false);
+    g_pSystem->Director.SetCurrentCommandIndex(0);
+    g_pSystem->Director.SetLastReplayTime(0.0f);
+    g_pState->Director.ClearScript();
 
     // Reset input
-    g_pState->NextInput.store({ InputContext::Unknown, InputAction::Unknown });
-    g_pState->InputProcessing.store(false);
-    {
-        std::lock_guard lock(g_pState->InputMutex);
-        g_pState->InputQueue = std::queue<InputRequest>();
-    }
+    g_pState->Input.Reset();
 
-    g_pState->CurrentPhase.store(targetPhase);
+    // Update phase
+    g_pState->Lifecycle.SetCurrentPhase(targetPhase);
 }
 
 void MainThread::Run() {
@@ -131,38 +111,38 @@ void MainThread::Run() {
     Present_Hook::Install();
     ResizeBuffers_Hook::Install();
 
-    g_pState->CurrentPhase.store(AutoTheaterPhase::Timeline);
-    g_pState->LogGameEvents.store(true);
+    g_pState->Lifecycle.SetCurrentPhase(AutoTheaterPhase::Timeline);
+    g_pState->Timeline.SetLoggingActive(true);
 
-    PersistenceManager::InitializePaths();
-    PersistenceManager::LoadEventRegistry();
+    g_pSystem->Settings.InitializePaths();
+    g_pSystem->EventRegistry.LoadEventRegistry();
 
-    Logger::LogAppend("Configuration and EventRegistry loaded");
+    Logger::LogAppend("Settings and EventRegistry loaded");
 
-    while (g_pState->Running.load())
+    while (g_pState->Lifecycle.IsRunning())
     {
         if (!IsHookIntact(g_EngineInitialize_Address) ||
             !IsHookIntact(g_DestroySubsystems_Address) ||
             !IsHookIntact(g_GameEngineStart_Address)
         ) {
-            if (g_pState->Running.load())
+            if (g_pState->Lifecycle.IsRunning())
             {
                 Logger::LogAppend("Watchdog: Hook corrupted or memory restored. Rebooting...");
-                g_pState->EngineStatus.store({ EngineStatus::Destroyed });
+                g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Destroyed });
             }
         }
 
-        if (g_pState->EngineStatus.load() == EngineStatus::Destroyed)
+        if (g_pState->Lifecycle.GetEngineStatus() == EngineStatus::Destroyed)
         {
             Logger::LogAppend("Game engine destruction detected, resetting lifecycle...");
 
             ThreadUtils::WaitOrExit(1000ms);
-            if (!g_pState->Running.load()) break;
+            if (!g_pState->Lifecycle.IsRunning()) break;
 
-            if (g_pState->AutoUpdatePhase.load() && g_pState->CurrentPhase.load() != AutoTheaterPhase::Default)
+            if (g_pState->Lifecycle.ShouldAutoUpdatePhase() && g_pState->Lifecycle.GetCurrentPhase() != AutoTheaterPhase::Default)
             {
-                AutoTheaterPhase targetPhase = g_pState->CurrentPhase.load() == AutoTheaterPhase::Timeline ? AutoTheaterPhase::Director : AutoTheaterPhase::Timeline;
-                if (g_pState->IsTheaterMode.load()) MainThread::UpdateToPhase(targetPhase);
+                AutoTheaterPhase targetPhase = g_pState->Lifecycle.GetCurrentPhase() == AutoTheaterPhase::Timeline ? AutoTheaterPhase::Director : AutoTheaterPhase::Timeline;
+                if (g_pState->Theater.IsTheaterMode()) MainThread::UpdateToPhase(targetPhase);
             }
 
             EngineInitialize_Hook::Uninstall();
@@ -170,7 +150,7 @@ void MainThread::Run() {
             GameEngineStart_Hook::Uninstall();
 
             ThreadUtils::WaitOrExit(1000ms);
-            if (!g_pState->Running.load())
+            if (!g_pState->Lifecycle.IsRunning())
             {
                 Logger::LogAppend("MainThread: Shutdown in progress, skipping re-installation.");
                 break;
@@ -182,8 +162,8 @@ void MainThread::Run() {
                 return;
             }
 
-            g_pState->EngineStatus.store({ EngineStatus::Awaiting });
-            g_pState->IsTheaterMode.store(false);
+            g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Awaiting });
+            g_pState->Theater.SetTheaterMode(false);
         }
 
         ThreadUtils::WaitOrExit(1000ms);
@@ -202,7 +182,7 @@ void MainThread::Run() {
 
     Logger::LogAppend("=== Cleanup complete. Ejecting mod... ===");
 
-    HMODULE hMod = g_pState->HandleModule.load();
+    HMODULE hMod = g_pState->Lifecycle.GetHandleModule();
 
     if (hMod != nullptr)
     {

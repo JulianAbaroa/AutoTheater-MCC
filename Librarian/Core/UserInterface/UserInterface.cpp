@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Utils/Formatting.h"
-#include "Core/Common/GlobalState.h"
+#include "Core/Common/AppCore.h"
 #include "Core/Threads/MainThread.h"
 #include "Core/UserInterface/UserInterface.h"
 #include "Core/UserInterface/Tabs/Logs/LogsTab.h"
@@ -35,9 +35,9 @@ static void DrawStatusBar()
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(15, 0));
 
-	AutoTheaterPhase currentPhase = g_pState->CurrentPhase.load();
+	AutoTheaterPhase currentPhase = g_pState->Lifecycle.GetCurrentPhase();
 	PhaseUI ui = GetPhaseUI(currentPhase);
-	bool isTheater = g_pState->IsTheaterMode.load();
+	bool isTheater = g_pState->Theater.IsTheaterMode();
 
 	// Section: Phase Selector
 	ImGui::AlignTextToFramePadding();
@@ -85,10 +85,10 @@ static void DrawStatusBar()
 	if (currentPhase != AutoTheaterPhase::Default)
 	{
 		ImGui::SameLine();
-		bool autoUpdatePhase = g_pState->AutoUpdatePhase.load();
+		bool autoUpdatePhase = g_pState->Lifecycle.ShouldAutoUpdatePhase();
 		if (ImGui::Checkbox("Auto-Update Phase", &autoUpdatePhase))
 		{
-			g_pState->AutoUpdatePhase.store(autoUpdatePhase);	
+			g_pState->Lifecycle.SetAutoUpdatePhase(autoUpdatePhase);	
 		}
 		if (ImGui::IsItemHovered())
 		{
@@ -105,7 +105,7 @@ static void DrawStatusBar()
 	ImGui::Text("Game Engine:");
 	ImGui::SameLine();
 
-	auto status = g_pState->EngineStatus.load();
+	auto status = g_pState->Lifecycle.GetEngineStatus();
 	ImVec4 statusColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
 	const char* statusText = "UNKNOWN";
 
@@ -137,7 +137,7 @@ static void DrawStatusBar()
 
 void HandleWindowReset()
 {
-	if (!g_pState->ForceMenuReset.load()) return;
+	if (!g_pState->Settings.MustResetMenu()) return;
 
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImVec2 screenSize = viewport->Size;
@@ -150,7 +150,7 @@ void HandleWindowReset()
 	);
 
 	ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-	g_pState->ForceMenuReset.store(false);
+	g_pState->Settings.SetForceMenuReset(false);
 }
 
 void DrawTabs()
@@ -173,10 +173,10 @@ void DrawTabs()
 	AddTab("Timeline", TimelineTab::Draw);
 	AddTab("Theater", TheaterTab::Draw);
 	AddTab("Director", DirectorTab::Draw);
-	AddTab("Configuration", ConfigurationTab::Draw, firstLaunch);
+	AddTab("Settings", ConfigurationTab::Draw, firstLaunch);
 
 	// Optional Tabs
-	bool useAppData = g_pState->UseAppData.load();
+	bool useAppData = g_pState->Settings.ShouldUseAppData();
 	if (!useAppData) ImGui::BeginDisabled();
 	AddTab("Replay Manager", ReplayManagerTab::Draw);
 	AddTab("Event Registry", EventRegistryTab::Draw);
@@ -192,7 +192,7 @@ void DrawTabs()
 void UserInterface::DrawMainInterface()
 {
 	// 1. Pre-render: Visibility and Input Management
-	if (!g_pState->ShowMenu.load())
+	if (!g_pState->Settings.IsMenuVisible())
 	{
 		ImGui::GetIO().ClearInputMouse();
 		ImGui::GetIO().ClearInputKeys();
@@ -210,7 +210,7 @@ void UserInterface::DrawMainInterface()
 
 	if (!open)
 	{
-		g_pState->ShowMenu.store(false);
+		g_pState->Settings.SetMenuVisible(false);
 	}
 
 	if (isVisible)

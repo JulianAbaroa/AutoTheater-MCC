@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Core/Common/GlobalState.h"
+#include "Core/Common/AppCore.h"
 #include "Core/Common/PersistenceManager.h"
 #include "Core/UserInterface/Tabs/Primary/ConfigurationTab.h"
 #include "External/imgui/imgui.h"
@@ -61,10 +61,10 @@ void ConfigurationTab::Draw()
 
 	ImGui::Spacing();
 
-	bool blockMouse = g_pState->FreezeMouse.load();
+	bool blockMouse = g_pState->Settings.ShouldFreezeMouse();
 	if (ImGui::Checkbox("Freeze Mouse Input", &blockMouse))
 	{
-		g_pState->FreezeMouse.store(blockMouse);
+		g_pState->Settings.SetFreezeMouse(blockMouse);
 	}
 	if (ImGui::IsItemHovered())
 	{
@@ -78,7 +78,7 @@ void ConfigurationTab::Draw()
 	ImGui::TextDisabled("DATA PERSISTENCE");
 	ImGui::Spacing();
 
-	bool useAppData = g_pState->UseAppData.load();
+	bool useAppData = g_pState->Settings.ShouldUseAppData();
 	if (ImGui::Checkbox("Enable Local Storage (AppData)", &useAppData))
 	{
 		if (!useAppData)
@@ -87,9 +87,9 @@ void ConfigurationTab::Draw()
 		}
 		else
 		{
-			g_pState->UseAppData.store(true);
-			PersistenceManager::CreateAppData();
-			PersistenceManager::SavePreferences();
+			g_pState->Settings.SetUseAppData(true);
+			g_pSystem->Settings.CreateAppData();
+			g_pSystem->Settings.SavePreferences();
 		}
 	}
 
@@ -107,8 +107,8 @@ void ConfigurationTab::Draw()
 
 		if (ImGui::Button("Yes", ImVec2(buttonWidth, 0.0f)))
 		{
-			g_pState->UseAppData.store(false);
-			PersistenceManager::SavePreferences();
+			g_pState->Settings.SetUseAppData(false);
+			g_pSystem->Settings.SavePreferences();
 			ImGui::CloseCurrentPopup();
 		}
 
@@ -162,8 +162,8 @@ void ConfigurationTab::Draw()
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
 		if (ImGui::Button("Confirm Wipe", ImVec2(btnWidth, 0.0f)))
 		{
-			PersistenceManager::DeleteAppData();
-			g_pState->RefreshReplayList.store(true);
+			g_pSystem->Settings.DeleteAppData();
+			g_pState->Replay.SetRefreshReplayList(true);
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::PopStyleColor();
@@ -184,13 +184,10 @@ void ConfigurationTab::Draw()
 	ImGui::TextDisabled("SYSTEM DIRECTORIES");
 	ImGui::Spacing();
 
-	{
-		std::lock_guard<std::mutex> lock(g_pState->ConfigMutex);
-		ImGui::Indent(10.0f);
-		DrawPathField("Base Installation", g_pState->BaseDirectory);
-		DrawPathField("Log File Output", g_pState->LoggerPath);
-		DrawPathField("Storage Folder", g_pState->AppDataDirectory);
-		DrawPathField("MCC Temporary Movies", g_pState->MCCTempMovieDirectory);
-		ImGui::Unindent(10.0f);
-	}
+	ImGui::Indent(10.0f);
+	DrawPathField("Base Installation", g_pState->Settings.GetBaseDirectory());
+	DrawPathField("Log File Output", g_pState->Settings.GetLoggerPath());
+	DrawPathField("Storage Folder", g_pState->Settings.GetAppDataDirectory());
+	DrawPathField("MCC Temporary Movies", g_pState->Settings.GetMovieTempDirectory());
+	ImGui::Unindent(10.0f);
 }

@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Utils/Logger.h"
-#include "Core/Common/GlobalState.h"
+#include "Core/Common/AppCore.h"
 #include "Core/Common/PersistenceManager.h"
 #include "Core/UserInterface/Tabs/Optional/ReplayManagerTab.h"
 #include "External/imgui/imgui.h" 
@@ -12,13 +12,8 @@ static void DrawCurrentSession()
     ImGui::TextDisabled("ACTIVE SESSION");
     ImGui::Separator();
 
-    std::string currentFilmPath;
-    std::string lastProcessedPath;
-    {
-        std::lock_guard lock(g_pState->ReplayManagerMutex);
-        currentFilmPath = g_pState->FilmPath;
-        lastProcessedPath = g_pState->LastProcessedPath;
-    }
+    std::string currentFilmPath = g_pState->Replay.GetCurrentFilmPath();
+    std::string lastProcessedPath = g_pState->Replay.GetPreviousReplayPath();
 
     if (!currentFilmPath.empty())
     {
@@ -26,11 +21,8 @@ static void DrawCurrentSession()
 
         if (currentFilmPath != lastProcessedPath)
         {
-            cachedHash = PersistenceManager::CalculateFileHash(currentFilmPath);
-            {
-                std::lock_guard lock(g_pState->ReplayManagerMutex);
-                g_pState->LastProcessedPath = g_pState->FilmPath;
-            }
+            cachedHash = g_pSystem->Replay.CalculateFileHash(currentFilmPath);
+            g_pState->Replay.SetPreviousReplayPath(g_pState->Replay.GetCurrentFilmPath());
         }
 
         ImGui::AlignTextToFramePadding();
@@ -55,19 +47,20 @@ static void DrawCurrentSession()
 
         if (ImGui::Button("Save Replay to Library"))
         {
-            PersistenceManager::SaveReplay(currentFilmPath);
-            g_pState->RefreshReplayList.store(true);
+            g_pSystem->Replay.SaveReplay(currentFilmPath);
+            g_pState->Replay.SetRefreshReplayList(true);
         }
 
         ImGui::SameLine();
-        std::filesystem::path replayFolder = std::filesystem::path(g_pState->AppDataDirectory) / "Replays" / cachedHash;
+        std::filesystem::path replayFolder = 
+            std::filesystem::path(g_pState->Settings.GetAppDataDirectory()) / "Replays" / cachedHash;
         bool replayExists = std::filesystem::exists(replayFolder);
 
         if (!replayExists) ImGui::BeginDisabled();
 
         if (ImGui::Button("Backup Timeline"))
         {
-            PersistenceManager::SaveTimeline(cachedHash);
+            g_pSystem->Replay.SaveTimeline(cachedHash);
         }
 
         if (!replayExists)
@@ -122,18 +115,14 @@ void ReplayManagerTab::Draw()
     static std::string hashToDelete = "";
     static bool openDeleteModal = false;
 
-    if (g_pState->RefreshReplayList.load())
+    if (g_pState->Replay.ShouldRefreshReplayList())
     {
-        std::lock_guard lock(g_pState->ReplayManagerMutex);
-        g_pState->SavedReplaysCache = PersistenceManager::GetSavedReplays();
-        g_pState->RefreshReplayList.store(false);
+        auto data = g_pSystem->Replay.GetSavedReplays();
+        g_pState->Replay.SetSavedReplaysCache(data);
+        g_pState->Replay.SetRefreshReplayList(false);
     }
 
-    std::vector<SavedReplay> savedReplaysCopy;
-    {
-        std::lock_guard lock(g_pState->ReplayManagerMutex);
-        savedReplaysCopy = g_pState->SavedReplaysCache;
-    }
+    std::vector<SavedReplay> savedReplaysCopy = g_pState->Replay.GetSavedReplaysCacheCopy();
 
     if (ImGui::BeginChild("ReplayList", ImVec2(0, 0), ImGuiChildFlags_Borders))
     {
@@ -207,8 +196,8 @@ void ReplayManagerTab::Draw()
                             ImGui::SetKeyboardFocusHere();
                             if (ImGui::InputText("##rename_input", renameBuf, IM_ARRAYSIZE(renameBuf), ImGuiInputTextFlags_EnterReturnsTrue))
                             {
-                                PersistenceManager::RenameReplay(replay.Hash, renameBuf);
-                                g_pState->RefreshReplayList.store(true);
+                                g_pSystem->Replay.RenameReplay(replay.Hash, renameBuf);
+                                g_pState->Replay.SetRefreshReplayList(true);
                                 editingIndex = -1;
                             }
                             if (ImGui::IsItemDeactivated() && !ImGui::IsItemActive())
@@ -238,13 +227,13 @@ void ReplayManagerTab::Draw()
 
                         if (ImGui::Button("Restore to Game", ImVec2(-FLT_MIN, 0)))
                         {
-                            PersistenceManager::RestoreReplay(replay);
+                            g_pSystem->Replay.RestoreReplay(replay);
                         }
 
                         if (!replay.HasTimeline) ImGui::BeginDisabled();
                         if (ImGui::Button("Load Timeline", ImVec2(-FLT_MIN, 0)))
                         {
-                            PersistenceManager::LoadTimeline(replay.Hash);
+                            g_pSystem->Replay.LoadTimeline(replay.Hash);
                         }
                         if (!replay.HasTimeline) ImGui::EndDisabled();
 
@@ -297,8 +286,8 @@ void ReplayManagerTab::Draw()
 
         if (ImGui::Button("Yes, Delete", ImVec2(btnW, 0)))
         {
-            PersistenceManager::DeleteReplay(hashToDelete);
-            g_pState->RefreshReplayList.store(true);
+            g_pSystem->Replay.DeleteReplay(hashToDelete);
+            g_pState->Replay.SetRefreshReplayList(true);
             selectedIndex = -1;
             ImGui::CloseCurrentPopup();
         }

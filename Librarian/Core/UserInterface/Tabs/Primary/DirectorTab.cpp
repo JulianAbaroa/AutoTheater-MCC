@@ -1,13 +1,13 @@
 #include "pch.h"
 #include "Utils/Formatting.h"
-#include "Core/Common/GlobalState.h"
+#include "Core/Common/AppCore.h"
 #include "Core/UserInterface/Tabs/Primary/DirectorTab.h"
 #include "External/imgui/imgui.h"
 
 static void DrawDirectorSystemStatus()
 {
-	bool init = g_pState->DirectorInitialized.load();
-	bool hooks = g_pState->DirectorHooksReady.load();
+	bool init = g_pState->Director.IsInitialized();
+	bool hooks = g_pState->Director.AreHooksReady();
 
 	ImGui::AlignTextToFramePadding();
 	ImGui::TextDisabled("System Status:");
@@ -34,14 +34,9 @@ static void DrawDirectorSystemStatus()
 
 static void DrawDirectorProgress(bool& autoScroll)
 {
-	float lastTime = g_pState->LastReplayTime.load();
-	size_t currentIndex = g_pState->CurrentCommandIndex.load();
-	size_t totalCommands = 0;
-
-	{
-		std::lock_guard<std::mutex> lock(g_pState->DirectorMutex);
-		totalCommands = g_pState->Script.size();
-	}
+	float lastTime = g_pSystem->Director.GetLastReplayTime();
+	size_t currentIndex = g_pSystem->Director.GetCurrentCommandIndex();
+	size_t totalCommands = g_pState->Director.GetScriptSize();
 
 	ImGui::AlignTextToFramePadding();
 	ImGui::Text("Playback Time: %s", Formatting::ToTimestamp(lastTime).c_str());
@@ -92,9 +87,8 @@ void DirectorTab::Draw()
 			ImGui::TableSetupColumn("Reason", ImGuiTableColumnFlags_WidthStretch);
 			ImGui::TableHeadersRow();
 
-			std::lock_guard<std::mutex> lock(g_pState->DirectorMutex);
-			const auto& script = g_pState->Script;
-			size_t currentIndex = g_pState->CurrentCommandIndex.load();
+			const auto& script = g_pState->Director.GetScriptCopy();
+			size_t currentIndex = g_pSystem->Director.GetCurrentCommandIndex();
 
 			for (size_t i = 0; i < script.size(); i++)
 			{

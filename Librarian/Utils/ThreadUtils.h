@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Core/Common/GlobalState.h"
 #include <chrono>
 
 namespace ThreadUtils

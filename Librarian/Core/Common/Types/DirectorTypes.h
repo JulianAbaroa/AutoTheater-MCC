@@ -19,21 +19,21 @@ enum class CommandType
 struct DirectorCommand
 {
 	// The time within the replay when the command should trigger.
-	float Timestamp;
+	float Timestamp{};
 
 	// The nature of the action (e.g, switching cameras or changing speed).
-	CommandType Type;
+	CommandType Type{};
 
 	// The index and name of the player the Director decided to focus on.
-	uint8_t TargetPlayerIdx;
-	std::string TargetPlayerName;
+	uint8_t TargetPlayerIdx{};
+	std::string TargetPlayerName{};
 
 	// The playback speed value (used if Type is SetSpeed).
-	float SpeedValue;
+	float SpeedValue{};
 
 	// A summary of the Director's heuristic decision.
 	// Format: "Score [X], Events[Y]", used for debug/UI.
-	std::string Reason;
+	std::string Reason{};
 };
 
 // Represents a continuous window of high-interest gameplay.
@@ -42,16 +42,16 @@ struct DirectorCommand
 struct ActionSegment
 {
 	// Collection of EventTypes that occurred within this segment's duration.
-	std::vector<EventType> TotalEvents;
+	std::vector<EventType> TotalEvents{};
 
 	// The name and ID of the player this segment focuses on.
-	std::string PlayerName;
-	uint8_t PlayerID;
+	std::string PlayerName{};
+	uint8_t PlayerID{};
 
 	// The aggregated weight of all events in this segment, determining its priority.
-	int TotalScore;
+	int TotalScore{};
 
 	// The calculated start and end times, including pre-roll and post-roll buffers.
-	float StartTime;
-	float EndTime;
+	float StartTime{};
+	float EndTime{};
 };

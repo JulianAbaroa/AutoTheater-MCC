@@ -3,8 +3,8 @@
 #include "Utils/Logger.h"
 #include "Utils/Formatting.h"
 #include "Utils/ThreadUtils.h"
-#include "Core/Common/GlobalState.h"
-#include "Hooks/Lifecycle/GameEngineStart_Hook.h"
+#include "Core/Common/AppCore.h"
+#include "Core/Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include <sstream>
 #include <chrono>
 
@@ -16,39 +16,31 @@ void LogThread::Run()
 {
     Logger::LogAppend("=== Log Thread Started ===");
 
-    while (g_pState->Running.load())
+    while (g_pState->Lifecycle.IsRunning())
     {
-        if (!g_pState->LogGameEvents.load() || !g_pState->IsTheaterMode.load()) {
+        if (!g_pState->Timeline.IsLoggingActive() || !g_pState->Theater.IsTheaterMode()) 
+        {
             ThreadUtils::WaitOrExit(100ms);
             continue;
         }
 
-        std::vector<GameEvent> eventsToProcess;
+        std::vector<GameEvent> eventsToProcess = g_pSystem->Timeline.ConsumePendingEvents();
 
-        {
-            std::lock_guard<std::mutex> lock(g_pState->TimelineMutex);
-
-            size_t currentSize = g_pState->Timeline.size();
-            size_t lastProcessed = g_pState->ProcessedCount.load();
-
-            if (lastProcessed < currentSize)
-            {
-                eventsToProcess.assign(g_pState->Timeline.begin() + lastProcessed, g_pState->Timeline.end());
-                g_pState->ProcessedCount.store(currentSize);
-            }
-        }
-
-        for (const auto& gameEvent : eventsToProcess)
+        for (const auto& event : eventsToProcess)
         {
             std::stringstream ss;
-            ss << "[" << Formatting::ToTimestamp(gameEvent.Timestamp) << "] ";
-            ss << Formatting::EventTypeToString(gameEvent.Type);
+            ss << "[" << Formatting::ToTimestamp(event.Timestamp) << "] ";
+            ss << Formatting::EventTypeToString(event.Type);
 
-            if (!gameEvent.Players.empty()) {
+            if (!event.Players.empty()) 
+            {
+                // TODO: Maybe do a function to format player on 'Formatting' namespace.
                 ss << ": ";
-                for (size_t i = 0; i < gameEvent.Players.size(); ++i) {
-                    ss << gameEvent.Players[i].Name;
-                    if (i < gameEvent.Players.size() - 1) {
+                for (size_t i = 0; i < event.Players.size(); ++i) 
+                {
+                    ss << event.Players[i].Name;
+                    if (i < event.Players.size() - 1) 
+                    {
                         ss << ", ";
                     }
                 }

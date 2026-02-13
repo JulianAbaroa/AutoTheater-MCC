@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Utils/Formatting.h"
 #include "External/imgui/imgui.h"
-#include "Core/Common/GlobalState.h"
+#include "Core/Common/AppCore.h"
 #include "Core/UserInterface/Tabs/Primary/TimelineTab.h"
 #include <vector>
 #include <string>
@@ -16,31 +16,35 @@ static void DrawTimelineControls(bool& autoScroll)
 	}
 	ImGui::SameLine();
 
-	auto AtomicCheckBox = [](const char* label, std::atomic<bool>& value, const char* tooltip) {
-		bool val = value.load();
-		if (ImGui::Checkbox(label, &val)) value.store(val);
+	auto AtomicCheckBox = [](const char* label, auto getter, auto setter, const char* tooltip) {
+		bool val = getter(); 
+		if (ImGui::Checkbox(label, &val)) setter(val);
 		if (ImGui::IsItemHovered()) ImGui::SetTooltip(tooltip);
 	};
 
-	AtomicCheckBox("Log Events", g_pState->LogGameEvents,
-		"Enable/Disable writing events to the log file and Logs Tab.");
+	AtomicCheckBox(
+		"Log Events", 
+		[&]() { return g_pState->Timeline.IsLoggingActive(); },
+		[&](bool val) { g_pState->Timeline.SetLoggingActive(val); },
+		"Enable/Disable writing events to the log file and Logs Tab."
+	);
 	ImGui::SameLine();
 
-	AtomicCheckBox("Last Event", g_pState->IsLastEvent,
+	AtomicCheckBox(
+		"Last Event", 
+		[&]() { return g_pSystem->Timeline.HasReachedLastEvent(); },
+		[&](bool val) { g_pSystem->Timeline.SetLastEventReached(val); },
 		"Stop capturing any new GameEvents from the engine.");
 	ImGui::SameLine();
 
+	ImGui::TextDisabled("| Events: %zu", g_pState->Timeline.GetTimelineSize());
+	if (ImGui::IsItemHovered())
 	{
-		std::lock_guard<std::mutex> lock(g_pState->TimelineMutex);
-		ImGui::TextDisabled("| Events: %zu", g_pState->Timeline.size());
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("Total number of events currently stored in memory.");
-		}
+		ImGui::SetTooltip("Total number of events currently stored in memory.");
 	}
 
 	ImGui::SameLine();
-	ImGui::TextDisabled("| Processed: %zu", g_pState->ProcessedCount.load());
+	ImGui::TextDisabled("| Processed: %zu", g_pSystem->Timeline.GetLoggedEventsCount());
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Number of events successfully written to the disk/logs.");
@@ -86,32 +90,29 @@ void TimelineTab::Draw()
 			ImGui::TableSetupColumn("Involved Players", ImGuiTableColumnFlags_WidthStretch);
 			ImGui::TableHeadersRow();
 
+			const auto& timelineCopy = g_pState->Timeline.GetTimelineCopy();
+			
+			ImGuiListClipper clipper;
+			clipper.Begin(static_cast<int>(timelineCopy.size()));
+			
+			while (clipper.Step())
 			{
-				std::lock_guard lock(g_pState->TimelineMutex);
-				const auto& timeline = g_pState->Timeline;
-
-				ImGuiListClipper clipper;
-				clipper.Begin(static_cast<int>(timeline.size()));
-
-				while (clipper.Step())
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 				{
-					for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-					{
-						const auto& gameEvent = timeline[i];
-						ImGui::TableNextRow();
-
-						// Column: Timestamp
-						ImGui::TableSetColumnIndex(0);
-						ImGui::TextUnformatted(Formatting::ToTimestamp(gameEvent.Timestamp).c_str());
-
-						// Column: Event
-						ImGui::TableSetColumnIndex(1);
-						ImGui::TextUnformatted(Formatting::EventTypeToString(gameEvent.Type).c_str());
-
-						// Column: Players
-						ImGui::TableSetColumnIndex(2);
-						RenderPlayerCell(gameEvent.Players);
-					}
+					const auto& gameEvent = timelineCopy[i];
+					ImGui::TableNextRow();
+			
+					// Column: Timestamp
+					ImGui::TableSetColumnIndex(0);
+					ImGui::TextUnformatted(Formatting::ToTimestamp(gameEvent.Timestamp).c_str());
+			
+					// Column: Event
+					ImGui::TableSetColumnIndex(1);
+					ImGui::TextUnformatted(Formatting::EventTypeToString(gameEvent.Type).c_str());
+			
+					// Column: Players
+					ImGui::TableSetColumnIndex(2);
+					RenderPlayerCell(gameEvent.Players);
 				}
 			}
 

@@ -145,7 +145,7 @@ struct PlayerInfo {
 struct GameEvent
 {
 	// The specific time (in seconds) the event occurred within the replay.
-	float Timestamp;
+	float Timestamp{};
 
 	// The categorized nature of the event (Kill, Capture, Join, etc.).
 	EventType Type{};
@@ -154,5 +154,5 @@ struct GameEvent
 	EventTeams Teams{};
 
 	// List of the players involved in this specific event instance.
-	std::vector<PlayerInfo> Players;
+	std::vector<PlayerInfo> Players{};
 };

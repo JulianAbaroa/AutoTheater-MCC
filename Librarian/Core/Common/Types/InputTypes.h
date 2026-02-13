@@ -14,7 +14,6 @@ enum class InputAction
 	TogglePanel = 59,
 	ToggleInterface = 58,
 	TogglePOV = 60,
-	CameraReset,			// Internal logic (No direct GetButtonState mapping).
 	NextPlayer = 78,
 	PreviousPlayer = 77,
 	JumpForward = 80,
@@ -26,7 +25,9 @@ enum class InputAction
 	FasterBoost = 69,
 	Ascend = 34,
 	Descend = 48,
-	TheaterPanning,			// I didn't get this one.
+
+	CameraReset = -100,			// Internal logic (No direct GetButtonState mapping).
+	TheaterPanning = -101,			// I didn't get this one.
 };
 
 // Defines the operational scope for inputs.
@@ -38,16 +39,9 @@ enum class InputContext
 	Theater, Forge,
 };
 
-// Represents a paired action and context for the injection queue.
-struct GameInput
-{
-	InputContext InputContext;
-	InputAction InputAction;
-};
-
 // Data structure used to request an input injection with specific parameters.
 struct InputRequest
 {
-	InputAction Action;
 	InputContext Context;
+	InputAction Action;
 };

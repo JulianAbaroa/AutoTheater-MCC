@@ -7,27 +7,6 @@
     <Filter Include="Core\Systems">
       <UniqueIdentifier>{b3222c33-b409-45cc-830b-a2b197bc4873}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Core\Scanner">
-      <UniqueIdentifier>{a4ba31c2-9a32-4895-9c5f-d4ecc2885114}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Threads">
-      <UniqueIdentifier>{b1c15104-2fec-44f5-9633-73b57f77e41b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Hooks">
-      <UniqueIdentifier>{e321b691-32f2-4951-a478-d1d9e6d9b84f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Hooks\Data">
-      <UniqueIdentifier>{90612870-55b2-4f70-b05e-508fdb0773be}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Hooks\Lifecycle">
-      <UniqueIdentifier>{b869ddd3-cd8b-4eb4-b7b7-eb0afa97ccb8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Hooks\MovReader">
-      <UniqueIdentifier>{f28f7099-5825-44af-9bde-4159cdb66c4a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Hooks\Telemetry">
-      <UniqueIdentifier>{2957f341-d990-4c04-a175-2e87d414366c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Proxy">
       <UniqueIdentifier>{b39b8137-507d-42c6-a0bb-e92d9839472c}</UniqueIdentifier>
     </Filter>
@@ -42,9 +21,6 @@
     </Filter>
     <Filter Include="Core\UserInterface">
       <UniqueIdentifier>{4591bf68-a2aa-4ce6-b51e-3f11c13de7bd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Hooks\UserInterface">
-      <UniqueIdentifier>{0e308943-01e3-4656-9033-c9af46061842}</UniqueIdentifier>
     </Filter>
     <Filter Include="Core\UserInterface\Tabs">
       <UniqueIdentifier>{999f3f26-c7cd-42ec-804b-1804f0676a38}</UniqueIdentifier>
@@ -73,23 +49,53 @@
     <Filter Include="Core\UserInterface\Tabs\Logs">
       <UniqueIdentifier>{914cb15e-9a6c-46dd-ba62-5a0afc6e83ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\States">
+      <UniqueIdentifier>{27a5a46a-6a14-4a14-b92e-d18622ee85eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks">
+      <UniqueIdentifier>{e321b691-32f2-4951-a478-d1d9e6d9b84f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks\Data">
+      <UniqueIdentifier>{90612870-55b2-4f70-b05e-508fdb0773be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks\Lifecycle">
+      <UniqueIdentifier>{b869ddd3-cd8b-4eb4-b7b7-eb0afa97ccb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks\MovReader">
+      <UniqueIdentifier>{f28f7099-5825-44af-9bde-4159cdb66c4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks\UserInterface">
+      <UniqueIdentifier>{0e308943-01e3-4656-9033-c9af46061842}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks\Scanner">
+      <UniqueIdentifier>{a4ba31c2-9a32-4895-9c5f-d4ecc2885114}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Threads">
+      <UniqueIdentifier>{b1c15104-2fec-44f5-9633-73b57f77e41b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\States\Domain">
+      <UniqueIdentifier>{77dae797-c8d9-4ef3-8ba6-86dfe1168115}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\States\Infrastructure">
+      <UniqueIdentifier>{5911c1aa-49de-4da8-abcf-f36944bc8ae6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Systems\Domain">
+      <UniqueIdentifier>{6ac9e185-a37f-41cd-bdf8-68fd9d92603e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Systems\Interface">
+      <UniqueIdentifier>{43c62b98-29df-49c1-84e0-e697591d846c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\States\Interface">
+      <UniqueIdentifier>{6bb77379-708a-4910-94eb-13513d85339c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Systems\Infrastructure">
+      <UniqueIdentifier>{030948d9-a9be-4e53-8aed-b6c2d1594140}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks\Data\Telemetry">
+      <UniqueIdentifier>{00e374de-5f5b-43be-986d-73d977963244}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\Systems\Director.h">
-      <Filter>Core\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Theater.h">
-      <Filter>Core\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Timeline.h">
-      <Filter>Core\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Scanner\Scanner.h">
-      <Filter>Core\Scanner</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Scanner\Signatures.h">
-      <Filter>Core\Scanner</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Threads\DirectorThread.h">
       <Filter>Core\Threads</Filter>
     </ClInclude>
@@ -101,30 +107,6 @@
     </ClInclude>
     <ClInclude Include="Core\Threads\LogThread.h">
       <Filter>Core\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\Data\SpectatorHandleInput_Hook.h">
-      <Filter>Hooks\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\Data\UIBuildDynamicMessage_Hook.h">
-      <Filter>Hooks\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\Data\UpdateTelemetryTimer_Hook.h">
-      <Filter>Hooks\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\Lifecycle\DestroySubsystems_Hook.h">
-      <Filter>Hooks\Lifecycle</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\Lifecycle\EngineInitialize_Hook.h">
-      <Filter>Hooks\Lifecycle</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\MovReader\BlamOpenFile_Hook.h">
-      <Filter>Hooks\MovReader</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\MovReader\FilmInitializeState_Hook.h">
-      <Filter>Hooks\MovReader</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\Telemetry\Telemetry.h">
-      <Filter>Hooks\Telemetry</Filter>
     </ClInclude>
     <ClInclude Include="Proxy\ProxyExports.h">
       <Filter>Proxy</Filter>
@@ -138,26 +120,11 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Ignore\BaseHook.h" />
-    <ClInclude Include="Hooks\Data\GetButtonState_Hook.h">
-      <Filter>Hooks\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\Lifecycle\GameEngineStart_Hook.h">
-      <Filter>Hooks\Lifecycle</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Common\GlobalState.h">
+    <ClInclude Include="Core\Common\AppCore.h">
       <Filter>Core\Common</Filter>
     </ClInclude>
     <ClInclude Include="Core\UserInterface\UserInterface.h">
       <Filter>Core\UserInterface</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\UserInterface\Present_Hook.h">
-      <Filter>Hooks\UserInterface</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\UserInterface\WndProc_Hook.h">
-      <Filter>Hooks\UserInterface</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\UserInterface\GetRawInputData_Hook.h">
-      <Filter>Hooks\UserInterface</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui\imgui.h">
       <Filter>External\imgui</Filter>
@@ -176,12 +143,6 @@
     </ClInclude>
     <ClInclude Include="Utils\ThreadUtils.h">
       <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Common\PersistenceManager.h">
-      <Filter>Core\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Hooks\UserInterface\ResizeBuffers_Hook.h">
-      <Filter>Hooks\UserInterface</Filter>
     </ClInclude>
     <ClInclude Include="Utils\DXUtils.h">
       <Filter>Utils</Filter>
@@ -228,22 +189,118 @@
     <ClInclude Include="Core\Common\EventRegistry.h">
       <Filter>Core\Common</Filter>
     </ClInclude>
+    <ClInclude Include="Core\States\Domain\DirectorState.h">
+      <Filter>Core\States\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Domain\EventRegistryState.h">
+      <Filter>Core\States\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Domain\TheaterState.h">
+      <Filter>Core\States\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Domain\TimelineState.h">
+      <Filter>Core\States\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\LifecycleState.h">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\RenderState.h">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\ReplayState.h">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\SettingsState.h">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Interface\DebugState.h">
+      <Filter>Core\States\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Interface\InputState.h">
+      <Filter>Core\States\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Domain\DirectorSystem.h">
+      <Filter>Core\Systems\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Domain\EventRegistrySystem.h">
+      <Filter>Core\Systems\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Domain\TheaterSystem.h">
+      <Filter>Core\Systems\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Domain\TimelineSystem.h">
+      <Filter>Core\Systems\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\LifecycleSystem.h">
+      <Filter>Core\Systems\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\RenderSystem.h">
+      <Filter>Core\Systems\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\ReplaySystem.h">
+      <Filter>Core\Systems\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\SettingsSystem.h">
+      <Filter>Core\Systems\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Interface\DebugSystem.h">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Interface\InputSystem.h">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\GetButtonState_Hook.h">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\SpectatorHandleInput_Hook.h">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\UIBuildDynamicMessage_Hook.h">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\UpdateTelemetryTimer_Hook.h">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Lifecycle\DestroySubsystems_Hook.h">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Lifecycle\EngineInitialize_Hook.h">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Lifecycle\GameEngineStart_Hook.h">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\MovReader\BlamOpenFile_Hook.h">
+      <Filter>Core\Hooks\MovReader</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\MovReader\FilmInitializeState_Hook.h">
+      <Filter>Core\Hooks\MovReader</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Scanner\Scanner.h">
+      <Filter>Core\Hooks\Scanner</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Scanner\Signatures.h">
+      <Filter>Core\Hooks\Scanner</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\Telemetry\Telemetry.h">
+      <Filter>Core\Hooks\Data\Telemetry</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\UserInterface\GetRawInputData_Hook.h">
+      <Filter>Core\Hooks\UserInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\UserInterface\Present_Hook.h">
+      <Filter>Core\Hooks\UserInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\UserInterface\ResizeBuffers_Hook.h">
+      <Filter>Core\Hooks\UserInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\UserInterface\WndProc_Hook.h">
+      <Filter>Core\Hooks\UserInterface</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\DllMain.cpp">
       <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Director.cpp">
-      <Filter>Core\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Theater.cpp">
-      <Filter>Core\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Timeline.cpp">
-      <Filter>Core\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Scanner\Scanner.cpp">
-      <Filter>Core\Scanner</Filter>
     </ClCompile>
     <ClCompile Include="Core\Threads\DirectorThread.cpp">
       <Filter>Core\Threads</Filter>
@@ -257,30 +314,6 @@
     <ClCompile Include="Core\Threads\LogThread.cpp">
       <Filter>Core\Threads</Filter>
     </ClCompile>
-    <ClCompile Include="Hooks\Data\SpectatorHandleInput_Hook.cpp">
-      <Filter>Hooks\Data</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\Data\UIBuildDynamicMessage_Hook.cpp">
-      <Filter>Hooks\Data</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\Data\UpdateTelemetryTimer_Hook.cpp">
-      <Filter>Hooks\Data</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\Lifecycle\DestroySubsystems_Hook.cpp">
-      <Filter>Hooks\Lifecycle</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\Lifecycle\EngineInitialize_Hook.cpp">
-      <Filter>Hooks\Lifecycle</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\MovReader\BlamOpenFile_Hook.cpp">
-      <Filter>Hooks\MovReader</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\MovReader\FilmInitializeState_Hook.cpp">
-      <Filter>Hooks\MovReader</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\Telemetry\Telemetry.cpp">
-      <Filter>Hooks\Telemetry</Filter>
-    </ClCompile>
     <ClCompile Include="Utils\Formatting.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -290,26 +323,11 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Ignore\BaseHook.cpp" />
     <ClCompile Include="Ignore\todos.cpp" />
-    <ClCompile Include="Hooks\Data\GetButtonState_Hook.cpp">
-      <Filter>Hooks\Data</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\Lifecycle\GameEngineStart_Hook.cpp">
-      <Filter>Hooks\Lifecycle</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Common\GlobalState.cpp">
+    <ClCompile Include="Core\Common\AppCore.cpp">
       <Filter>Core\Common</Filter>
     </ClCompile>
     <ClCompile Include="Core\UserInterface\UserInterface.cpp">
       <Filter>Core\UserInterface</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\UserInterface\Present_Hook.cpp">
-      <Filter>Hooks\UserInterface</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\UserInterface\WndProc_Hook.cpp">
-      <Filter>Hooks\UserInterface</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\UserInterface\GetRawInputData_Hook.cpp">
-      <Filter>Hooks\UserInterface</Filter>
     </ClCompile>
     <ClCompile Include="External\imgui\imgui.cpp">
       <Filter>External\imgui</Filter>
@@ -350,12 +368,6 @@
     <ClCompile Include="Utils\ThreadUtils.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Common\PersistenceManager.cpp">
-      <Filter>Core\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Hooks\UserInterface\ResizeBuffers_Hook.cpp">
-      <Filter>Hooks\UserInterface</Filter>
-    </ClCompile>
     <ClCompile Include="Utils\DXUtils.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -382,6 +394,111 @@
     </ClCompile>
     <ClCompile Include="Core\Common\EventRegistry.cpp">
       <Filter>Core\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Domain\DirectorState.cpp">
+      <Filter>Core\States\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Domain\EventRegistryState.cpp">
+      <Filter>Core\States\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Domain\TheaterState.cpp">
+      <Filter>Core\States\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Domain\TimelineState.cpp">
+      <Filter>Core\States\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\LifecycleState.cpp">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\RenderState.cpp">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\ReplayState.cpp">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\SettingsState.cpp">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Interface\DebugState.cpp">
+      <Filter>Core\States\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Interface\InputState.cpp">
+      <Filter>Core\States\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Domain\DirectorSystem.cpp">
+      <Filter>Core\Systems\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Domain\EventRegistrySystem.cpp">
+      <Filter>Core\Systems\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Domain\TheaterSystem.cpp">
+      <Filter>Core\Systems\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Domain\TimelineSystem.cpp">
+      <Filter>Core\Systems\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\LifecycleSystem.cpp">
+      <Filter>Core\Systems\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\RenderSystem.cpp">
+      <Filter>Core\Systems\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\ReplaySystem.cpp">
+      <Filter>Core\Systems\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\SettingsSystem.cpp">
+      <Filter>Core\Systems\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Interface\DebugSystem.cpp">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Interface\InputSystem.cpp">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\GetButtonState_Hook.cpp">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\SpectatorHandleInput_Hook.cpp">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\UIBuildDynamicMessage_Hook.cpp">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\UpdateTelemetryTimer_Hook.cpp">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Lifecycle\DestroySubsystems_Hook.cpp">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Lifecycle\EngineInitialize_Hook.cpp">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStart_Hook.cpp">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\MovReader\BlamOpenFile_Hook.cpp">
+      <Filter>Core\Hooks\MovReader</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\MovReader\FilmInitializeState_Hook.cpp">
+      <Filter>Core\Hooks\MovReader</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Scanner\Scanner.cpp">
+      <Filter>Core\Hooks\Scanner</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\Telemetry\Telemetry.cpp">
+      <Filter>Core\Hooks\Data\Telemetry</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\UserInterface\GetRawInputData_Hook.cpp">
+      <Filter>Core\Hooks\UserInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\UserInterface\Present_Hook.cpp">
+      <Filter>Core\Hooks\UserInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\UserInterface\ResizeBuffers_Hook.cpp">
+      <Filter>Core\Hooks\UserInterface</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\UserInterface\WndProc_Hook.cpp">
+      <Filter>Core\Hooks\UserInterface</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

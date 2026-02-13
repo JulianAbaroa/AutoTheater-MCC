@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Utils/Logger.h"
 #include "Proxy/ProxyExports.h"
-#include "Core/Common/GlobalState.h"
+#include "Core/Common/AppCore.h"
 #include "Core/Threads/MainThread.h"
 #include "Core/Threads/LogThread.h"
 #include "Core/Threads/InputThread.h"
@@ -17,39 +17,40 @@ using namespace std::chrono_literals;
 // Responsible for initializing AutoTheater data and core systems.
 static DWORD WINAPI InitializeLibrarian(LPVOID lpParam)
 {
-    // 1. Instantiate the global AppState.
-    g_pState = new AppState();
+    // 1. Instantiate the global container.
+    g_App = std::make_unique<AppCore>();
 
-    // 2. Store the Module Handle of the main process (MCC-Win64-Shipping.exe).
+    // 2. Configure convenience pointers.
+    g_pState = g_App->State.get();
+    g_pSystem = g_App->System.get();
+
+    // 3. Store the Module Handle of the main process (MCC-Win64-Shipping.exe).
     HMODULE handleModule = (HMODULE)lpParam;
-    g_pState->HandleModule.store(handleModule);
+    g_pState->Lifecycle.SetHandleModule(handleModule);
 
-    // 3. Get the base directory where the main process is running.
+    // 4. Get the base directory where the main process is running.
     char buffer[MAX_PATH];
     GetModuleFileNameA(handleModule, buffer, MAX_PATH);
     PathRemoveFileSpecA(buffer);
 
-    // 4. Store the base directory and logger path, and creates the logger file.
-    {
-        std::lock_guard<std::mutex> lock(g_pState->ConfigMutex);
-        g_pState->BaseDirectory = std::string(buffer);
-        g_pState->LoggerPath = g_pState->BaseDirectory + "\\AutoTheater.txt";
-        std::ofstream ofs(g_pState->LoggerPath, std::ios::trunc);
-    }
+    // 5. Store the base directory and logger path, and creates the logger file.
+    g_pState->Settings.SetBaseDirectory(std::string(buffer));
+    g_pState->Settings.SetLoggerPath(g_pState->Settings.GetBaseDirectory() + "\\AutoTheater.txt");
+    std::ofstream ofs(g_pState->Settings.GetLoggerPath(), std::ios::trunc);
 
     Logger::LogAppend("AutoTheater Initializing.");
 
-    // 5. Attempt to initialize MinHook.
+    // 6. Attempt to initialize MinHook.
     if (MH_Initialize() != MH_OK)
     {
         Logger::LogAppend("ERROR: MH_Initialize failed.");
         return 0;
     }
 
-    // 6. Signal that the application started running.
-    g_pState->Running.store(true);
+    // 7. Signal that the application started running.
+    g_pState->Lifecycle.SetRunning(true);
 
-    // 7. Initialize main worker threads.
+    // 8. Initialize main worker threads.
     
     // Manages the hooks lifecycle and main application state updates.
     g_MainThread = std::thread(MainThread::Run);
@@ -75,7 +76,7 @@ static void DeinitializeLibrarian(LPVOID lpReserved)
         Logger::LogAppend("[DLL_PROCESS_DETACH]");
 
         // 2. Signal that the application has stopped running.
-        g_pState->Running.store(false);
+        g_pState->Lifecycle.SetRunning(false);
 
         std::this_thread::sleep_for(100ms);
 
@@ -88,10 +89,13 @@ static void DeinitializeLibrarian(LPVOID lpReserved)
         if (g_InputThread.joinable()) g_InputThread.detach();
         if (g_DirectorThread.joinable()) g_DirectorThread.detach();
 
-        Logger::LogAppend("Cleanup finished.");
+        // 5. Destroy the application.
+        g_App.reset();
 
-        // 5. Delete the AppState instance.
-        delete g_pState;
+        g_pState = nullptr;
+        g_pSystem = nullptr;
+
+        Logger::LogAppend("Cleanup finished.");
     }
 }
 

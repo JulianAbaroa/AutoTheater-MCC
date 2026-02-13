@@ -19,16 +19,16 @@ struct EventMetadata
 
 struct SavedReplay
 {
-	std::string Hash;
-	std::string DisplayName;
-	std::string MovFileName;
-	std::string Author;
-	std::string Info;
-	std::filesystem::path FullPath;
-	bool HasTimeline;
+	std::string Hash{};
+	std::string DisplayName{};
+	std::string MovFileName{};
+	std::string Author{};
+	std::string Info{};
+	std::filesystem::path FullPath{};
+	bool HasTimeline{};
 };
 
-struct CurrentFilmMetadata
+struct FilmMetadata
 {
 	std::string Author;
 	std::string Info;
