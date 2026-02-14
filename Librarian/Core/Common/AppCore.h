@@ -24,6 +24,9 @@
 #include "Core/Systems/Infrastructure/LifecycleSystem.h"
 #include "Core/Systems/Infrastructure/ReplaySystem.h"
 
+// UI
+#include "Core/UserInterface/Tabs/Optional/ReplayManagerTab.h"
+
 #include <memory>
 
 struct CoreState 
@@ -64,6 +67,18 @@ struct CoreSystem
 	ReplaySystem Replay;
 };
 
+struct CoreUI
+{
+	// Domain
+
+
+	// Interface
+
+
+	// Infrastructure
+	ReplayManagerTab Replay;
+};
+
 class AppCore
 {
 public:
@@ -72,9 +87,11 @@ public:
 
 	std::unique_ptr<CoreSystem> System;
 	std::unique_ptr<CoreState> State;
+	std::unique_ptr<CoreUI> UI;
 };
 
 extern std::unique_ptr<AppCore> g_App;
 
 extern CoreSystem* g_pSystem;
 extern CoreState* g_pState;
+extern CoreUI* g_pUI;

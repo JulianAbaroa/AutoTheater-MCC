@@ -207,7 +207,7 @@
     <ClInclude Include="Core\UserInterface\Tabs\Logs\LogsTab.h" />
     <ClInclude Include="Core\UserInterface\Tabs\Optional\EventRegistryTab.h" />
     <ClInclude Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\Primary\ConfigurationTab.h" />
+    <ClInclude Include="Core\UserInterface\Tabs\Primary\SettingsTab.h" />
     <ClInclude Include="Core\UserInterface\Tabs\Primary\DirectorTab.h" />
     <ClInclude Include="Core\UserInterface\Tabs\Primary\TheaterTab.h" />
     <ClInclude Include="Core\UserInterface\Tabs\Primary\TimelineTab.h" />
@@ -290,7 +290,7 @@
     <ClCompile Include="Core\UserInterface\Tabs\Logs\LogsTab.cpp" />
     <ClCompile Include="Core\UserInterface\Tabs\Optional\EventRegistryTab.cpp" />
     <ClCompile Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\Primary\ConfigurationTab.cpp" />
+    <ClCompile Include="Core\UserInterface\Tabs\Primary\SettingsTab.cpp" />
     <ClCompile Include="Core\UserInterface\Tabs\Primary\DirectorTab.cpp" />
     <ClCompile Include="Core\UserInterface\Tabs\Primary\TheaterTab.cpp" />
     <ClCompile Include="Core\UserInterface\Tabs\Primary\TimelineTab.cpp" />

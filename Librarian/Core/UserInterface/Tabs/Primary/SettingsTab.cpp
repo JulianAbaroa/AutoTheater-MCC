@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Core/Common/AppCore.h"
 #include "Core/Common/PersistenceManager.h"
-#include "Core/UserInterface/Tabs/Primary/ConfigurationTab.h"
+#include "Core/UserInterface/Tabs/Primary/SettingsTab.h"
 #include "External/imgui/imgui.h"
 
 static void DrawHotkey(const char* label, const char* keys, const char* tooltip)
@@ -36,7 +36,7 @@ static void DrawPathField(const char* label, const std::string& path)
 	ImGui::Spacing();
 }
 
-void ConfigurationTab::Draw()
+void SettingsTab::Draw()
 {
 	// Section: User Interface
 	ImGui::TextDisabled("USER INTERFACE & HOTKEYS");
@@ -164,6 +164,7 @@ void ConfigurationTab::Draw()
 		{
 			g_pSystem->Settings.DeleteAppData();
 			g_pState->Replay.SetRefreshReplayList(true);
+			g_pState->Settings.SetUseAppData(false);
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::PopStyleColor();

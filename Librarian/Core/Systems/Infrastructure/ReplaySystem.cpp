@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Utils/Logger.h"
-#include "ReplaySystem.h"
+#include "Utils/Formatting.h"
+#include "Core/Systems/Infrastructure/ReplaySystem.h"
 #include "Core/Common/AppCore.h"
 #include <fstream>
 
@@ -13,25 +14,29 @@ void ReplaySystem::SaveReplay(const std::string& sourceFilmPath)
 		std::filesystem::path src(sourceFilmPath);
 		if (!std::filesystem::exists(src)) return;
 
+		TheaterReplay scannedData = this->ScanReplay(sourceFilmPath);
+
 		std::string fileHash = CalculateFileHash(sourceFilmPath);
 
 		std::filesystem::path destDir =
 			std::filesystem::path(g_pState->Settings.GetAppDataDirectory()) / "Replays" / fileHash;
 
-		std::filesystem::create_directories(destDir);
+		if (!std::filesystem::exists(destDir))
+			std::filesystem::create_directories(destDir);
 
-		std::filesystem::path finalMovPath = destDir / src.filename();
+		std::filesystem::path finalMovPath = destDir / (fileHash + ".mov");
+
 		std::filesystem::copy_file(
 			src, finalMovPath,
 			std::filesystem::copy_options::overwrite_existing
 		);
 
-		SaveMetadata(fileHash, fileHash);
+		this->SaveMetadata(fileHash, src.stem().string(), scannedData.FilmMetadata);
 
 		g_pState->Replay.SetActiveReplayHash(fileHash);
-
 		g_pState->Replay.SetRefreshReplayList(true);
-		Logger::LogAppend(("Replay indexed by hash: " + fileHash.substr(0, 8) + "...").c_str());
+
+		Logger::LogAppend(("Replay saved & indexed: " + fileHash.substr(0, 8)).c_str());
 	}
 	catch (const std::exception& e)
 	{
@@ -60,31 +65,24 @@ void ReplaySystem::DeleteReplay(const std::string& hash)
 }
 
 
-void ReplaySystem::SaveMetadata(const std::string& hash, const std::string& defaultName)
+void ReplaySystem::SaveMetadata(const std::string& hash, const std::string& defaultName, const FilmMetadata& metadata)
 {
 	std::filesystem::path path =
 		std::filesystem::path(g_pState->Settings.GetAppDataDirectory()) / "Replays" / hash / "metadata.txt";
 
 	std::string finalName = defaultName;
 	std::string localHash = hash;
-	std::string author = "Unknown";
-	std::string info = "N/A";
+
+	std::string author = metadata.Author.empty() ? "Unknown" : metadata.Author;
+	std::string info = metadata.Info.empty() ? "N/A" : metadata.Info;
 
 	if (std::filesystem::exists(path)) {
 		std::ifstream inFile(path);
 		std::string line;
 		while (std::getline(inFile, line)) {
 			if (line.find("Name=") == 0) finalName = line.substr(5);
-			else if (line.find("Hash=") == 0) localHash = line.substr(5);
-			else if (line.find("Author=") == 0) author = line.substr(7);
-			else if (line.find("Info=") == 0) info = line.substr(5);
 		}
 		inFile.close();
-	}
-	else {
-		FilmMetadata metadata = g_pState->Replay.GetFilmMetadata();
-		author = metadata.Author;
-		info = metadata.Info;
 	}
 
 	std::ofstream file(path, std::ios::trunc);
@@ -131,8 +129,8 @@ void ReplaySystem::RestoreReplay(const SavedReplay& replay)
 
 	try
 	{
-		std::filesystem::path src = replay.FullPath / replay.MovFileName;
-		std::filesystem::path dest = std::filesystem::path(g_pState->Settings.GetMovieTempDirectory()) / replay.MovFileName;
+		std::filesystem::path src = replay.TheaterReplay.FullPath / replay.TheaterReplay.MovFileName;
+		std::filesystem::path dest = std::filesystem::path(g_pState->Settings.GetMovieTempDirectory()) / replay.TheaterReplay.MovFileName;
 
 		if (std::filesystem::exists(dest))
 		{
@@ -162,7 +160,7 @@ void ReplaySystem::SaveTimeline(const std::string& replayHash)
 
 	if (std::filesystem::exists(timelinePath))
 	{
-		float existingLastTimestamp = GetLastTimestampFromFile(timelinePath.string());
+		float existingLastTimestamp = this->GetLastTimestampFromFile(timelinePath.string());
 		float currentTimestamp = g_pSystem->Timeline.GetLatestTimestamp();
 
 		if (currentTimestamp <= existingLastTimestamp)
@@ -299,21 +297,6 @@ void ReplaySystem::LoadTimeline(const std::string& hash)
 	file.close();
 }
 
-float ReplaySystem::GetLastTimestampFromFile(const std::string& timelinePath)
-{
-	std::ifstream file(timelinePath, std::ios::binary);
-	if (!file) return 0.0f;
-
-	size_t eventCount = 0;
-	float lastTimestamp = 0.0f;
-
-	file.read((char*)&eventCount, sizeof(eventCount));
-	if (eventCount == 0) return 0.0f;
-
-	file.read((char*)&lastTimestamp, sizeof(lastTimestamp));
-	return lastTimestamp;
-}
-
 
 std::vector<SavedReplay> ReplaySystem::GetSavedReplays()
 {
@@ -329,7 +312,7 @@ std::vector<SavedReplay> ReplaySystem::GetSavedReplays()
 		{
 			SavedReplay replay;
 			replay.Hash = entry.path().filename().string();
-			replay.FullPath = entry.path();
+			replay.TheaterReplay.FullPath = entry.path();
 			replay.HasTimeline = std::filesystem::exists(entry.path() / "events.timeline");
 
 			std::filesystem::path metaPath = entry.path() / "metadata.txt";
@@ -340,8 +323,8 @@ std::vector<SavedReplay> ReplaySystem::GetSavedReplays()
 				while (std::getline(file, line))
 				{
 					if (line.find("Name=") == 0) replay.DisplayName = line.substr(5);
-					else if (line.find("Author=") == 0) replay.Author = line.substr(7);
-					else if (line.find("Info=") == 0) replay.Info = line.substr(5);
+					else if (line.find("Author=") == 0) replay.TheaterReplay.FilmMetadata.Author = line.substr(7);
+					else if (line.find("Info=") == 0) replay.TheaterReplay.FilmMetadata.Info = line.substr(5);
 				}
 			}
 			else
@@ -353,7 +336,7 @@ std::vector<SavedReplay> ReplaySystem::GetSavedReplays()
 			{
 				if (f.path().extension() == ".mov")
 				{
-					replay.MovFileName = f.path().filename().string();
+					replay.TheaterReplay.MovFileName = f.path().filename().string();
 					break;
 				}
 			}
@@ -405,4 +388,109 @@ std::string ReplaySystem::CalculateFileHash(const std::string& sourceFilmPath)
 	std::stringstream ss;
 	ss << std::hex << std::setw(16) << std::setfill('0') << hash;
 	return ss.str();
+}
+
+std::vector<TheaterReplay> ReplaySystem::GetTheaterReplays(const std::filesystem::path& directoryPath)
+{
+	std::vector<TheaterReplay> replays;
+
+	if (!std::filesystem::exists(directoryPath) || !std::filesystem::is_directory(directoryPath))
+	{
+		return replays;
+	}
+
+	for (const auto& entry : std::filesystem::directory_iterator(directoryPath))
+	{
+		if (entry.is_regular_file() && entry.path().extension() == ".mov")
+		{
+			replays.push_back(this->ScanReplay(entry.path()));
+		}
+	}
+
+	return replays;
+}
+
+TheaterReplay ReplaySystem::ScanReplay(const std::filesystem::path& filePath)
+{
+	TheaterReplay replay;
+	replay.FullPath = filePath;
+	replay.MovFileName = filePath.filename().string();
+
+	std::ifstream file(filePath, std::ios::binary);
+	if (file.is_open())
+	{
+		char buffer[0x400] = { 0 };
+		file.read(buffer, sizeof(buffer));
+		file.close();
+
+		char author[17] = { 0 };
+		memcpy(author, buffer + 0x88, 16);
+
+		wchar_t* wFullInfo = reinterpret_cast<wchar_t*>(buffer + 0x1C0);
+
+		replay.FilmMetadata.Author = std::string(author);
+		replay.FilmMetadata.Info = Formatting::WStringToString(wFullInfo);
+	}
+
+	return replay;
+}
+
+void ReplaySystem::DeleteInGameReplay(const std::filesystem::path& replayPath)
+{
+	try
+	{
+		if (std::filesystem::exists(replayPath))
+		{
+			std::filesystem::remove(replayPath);
+			Logger::LogAppend(("Deleted in-game replay: " + replayPath.filename().string()).c_str());
+			this->HotreloadReplays();
+		}
+	}
+	catch (const std::exception& e)
+	{
+		Logger::LogAppend(("Error deleting in-game replay: " + std::string(e.what())).c_str());
+	}
+}
+
+
+float ReplaySystem::GetLastTimestampFromFile(const std::string& timelinePath)
+{
+	std::ifstream file(timelinePath, std::ios::binary);
+	if (!file) return 0.0f;
+
+	size_t eventCount = 0;
+	float lastTimestamp = 0.0f;
+
+	file.read((char*)&eventCount, sizeof(eventCount));
+	if (eventCount == 0) return 0.0f;
+
+	file.read((char*)&lastTimestamp, sizeof(lastTimestamp));
+	return lastTimestamp;
+}
+
+void ReplaySystem::HotreloadReplays()
+{
+	try
+	{
+		std::filesystem::path dir = std::filesystem::path(g_pState->Settings.GetMovieTempDirectory());
+
+		if (std::filesystem::exists(dir))
+		{
+			std::filesystem::path tempFile = dir / ".hotreload_trigger.mov";
+
+			if (std::filesystem::exists(tempFile))
+			{
+				std::filesystem::remove(tempFile);
+			}
+
+			std::ofstream file(tempFile);
+			file.close();
+
+			Logger::LogAppend("Replays hotreload executed.");
+		}
+	}
+	catch (const std::exception& e)
+	{
+		Logger::LogAppend((std::string("Error in hotreload replays: ") + e.what()).c_str());
+	}
 }

@@ -17,21 +17,25 @@ struct EventMetadata
 	std::vector<std::wstring> InternalTemplates;
 };
 
-struct SavedReplay
-{
-	std::string Hash{};
-	std::string DisplayName{};
-	std::string MovFileName{};
-	std::string Author{};
-	std::string Info{};
-	std::filesystem::path FullPath{};
-	bool HasTimeline{};
-};
-
 struct FilmMetadata
 {
 	std::string Author;
 	std::string Info;
+};
+
+struct TheaterReplay
+{
+	FilmMetadata FilmMetadata{};
+	std::filesystem::path FullPath{};
+	std::string MovFileName{};
+};
+
+struct SavedReplay
+{
+	std::string Hash{};
+	std::string DisplayName{};
+	TheaterReplay TheaterReplay{};
+	bool HasTimeline{};
 };
 
 struct PhaseUI

@@ -9,6 +9,8 @@
 #include "External/minhook/include/MinHook.h"
 #include <fstream>
 
+#include "Core/Systems/Infrastructure/ReplaySystem.h"
+
 BlamOpenFile_t original_BlamOpenFile = nullptr;
 std::atomic<bool> g_BlamOpenFile_Hook_Installed;
 void* g_BlamOpenFile_Address;
@@ -28,35 +30,18 @@ void hkBlam_OpenFile(
 		if (pathStr.find(".mov") != std::string::npos) 
 		{
 			g_pState->Replay.SetCurrentFilmPath(filePath);
-
-			std::ifstream file(pathStr, std::ios::binary);
-			char author[17] = { 0 };
-			wchar_t* wFullInfo{};
-
-			if (file.is_open())
-			{
-				char buffer[0x400] = { 0 };
-				file.read(buffer, sizeof(buffer));
-
-				memcpy(author, buffer + 0x88, 16);
-
-				wFullInfo = reinterpret_cast<wchar_t*>(buffer + 0x1C0);
-
-				// TODO: Possibly author wstring to string needed
-				g_pState->Replay.SetFilmMetadata({ author, Formatting::WStringToString(wFullInfo) });
-
-				file.close();
-			}
+			TheaterReplay replay = g_pSystem->Replay.ScanReplay(filePath);
+			g_pState->Replay.SetFilmMetadata(replay.FilmMetadata);
 
 			if (g_pState->Lifecycle.GetCurrentPhase() == AutoTheaterPhase::Timeline)
 			{
 				Logger::LogAppend((std::string("Film path: ") + filePath).c_str());
 				Logger::LogAppend("=== Analyzing CHDR from Disk ===");
-				Logger::LogAppend((std::string("Recorded by: ") + author).c_str());
+				Logger::LogAppend((std::string("Recorded by: ") + replay.FilmMetadata.Author).c_str());
 
-				if (wFullInfo != nullptr && wFullInfo[0] != L'\0')
+				if (!replay.FilmMetadata.Info.empty())
 				{
-					Logger::LogAppend((std::string("Info: ") + Formatting::WStringToString(wFullInfo)).c_str());
+					Logger::LogAppend((std::string("Info: ") + replay.FilmMetadata.Info).c_str());
 				}
 			}
 			else if (g_pState->Lifecycle.GetCurrentPhase() == AutoTheaterPhase::Director)

@@ -7,7 +7,7 @@
 #include "Core/UserInterface/Tabs/Primary/TimelineTab.h"
 #include "Core/UserInterface/Tabs/Primary/TheaterTab.h"
 #include "Core/UserInterface/Tabs/Primary/DirectorTab.h"
-#include "Core/UserInterface/Tabs/Primary/ConfigurationTab.h"
+#include "Core/UserInterface/Tabs/Primary/SettingsTab.h"
 #include "Core/UserInterface/Tabs/Optional/ReplayManagerTab.h"
 #include "Core/UserInterface/Tabs/Optional/EventRegistryTab.h"
 #include "External/imgui/imgui_internal.h"
@@ -159,7 +159,7 @@ void DrawTabs()
 
 	static bool firstLaunch = true;
 
-	auto AddTab = [](const char* label, void (*drawFn)(), bool forceOpen = false) {
+	auto AddTab = [](const char* label, auto drawFn, bool forceOpen = false) {
 		ImGuiTabItemFlags flags = forceOpen ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
 
 		if (ImGui::BeginTabItem(label, nullptr, flags))
@@ -173,12 +173,12 @@ void DrawTabs()
 	AddTab("Timeline", TimelineTab::Draw);
 	AddTab("Theater", TheaterTab::Draw);
 	AddTab("Director", DirectorTab::Draw);
-	AddTab("Settings", ConfigurationTab::Draw, firstLaunch);
+	AddTab("Settings", SettingsTab::Draw, firstLaunch);
 
 	// Optional Tabs
 	bool useAppData = g_pState->Settings.ShouldUseAppData();
 	if (!useAppData) ImGui::BeginDisabled();
-	AddTab("Replay Manager", ReplayManagerTab::Draw);
+	AddTab("Replay Manager", []() { g_pUI->Replay.Draw(); });
 	AddTab("Event Registry", EventRegistryTab::Draw);
 	if (!useAppData) ImGui::EndDisabled();
 

@@ -177,7 +177,7 @@
     <ClInclude Include="Core\UserInterface\Tabs\Primary\TimelineTab.h">
       <Filter>Core\UserInterface\Tabs\Primary</Filter>
     </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\Primary\ConfigurationTab.h">
+    <ClInclude Include="Core\UserInterface\Tabs\Primary\SettingsTab.h">
       <Filter>Core\UserInterface\Tabs\Primary</Filter>
     </ClInclude>
     <ClInclude Include="Core\UserInterface\Tabs\Primary\DirectorTab.h">
@@ -380,7 +380,7 @@
     <ClCompile Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.cpp">
       <Filter>Core\UserInterface\Tabs\Optional</Filter>
     </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\Primary\ConfigurationTab.cpp">
+    <ClCompile Include="Core\UserInterface\Tabs\Primary\SettingsTab.cpp">
       <Filter>Core\UserInterface\Tabs\Primary</Filter>
     </ClCompile>
     <ClCompile Include="Core\UserInterface\Tabs\Primary\DirectorTab.cpp">
