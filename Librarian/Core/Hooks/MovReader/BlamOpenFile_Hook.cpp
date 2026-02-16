@@ -15,6 +15,14 @@ BlamOpenFile_t original_BlamOpenFile = nullptr;
 std::atomic<bool> g_BlamOpenFile_Hook_Installed;
 void* g_BlamOpenFile_Address;
 
+// This function is a hook for the Blam! File System API, used for interacting with Windows I/O.
+// It is triggered during engine initialization and state transitions to load maps,
+// game variants, and resource packages.
+// AutoTheater Interception: By hooking this call, the mod identifies the specific replay
+// file (.mov) being loaded by the player. This allows AutoTheater to:
+// 1. Scan and extract 'CHDR' (Film Metadata) from the disk.
+// 2. Hash the file to ensure the currently loaded Timeline matches the replay data.
+// 3. Synchronize the Director's lifecycle with the game's file-loading state.
 void hkBlam_OpenFile(
 	long long fileContext,
 	uint32_t accessFlags,

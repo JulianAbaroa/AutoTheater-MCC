@@ -19,6 +19,18 @@ void TheaterSystem::Update()
 	}
 }
 
+
+void TheaterSystem::InitializeReplaySpeed()
+{
+	if (m_IsReplaySpeedInitialized.load()) return;
+
+	float* pTimeScale = g_pState->Theater.GetTimeScalePtr();
+	if (!pTimeScale)
+	{
+		g_pSystem->Theater.SetReplaySpeed(1.0f);
+	}
+}
+
 void TheaterSystem::SetReplaySpeed(float speed)
 {
 	speed = std::clamp(speed, 0.0f, 32.0f);
@@ -49,7 +61,7 @@ void TheaterSystem::RefreshPlayerList()
 	uintptr_t objectTable = Telemetry::GetTelemetryObjectTable();
 	if (!playerTable || !objectTable) return;
 
-	//LogTables(playerTable, objectTable);
+	LogTables(playerTable, objectTable);
 
 	std::vector<PlayerInfo> nextPlayerList;
 	nextPlayerList.resize(16);
@@ -163,6 +175,14 @@ void TheaterSystem::UpdateRealTimeScale()
 }
 
 // TODO: Currently is not copying the Rotation and LookVector from memory.
+// Reads and parses data for a single player by resolving their handles through the Object Table.
+// 1. Data Access: Uses the 'playerTable' and 'index' to calculate the player's 0x490-sized data block.
+// 2. Handle Resolution: Extracts the low 16 bits (0xFFFF) from object handles to use as an index 
+//    within the Global Object Table.
+// 3. Pointer Indirection: Each 24-byte (0x18) entry in the Object Table is scanned for a valid 
+//    64-bit memory address (pointing to the actual Weapon, Biped, or Objective entity).
+// 4. Safety: Uses Structured Exception Handling (__try/__except) and manual pointer validation 
+//    to prevent crashes during memory scraping.
 bool TheaterSystem::RawReadSinglePlayer(
 	uintptr_t playerTable, 
 	uintptr_t objectTable, 

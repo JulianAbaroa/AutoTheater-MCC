@@ -9,6 +9,14 @@ GameEngineStart_t original_GameEngineStart = nullptr;
 std::atomic<bool> g_GameEngineStart_Hook_Installed = false;
 void* g_GameEngineStart_Address = nullptr;
 
+// This is the entry point for the Game Engine's primary initialization loop.
+// It is triggered whenever a new simulation state is being prepared.
+// Detection Logic: AutoTheater inspects 'param_3' for a specific 16-byte session 
+// signature (CGB Theater Signature). This signature uniquely identifies if the 
+// current engine state is a Theater replay session.
+// Purpose: This prevents the mod from activating during normal gameplay (Campaign/MP), 
+// ensuring that AutoTheater's director and hooks only engage when a valid 
+// replay context is detected.
 void __fastcall hkGameEngineStart(uint64_t param_1, uint64_t param_2, uint64_t* param_3)
 {
 	original_GameEngineStart(param_1, param_2, param_3);

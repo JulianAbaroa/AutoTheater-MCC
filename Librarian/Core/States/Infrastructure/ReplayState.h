@@ -26,12 +26,11 @@ public:
 
 private:
 	std::vector<SavedReplay> m_SavedReplaysCache;
-	std::atomic<bool> m_ShouldRefreshReplayList{ true };
-	FilmMetadata m_FilmMetadata{};
-
+	std::string m_PreviousReplayPath{};
 	std::string m_ActiveReplayHash{};
 	std::string m_CurrentFilmPath{};
-	std::string m_PreviousReplayPath{};
-
+	FilmMetadata m_FilmMetadata{};
 	mutable std::mutex m_Mutex;
+
+	std::atomic<bool> m_ShouldRefreshReplayList{ true };
 };

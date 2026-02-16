@@ -27,7 +27,7 @@ enum class InputAction
 	Descend = 48,
 
 	CameraReset = -100,			// Internal logic (No direct GetButtonState mapping).
-	TheaterPanning = -101,			// I didn't get this one.
+	TheaterPanning = -101,		// I didn't get this one.
 };
 
 // Defines the operational scope for inputs.

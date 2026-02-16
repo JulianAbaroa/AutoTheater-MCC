@@ -38,6 +38,15 @@ static void PrintNewEvent(
 	}
 }
 
+// This function acts as a string formatter for the in-game event feed (kill-feed).
+// It processes a 'pTemplateStr' and uses 'pEventData' to generate the final localized
+// string displayed to players.
+// Observed Behavior: This hook does not capture every game event. While it processes
+// major combat and world events, it does not appear to trigger for minor local 
+// actions such as picking up weapons or equipment.
+// Critical for AutoTheater: This hook is the primary data source for the Timeline.
+// By intercepting these events, AutoTheater builds the real-time script that
+// drives the automated camera director and replay editing.
 unsigned char hkUIBuildDynamicMessage(
 	int playerMask,
 	wchar_t* pTemplateStr,

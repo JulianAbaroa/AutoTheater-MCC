@@ -9,6 +9,7 @@ class TheaterSystem
 public: 
     void Update();
 
+    void InitializeReplaySpeed();
     void SetReplaySpeed(float speed);
     void RefreshPlayerList();
 
@@ -19,6 +20,8 @@ public:
     float GetRealTimeScale() const;
 
 private:
+    std::atomic<bool> m_IsReplaySpeedInitialized{ false };
+
     std::atomic<float> m_RealTimeScale{ 1.0f };
     std::atomic<double> m_AnchorSystemTime{ 0.0f };
     std::atomic<float> m_AnchorReplayTime{ 0.0f };

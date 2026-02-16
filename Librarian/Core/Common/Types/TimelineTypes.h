@@ -93,8 +93,7 @@ enum class EventType
 	// Add new game events here...
 };
 
-/** * @brief Metadata associated with a specific game event.
- */
+// Metadata associated with a specific game event.
 struct EventInfo
 {
 	// The categorized type of the event used for logic identification.
@@ -108,8 +107,7 @@ struct EventInfo
 	EventClass Class;
 };
 
-/** * @brief Simplified structure to represent team interactions within an event.
- */
+// Simplified structure to represent team interactions within an event.
 struct EventTeams
 {
 	// Maps to the CauseTeam (Instigator)
@@ -119,9 +117,8 @@ struct EventTeams
 	int8_t Second;
 };
 
-/** * @brief High-level representation of a player, aggregating raw engine data
- * with processed metadata for UI and Director logic.
- */
+// High-level representation of a player, aggregating raw engine data
+// with processed metadata for UI and Director logic.
 struct PlayerInfo {
 	// Snapshotted spatial and state data directly from the game's PlayerTable.
 	RawPlayer RawPlayer{};
@@ -139,9 +136,8 @@ struct PlayerInfo {
 	uint8_t Id = 0;
 };
 
-/** * @brief A processed event entry within the AutoTheater timeline.
- * Aggregates timing, types, and all participating player datafor logic evaluation.
- */
+// A processed event entry within the AutoTheater timeline.
+// Aggregates timing, types, and all participating player datafor logic evaluation.
 struct GameEvent
 {
 	// The specific time (in seconds) the event occurred within the replay.

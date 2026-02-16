@@ -19,8 +19,9 @@ public:
 	void Reset();
 
 private:
-	InputRequest m_NextRequest{ InputContext::Unknown, InputAction::Unknown };
-	std::atomic<bool> m_IsProcessing{ false };
 	std::queue<InputRequest> m_Queue{};
+	InputRequest m_NextRequest{ InputContext::Unknown, InputAction::Unknown };
 	mutable std::mutex m_Mutex;
+
+	std::atomic<bool> m_IsProcessing{ false };
 };

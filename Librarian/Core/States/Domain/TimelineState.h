@@ -21,9 +21,6 @@ public:
 private:
 	// Accumulates the events of a replay during the Timeline phase.
 	std::vector<GameEvent> m_Events{};
-
-	// Mutex for thread-safe Timeline modification.
 	mutable std::mutex m_Mutex;
-
 	std::atomic<bool> m_IsLoggingActive{ true };
 };

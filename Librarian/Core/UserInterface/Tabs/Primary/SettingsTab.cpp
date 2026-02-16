@@ -128,11 +128,11 @@ void SettingsTab::Draw()
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
 
 	if (ImGui::Button("Delete All AppData")) {
-		ImGui::OpenPopup("CRITICAL: Wipe AppData?");
+		ImGui::OpenPopup("Delete AppData");
 	}
 	ImGui::PopStyleColor(2);
 
-	if (ImGui::BeginPopupModal("CRITICAL: Wipe AppData?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::BeginPopupModal("Delete AppData", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "WARNING: THIS ACTION CANNOT BE UNDONE");
 		ImGui::Separator();
@@ -159,19 +159,17 @@ void SettingsTab::Draw()
 		float offset = (ImGui::GetContentRegionAvail().x - totalWidth) * 0.5f;
 		if (offset > 0.0f) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));
-		if (ImGui::Button("Confirm Wipe", ImVec2(btnWidth, 0.0f)))
+		if (ImGui::Button("Yes", ImVec2(btnWidth, 0.0f)))
 		{
 			g_pSystem->Settings.DeleteAppData();
 			g_pState->Replay.SetRefreshReplayList(true);
 			g_pState->Settings.SetUseAppData(false);
 			ImGui::CloseCurrentPopup();
 		}
-		ImGui::PopStyleColor();
 
 		ImGui::SameLine();
 
-		if (ImGui::Button("Keep Data", ImVec2(btnWidth, 0.0f)))
+		if (ImGui::Button("Cancel", ImVec2(btnWidth, 0.0f)))
 		{
 			ImGui::CloseCurrentPopup();
 		}

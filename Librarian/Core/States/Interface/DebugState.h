@@ -15,8 +15,7 @@ public:
 
 private:
 	std::deque<std::string> m_Logs{};
-	const size_t m_MaxLogs = 500;
-
-	// Mutex for thread-safe Logs modification.
 	mutable std::mutex m_Mutex;
+
+	const size_t m_MaxLogs = 500;
 };

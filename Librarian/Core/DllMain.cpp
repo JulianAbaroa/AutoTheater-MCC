@@ -23,6 +23,7 @@ static DWORD WINAPI InitializeLibrarian(LPVOID lpParam)
     // 2. Configure convenience pointers.
     g_pState = g_App->State.get();
     g_pSystem = g_App->System.get();
+    g_pUI = g_App->UI.get();
 
     // 3. Store the Module Handle of the main process (MCC-Win64-Shipping.exe).
     HMODULE handleModule = (HMODULE)lpParam;
@@ -92,8 +93,9 @@ static void DeinitializeLibrarian(LPVOID lpReserved)
         // 5. Destroy the application.
         g_App.reset();
 
-        g_pState = nullptr;
+        g_pUI = nullptr;
         g_pSystem = nullptr;
+        g_pState = nullptr;
 
         Logger::LogAppend("Cleanup finished.");
     }

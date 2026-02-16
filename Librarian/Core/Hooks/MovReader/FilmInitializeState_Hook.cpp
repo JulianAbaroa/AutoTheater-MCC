@@ -11,6 +11,15 @@ FilmInitializeState_t original_FilmInitializeState = nullptr;
 std::atomic<bool> g_FilmInitializeState_Hook_Installed;
 void* g_FilmInitializeState_Address;
 
+// This function is triggered when the game engine initializes a Theater film session.
+// It provides access to the 'FLMH' (Film Header) buffer, which contains the 
+// initial snapshot of the session's state before the simulation starts.
+// AutoTheater uses this hook to:
+// 1. Extract the Base Map name (located at +0x930).
+// 2. Build the Initial Player Registry: It parses the 16-slot player table starting 
+//    at +0xBD0 (where each entry is 0xA0 bytes).
+// 3. Populate Global State: Stores names and service ids into the Theater State.
+// Note: This data reflects the players present at the moment the recording started.
 void hkFilm_InitializeState(
 	uint64_t sessionContext,
 	uint64_t headerBuffer

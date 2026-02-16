@@ -33,16 +33,21 @@ void ReplayManagerTab::Draw()
 
     if (OpenLibDeleteModal)
     {
-        ImGui::OpenPopup("DeleteLibConfirm");
+        ImGui::OpenPopup("Delete Library Replay");
         OpenLibDeleteModal = false;
     }
 
-    if (ImGui::BeginPopupModal("DeleteLibConfirm", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    if (ImGui::BeginPopupModal("Delete Library Replay", NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("This replay will be permanently removed from your library.\nThis action cannot be undone.");
-        ImGui::Separator(); ImGui::Spacing();
+        ImGui::Separator(); 
+        ImGui::Spacing();
 
-        if (ImGui::Button("Yes, Delete", ImVec2(120, 0)))
+        float buttonWidth = 120.0f;
+        float totalButtonsWidth = (buttonWidth * 2.0f) + ImGui::GetStyle().ItemSpacing.x;
+        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalButtonsWidth) * 0.5f);
+
+        if (ImGui::Button("Yes", ImVec2(120, 0)))
         {
             g_pSystem->Replay.DeleteReplay(HashToDelete);
             g_pState->Replay.SetRefreshReplayList(true); 
@@ -57,16 +62,21 @@ void ReplayManagerTab::Draw()
 
     if (OpenGameDeleteModal)
     {
-        ImGui::OpenPopup("DeleteGameConfirm");
+        ImGui::OpenPopup("Delete Game Replay");
         OpenGameDeleteModal = false;
     }
 
-    if (ImGui::BeginPopupModal("DeleteGameConfirm", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    if (ImGui::BeginPopupModal("Delete Game Replay", NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::Text("This will remove the temporary film from the game directory.\nThe game will hotreload to update the list.");
-        ImGui::Separator(); ImGui::Spacing();
+        ImGui::Text("This replay will be permanently removed from the game directory.\nThis action cannot be undone.");
+        ImGui::Separator(); 
+        ImGui::Spacing();
 
-        if (ImGui::Button("Yes, Delete", ImVec2(120, 0)))
+        float buttonWidth = 120.0f;
+        float totalButtonsWidth = (buttonWidth * 2.0f) + ImGui::GetStyle().ItemSpacing.x;
+        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalButtonsWidth) * 0.5f);
+
+        if (ImGui::Button("Yes", ImVec2(120, 0)))
         {
             g_pSystem->Replay.DeleteInGameReplay(PathToDelete);
             NeedsInGameRefresh = true;
@@ -81,17 +91,8 @@ void ReplayManagerTab::Draw()
 
 void ReplayManagerTab::DrawLibrary()
 {
-    ImGui::TextDisabled("REPLAY LIBRARY");
-    ImGui::Separator();
-
-    DrawSearchBar(SearchBuffer, IM_ARRAYSIZE(SearchBuffer));
+    DrawSearchBar("##search_inlibrary", LibrarySearchBuffer, IM_ARRAYSIZE(LibrarySearchBuffer));
     ImGui::Spacing();
-
-    if (ImGui::Button("Refresh List"))
-    {
-        g_pState->Replay.SetRefreshReplayList(true);
-        SelectedLibIndex = -1;
-    }
 
     if (g_pState->Replay.ShouldRefreshReplayList())
     {
@@ -102,13 +103,56 @@ void ReplayManagerTab::DrawLibrary()
 
     std::vector<SavedReplay> savedReplaysCopy = g_pState->Replay.GetSavedReplaysCacheCopy();
 
+    std::string searchStr = LibrarySearchBuffer;
+    bool hasFilter = !searchStr.empty();
+    if (hasFilter)
+    {
+        std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
+    }
+
+    int visibleCount = 0;
+    for (const auto& r : savedReplaysCopy) {
+        if (!hasFilter) 
+        { 
+            visibleCount = (int)savedReplaysCopy.size(); 
+            break; 
+        }
+
+        std::string n = r.DisplayName; std::transform(n.begin(), n.end(), n.begin(), ::tolower);
+        std::string a = r.TheaterReplay.FilmMetadata.Author; std::transform(a.begin(), a.end(), a.begin(), ::tolower);
+
+        if (n.find(searchStr) != std::string::npos ||
+            a.find(searchStr) != std::string::npos)
+        {
+            visibleCount++;
+        }
+    }
+
+    ImGui::AlignTextToFramePadding();
+
+    if (savedReplaysCopy.empty())
+    {
+        ImGui::TextDisabled("Library is empty...");
+    }
+    else
+    {
+        ImGui::TextDisabled("Showing %d saved replays", visibleCount);
+    }
+
+    float buttonWidth = ImGui::CalcTextSize("Refresh List").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+    ImGui::SameLine(ImGui::GetContentRegionAvail().x - buttonWidth);
+
+    if (ImGui::Button("Refresh List"))
+    {
+        g_pState->Replay.SetRefreshReplayList(true);
+        SelectedLibIndex = -1;
+    }
+
+    ImGui::Separator();
+
     if (ImGui::BeginChild("ReplayList", ImVec2(0, 0), ImGuiChildFlags_Borders))
     {
-        if (savedReplaysCopy.empty())
-        {
-            ImGui::TextDisabled("Library is empty...");
-        }
-        else
+        if (!savedReplaysCopy.empty())
         {
             ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(12.0f, 8.0f));
 
@@ -116,18 +160,20 @@ void ReplayManagerTab::DrawLibrary()
             {
                 auto& replay = savedReplaysCopy[i];
 
-                if (strlen(SearchBuffer) > 0)
+                if (hasFilter)
                 {
-                    std::string s = SearchBuffer;
-                    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-
                     std::string name = replay.DisplayName;
                     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+
+                    std::string author = replay.TheaterReplay.FilmMetadata.Author;
+                    std::transform(author.begin(), author.end(), author.begin(), ::tolower);
 
                     std::string info = replay.TheaterReplay.FilmMetadata.Info;
                     std::transform(info.begin(), info.end(), info.begin(), ::tolower);
 
-                    if (name.find(s) == std::string::npos && info.find(s) == std::string::npos)
+                    if (name.find(searchStr) == std::string::npos &&
+                        author.find(searchStr) == std::string::npos &&
+                        info.find(searchStr) == std::string::npos) 
                     {
                         continue;
                     }
@@ -239,11 +285,8 @@ void ReplayManagerTab::DrawLibrary()
 
 void ReplayManagerTab::DrawInGameReplays()
 {
-    if (ImGui::Button("Refresh List"))
-    {
-        NeedsInGameRefresh = true;
-        SelectedGameIndex = -1;
-    }
+    DrawSearchBar("##search_ingame", InGameSearchBuffer, IM_ARRAYSIZE(InGameSearchBuffer));
+    ImGui::Spacing();
 
     if (NeedsInGameRefresh)
     {
@@ -261,16 +304,56 @@ void ReplayManagerTab::DrawInGameReplays()
         NeedsInGameRefresh = false;
     }
 
-    ImGui::Separator();
+    std::string searchStr = InGameSearchBuffer;
+    bool hasFilter = !searchStr.empty();
+    if (hasFilter)
+    {
+        std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
+    }
 
+    int visibleCount = 0;
+    if (hasFilter)
+    {
+        for (const auto& r : CachedInGameReplays)
+        {
+            std::string n = r.MovFileName; std::transform(n.begin(), n.end(), n.begin(), ::tolower);
+            std::string a = r.FilmMetadata.Author; std::transform(a.begin(), a.end(), a.begin(), ::tolower);
+            std::string info = r.FilmMetadata.Info; std::transform(info.begin(), info.end(), info.begin(), ::tolower);
+
+            if (n.find(searchStr) != std::string::npos ||
+                a.find(searchStr) != std::string::npos ||
+                info.find(searchStr) != std::string::npos)
+            {
+                visibleCount++;
+            }
+        }
+    }
+    else
+    {
+        visibleCount = (int)CachedInGameReplays.size();
+    }
+
+    ImGui::AlignTextToFramePadding();
     if (CachedInGameReplays.empty())
     {
         ImGui::TextDisabled("No active replays in game directory.");
-        return;
+    }
+    else
+    {
+        ImGui::TextDisabled("Showing %d active replays", visibleCount);
     }
 
-    ImGui::TextDisabled("Showing %d active replays", (int)CachedInGameReplays.size());
-    ImGui::Spacing();
+    float buttonWidth = ImGui::CalcTextSize("Refresh List").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+    ImGui::SameLine(ImGui::GetContentRegionAvail().x - buttonWidth);
+    if (ImGui::Button("Refresh List"))
+    {
+        NeedsInGameRefresh = true;
+        SelectedGameIndex = -1;
+    }
+
+    ImGui::Separator();
+
+    if (CachedInGameReplays.empty()) return;
 
     if (ImGui::BeginChild("InGameList", ImVec2(0, 0), ImGuiChildFlags_Borders))
     {
@@ -279,9 +362,24 @@ void ReplayManagerTab::DrawInGameReplays()
         for (int i = 0; i < (int)CachedInGameReplays.size(); i++)
         {
             auto& replay = CachedInGameReplays[i];
-            bool isSelected = (SelectedGameIndex == i);
 
+            if (hasFilter)
+            {
+                std::string n = replay.MovFileName; std::transform(n.begin(), n.end(), n.begin(), ::tolower);
+                std::string a = replay.FilmMetadata.Author; std::transform(a.begin(), a.end(), a.begin(), ::tolower);
+                std::string info = replay.FilmMetadata.Info; std::transform(info.begin(), info.end(), info.begin(), ::tolower);
+
+                if (n.find(searchStr) == std::string::npos &&
+                    a.find(searchStr) == std::string::npos &&
+                    info.find(searchStr) == std::string::npos)
+                {
+                    continue;
+                }
+            }
+
+            bool isSelected = (SelectedGameIndex == i);
             ImGui::PushID(i);
+
             ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
             ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, isSelected ? 2.0f : 1.0f);
 
@@ -320,14 +418,11 @@ void ReplayManagerTab::DrawInGameReplays()
 
                     ImGui::TableSetColumnIndex(1);
 
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
-
                     if (ImGui::Button("Save to Replay Library", ImVec2(-FLT_MIN, 0))) 
                     {
                         g_pSystem->Replay.SaveReplay(replay.FullPath.string());
                     }
 
-                    ImGui::PopStyleColor();
                     ImGui::Spacing();
 
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
@@ -425,7 +520,7 @@ void ReplayManagerTab::DrawCurrentSession()
     }
 }
 
-void ReplayManagerTab::DrawSearchBar(char* buffer, size_t bufferSize)
+void ReplayManagerTab::DrawSearchBar(const char* label, char* buffer, size_t bufferSize)
 {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Filter:");
@@ -435,7 +530,7 @@ void ReplayManagerTab::DrawSearchBar(char* buffer, size_t bufferSize)
     float availableWidth = ImGui::GetContentRegionAvail().x;
 
     ImGui::PushItemWidth(availableWidth - clearBtnWidth - ImGui::GetStyle().ItemSpacing.x);
-    if (ImGui::InputTextWithHint("##SearchReplay", "Search by name, map or author...", buffer, bufferSize)) {}
+    if (ImGui::InputTextWithHint(label, "Search by name, map or author...", buffer, bufferSize)) {}
     ImGui::PopItemWidth();
     ImGui::SameLine();
 

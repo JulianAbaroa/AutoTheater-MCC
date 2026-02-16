@@ -22,8 +22,6 @@ public:
 private:
 	// Stores all the Director commands generated from the 'g_pState->Timeline.m_Events'.
 	std::vector<DirectorCommand> m_Script{};
-
-	// Mutex for thread-safe script modification.
 	mutable std::mutex m_Mutex;
 
 	std::atomic<bool> m_Initialized{ false };

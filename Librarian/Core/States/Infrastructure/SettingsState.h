@@ -41,7 +41,5 @@ private:
 	std::string m_AppDataDirectory{};
 	std::string m_MovieTempDirectory{};
 	std::string m_LoggerPath{};
-
-	// Mutex for thread-safe string variables modification.	
 	mutable std::mutex m_Mutex;
 };

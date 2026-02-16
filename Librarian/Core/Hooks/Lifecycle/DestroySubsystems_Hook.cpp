@@ -15,6 +15,16 @@ DestroySubsystems_t original_DestroySubsystems = nullptr;
 std::atomic<bool> g_DestroySubsystems_Hook_Installed = false;
 void* g_DestroySubsystems_Address = nullptr;
 
+// This function is triggered when the game engine shuts down the Halo: Reach simulation, 
+// typically when returning to the MCC main menu.
+// Purpose: Performs a cleanup of all AutoTheater interceptions.
+// Logic:
+// 1. Hook Removal: Uninstalls all active hooks to prevent the engine from executing 
+//    detoured code in invalid memory contexts (Main Menu/Other Games).
+// 2. Resource Reset: Invalidates pointers to engine-specific variables (Time, TimeScale) 
+//    to avoid "dangling pointer" access in subsequent sessions.
+// 3. Lifecycle Update: Sets the engine status to 'Destroyed' to signal all background 
+//    systems (Director/Timeline) to stop processing immediately.
 void __fastcall hkDestroySubsystems(void)
 {
 	UIBuildDynamicMessage_Hook::Uninstall();

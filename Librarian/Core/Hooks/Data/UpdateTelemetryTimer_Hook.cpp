@@ -9,6 +9,14 @@ UpdateTelemetryTimer_t original_UpdateTelemetryTimer = nullptr;
 std::atomic<bool> g_UpdateTelemetryTimer_Hook_Installed;
 void* g_UpdateTelemetryTimer_Address;
 
+// This function updates the engine's internal telemetry timers and simulation clock.
+// AutoTheater uses this hook as a high-frequency synchronization point to:
+// 1. Dynamic Discovery: On the first execution, it performs a pattern scan to locate 
+//    the 'ReplayTime' variable in memory using relative RVA offsets.
+// 2. State Synchronization: Once found, it stores the pointer to the engine's 
+//    absolute replay time, allowing the Director to sync camera cuts with the simulation.
+// 3. Efficiency: By caching the pointer after the first match, it avoids the 
+//    overhead of repeated signature scanning in subsequent frames.
 void hkUpdateTelemetryTimer(
 	uint64_t timerContext,
 	float deltaTime

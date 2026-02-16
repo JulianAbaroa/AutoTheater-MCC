@@ -1,10 +1,3 @@
-/**
- * @file WindProc_Hook.cpp
- * @brief Window Procedure Hooking logic.
- * * Intercepts Window messages to handle hotkeys, ImGui input capture,
- * and graceful shutdowns when the game window closes.
- */
-
 #include "pch.h"
 #include "Utils/Logger.h"
 #include "Core/Common/AppCore.h"
@@ -17,10 +10,7 @@ using namespace std::chrono_literals;
 
 WNDPROC original_WndProc = nullptr;
 
-/** 
- * @brief Private helper to handle mod-specific hotkeys.
- * @return true if the message was handled and should not be passed to the game.
- */
+// Private helper to handle mod-specific hotkeys.
 bool HandleHotKeys(WPARAM wParam)
 {
 	bool ctrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
@@ -41,14 +31,6 @@ bool HandleHotKeys(WPARAM wParam)
 	return false;
 }
 
-/**
- * @brief Main Window Procedure Hook.
- * @details Orchestrate the priority of messages:
- * 1. System shutdown (High Priority).
- * 2. Mod Hotkeys.
- * 3. ImGui Input (If the menu is visible).
- * 4. Game (Original WndProc).
- */
 LRESULT __stdcall WndProc_Hook::hkWndProc(
 	const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 ) {
@@ -60,6 +42,11 @@ LRESULT __stdcall WndProc_Hook::hkWndProc(
 			g_pSystem->Lifecycle.SignalShutdown();
 		}
 		
+		return CallWindowProc(original_WndProc, hWnd, uMsg, wParam, lParam);
+	}
+
+	if (uMsg == WM_SYSKEYDOWN && wParam == VK_F4)
+	{
 		return CallWindowProc(original_WndProc, hWnd, uMsg, wParam, lParam);
 	}
 
@@ -79,6 +66,7 @@ LRESULT __stdcall WndProc_Hook::hkWndProc(
 		{
 			return 0;
 		}
+
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
 			switch (uMsg)

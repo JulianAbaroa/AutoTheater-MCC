@@ -18,6 +18,16 @@ EngineInitialize_t original_EngineInitialize = nullptr;
 std::atomic<bool> g_EngineInitialize_Hook_Installed = false;
 void* g_EngineInitialize_Address = nullptr;
 
+// This is the core initialization hook for the Blam! Engine environment.
+// It serves as the "Orchestrator" for AutoTheater, responsible for selective hook 
+// installation based on the current mod Lifecycle (Timeline vs. Director).
+// Logic:
+// 1. Guard Clause: Immediately exits if the session is not identified as 'TheaterMode'.
+// 2. Timeline Phase: Installs diagnostic hooks (FLMH, GameEvents) to analyze and 
+//    build the event database from the replay.
+// 3. Director Phase: Installs execution hooks (Input, ButtonState) to allow the 
+//    automated script to take control of the camera and playback.
+// 4. Default Phase: Only maintains basic synchronization (Telemetry Timer).
 void __fastcall hkEngineInitialize(void)
 {
 	original_EngineInitialize();
@@ -55,6 +65,7 @@ void __fastcall hkEngineInitialize(void)
 		UpdateTelemetryTimer_Hook::Install();
 	}
 
+	g_pSystem->Theater.InitializeReplaySpeed();
 	g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Running });
 }
 

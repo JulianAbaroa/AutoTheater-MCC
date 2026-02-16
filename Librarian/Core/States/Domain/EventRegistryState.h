@@ -21,7 +21,5 @@ public:
 
 private:
 	std::unordered_map<std::wstring, EventInfo> m_EventRegistry = g_EventRegistry;
-
-	// Mutex for thread-safe EventRegistry variable modification.	
 	mutable std::mutex m_Mutex;
 };

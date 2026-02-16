@@ -10,6 +10,17 @@ SpectatorHandleInput_t original_SpectatorHandleInput = nullptr;
 std::atomic<bool> g_SpectatorHandleInput_Hook_Installed = false;
 void* g_SpectatorHandleInput_Address = nullptr;
 
+// This function handles the logic for spectator input processing and state transitions.
+// It is called frequently (matching the engine's input polling rate) to update 
+// the Spectator/Replay Module state.
+// AutoTheater uses this hook to:
+// 1. Module Tracking: Captures the 'pReplayModule' pointer, which serves as the 
+//    central controller for camera modes and spectated targets.
+// 2. Camera Monitoring: Reads the current Camera Mode (at offset +0x190) to 
+//    detect if the user is in Free Camera, First Person, or Third Person.
+// 3. Target Tracking: Monitors changes in the spectated player index. When a 
+//    change is detected, it resolves the player's name for logging and 
+//    synchronizes the Director's focus target.
 void __fastcall hkSpectatorHandleInput(
 	uint64_t* pReplayModule,
 	uint32_t rdx_param

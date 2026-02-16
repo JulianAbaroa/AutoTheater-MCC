@@ -5,8 +5,7 @@
 #include <vector>
 #include <string>
 
-/** * @brief UI-specific metadata used for rendering on ImGui.
- */
+// UI-specific metadata used for rendering on ImGui.
 struct EventMetadata
 {
 	// Human-readable summary of the event shown in the UI.
