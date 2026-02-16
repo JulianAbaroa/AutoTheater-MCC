@@ -3,57 +3,57 @@
 
 ID3D11Device* RenderState::GetDevice() const 
 { 
-	return pDevice; 
+	return m_pDevice; 
 }
 
 ID3D11DeviceContext* RenderState::GetContext() const
 {
-	return pContext;
+	return m_pContext;
 }
 
 HWND RenderState::GetHWND() const
 {
-	return GameHWND;
+	return m_GameHWND;
 }
 
 ID3D11RenderTargetView* RenderState::GetRTV() const
 {
-	return pMainRenderTargetView;
+	return m_pMainRenderTargetView;
 }
 
 
 void RenderState::SetDevice(ID3D11Device* device) 
 { 
-	pDevice = device; 
+	m_pDevice = device; 
 }
 
 void RenderState::SetContext(ID3D11DeviceContext* context) 
 { 
-	pContext = context; 
+	m_pContext = context; 
 }
 
 void RenderState::SetHWND(HWND hwnd) 
 { 
-	GameHWND = hwnd; 
+	m_GameHWND = hwnd; 
 }
 
 void RenderState::SetRTV(ID3D11RenderTargetView* rtv) 
 { 
-	pMainRenderTargetView = rtv; 
+	m_pMainRenderTargetView = rtv; 
 }
 
 
 bool RenderState::IsReady() const 
 {
-	return pDevice != nullptr && pContext != nullptr && pMainRenderTargetView != nullptr;
+	return m_pDevice != nullptr && m_pContext != nullptr && m_pMainRenderTargetView != nullptr;
 }
 
 void RenderState::CleanupRTV() 
 {
-	if (pMainRenderTargetView) 
+	if (m_pMainRenderTargetView) 
 	{
-		pMainRenderTargetView->Release();
-		pMainRenderTargetView = nullptr;
+		m_pMainRenderTargetView->Release();
+		m_pMainRenderTargetView = nullptr;
 	}
 }
 
@@ -61,7 +61,28 @@ void RenderState::FullCleanup()
 {
 	CleanupRTV();
 
-	pDevice = nullptr;
-	pContext = nullptr;
-	GameHWND = nullptr;
+	m_pDevice = nullptr;
+	m_pContext = nullptr;
+	m_GameHWND = nullptr;
+}
+
+
+bool RenderState::IsImGuiInitialized()
+{
+	return m_IsImGuiInitialized.load();
+}
+
+void RenderState::SetImGuiInitialized(bool initialized)
+{
+	m_IsImGuiInitialized.store(initialized);
+}
+
+bool RenderState::IsResizing() const
+{
+	return m_IsResizing.load();
+}
+
+void RenderState::SetResizing(bool state)
+{
+	m_IsResizing.store(state);
 }

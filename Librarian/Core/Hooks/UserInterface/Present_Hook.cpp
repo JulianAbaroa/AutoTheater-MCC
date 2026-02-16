@@ -15,16 +15,21 @@ void* g_Present_Address = nullptr;
 
 static HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) 
 {
+    if (g_pState->Render.IsResizing())
+    {
+        return original_Present(pSwapChain, SyncInterval, Flags);
+    }
+
     if (!g_pSystem->Render.IsInitialized())
     {
         g_pSystem->Render.Initialize(pSwapChain);
     }
 
-    g_pSystem->Render.BeginFrame(pSwapChain);
-
-    UserInterface::DrawMainInterface();
-
-    g_pSystem->Render.EndFrame();
+    if (g_pState->Render.GetRTV()) {
+        g_pSystem->Render.BeginFrame(pSwapChain);
+        UserInterface::DrawMainInterface();
+        g_pSystem->Render.EndFrame();
+    }
 
     if (g_pState->Theater.IsTheaterMode()) {
         g_pSystem->Theater.UpdateRealTimeScale();

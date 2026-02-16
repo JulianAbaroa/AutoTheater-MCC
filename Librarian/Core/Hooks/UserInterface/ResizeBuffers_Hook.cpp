@@ -10,27 +10,28 @@ std::atomic<bool> g_ResizeBuffers_Hook_Installed = false;
 void* g_ResizeBuffers_Address = nullptr;
 
 HRESULT __stdcall hkResizeBuffers(
-    IDXGISwapChain* pSwapChain,
-    UINT BufferCount,
-    UINT Width, UINT Height,
-    DXGI_FORMAT NewFormat,
-    UINT SwapChainFlags
-) {
-    if (g_pState->Render.GetContext()) {
-        g_pState->Render.GetContext()->OMSetRenderTargets(0, nullptr, nullptr);
-    }
+	IDXGISwapChain* pSwapChain, 
+	UINT BufferCount, 
+	UINT Width, UINT Height, 
+	DXGI_FORMAT NewFormat, 
+	UINT SwapChainFlags)
+{
+	g_pState->Render.SetResizing(true);
 
-    g_pState->Render.CleanupRTV();
+	if (g_pState->Render.GetContext()) {
+		g_pState->Render.GetContext()->OMSetRenderTargets(0, nullptr, nullptr);
+	}
+	g_pState->Render.CleanupRTV();
 
-    HRESULT hr = original_ResizeBuffers(
-        pSwapChain,
-        BufferCount,
-        Width, Height,
-        NewFormat,
-        SwapChainFlags
-    );
+	HRESULT hr = original_ResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 
-    return hr;
+	if (SUCCEEDED(hr)) {
+		g_pSystem->Render.Initialize(pSwapChain);
+	}
+
+	g_pState->Render.SetResizing(false);
+
+	return hr;
 }
 
 void ResizeBuffers_Hook::Install()
