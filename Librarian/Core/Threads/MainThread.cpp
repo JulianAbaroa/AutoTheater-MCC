@@ -1,62 +1,70 @@
 #include "pch.h"
-#include "Utils/Logger.h"
-#include "Utils/ThreadUtils.h"
+#include "Core/Utils/CoreUtil.h"
+#include "Core/Hooks/CoreHook.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 #include "Core/Threads/MainThread.h"
-#include "Core/Common/AppCore.h"
-#include "Core/Common/PersistenceManager.h"
-#include "Core/Hooks/Lifecycle/GameEngineStart_Hook.h"
-#include "Core/Hooks/Lifecycle/EngineInitialize_Hook.h"
-#include "Core/Hooks/Lifecycle/DestroySubsystems_Hook.h"
-#include "Core/Hooks/UserInterface/ResizeBuffers_Hook.h"
-#include "Core/Hooks/UserInterface/Present_Hook.h"
-#include <sstream>
 #include <chrono>
 
 using namespace std::chrono_literals;
 
-std::thread g_MainThread;
-
-static bool IsHookIntact(void* address)
+void MainThread::Run() 
 {
-    if (address == nullptr) return false;
+    // TODO: Maybe make this customizable.
+    // Initial delay.
+    g_pUtil->Thread.WaitOrExit(5000ms);
 
-    unsigned char firstByte{};
-    size_t bytesRead;
+    g_pUtil->Log.Append("[MainThread] INFO: Started.");
 
-    if (ReadProcessMemory(GetCurrentProcess(), address, &firstByte, 1, &bytesRead))
-    {
-        return firstByte == 0xE9;
-    }
-
-    return false;
-}
-
-static void MainThread::ShutdownAndEject()
-{
-    Logger::LogAppend("Critical Error: Initiating emergency shutdown.");
-    g_pState->Lifecycle.SetRunning(false);
-}
-
-static bool TryInstallLifecycleHooks(const char* context)
-{
-    std::stringstream ss;
+    this->InitializeAutoTheater();
+    this->InstallCaptureHooks();
 
     while (g_pState->Lifecycle.IsRunning())
     {
-        if (EngineInitialize_Hook::Install(true) &&
-             DestroySubsystems_Hook::Install(true) &&
-             GameEngineStart_Hook::Install(true)
-        ) {
-             ss << "All initial hooks installed successfully [" << context << "]";
-             Logger::LogAppend(ss.str().c_str());
-             ss.str("");
-             return true;
-         }
+        this->CheckHooksHealth();
 
-        ThreadUtils::WaitOrExit(1000ms);
+        if (g_pState->Lifecycle.GetEngineStatus() == EngineStatus::Destroyed)
+        {
+            g_pUtil->Log.Append("[MainThread] WARNING: Game engine destruction detected, resetting lifecycle.");
+
+            if (!this->IsStillRunning()) break;
+
+            if (g_pState->Lifecycle.ShouldAutoUpdatePhase() && g_pState->Lifecycle.GetCurrentPhase() != AutoTheaterPhase::Default)
+            {
+                AutoTheaterPhase targetPhase = g_pState->Lifecycle.GetCurrentPhase() == AutoTheaterPhase::Timeline ? AutoTheaterPhase::Director : AutoTheaterPhase::Timeline;
+                if (g_pState->Theater.IsTheaterMode()) MainThread::UpdateToPhase(targetPhase);
+            }
+
+            this->UninstallLifecycleHooks();
+
+            if (!this->IsStillRunning()) break;
+
+            if (!this->TryInstallLifecycleHooks("Engine Reset Cycle")) 
+            {
+                g_pUtil->Log.Append("[MainThread] ERROR: Failed to re-install hooks after engine reset.");
+                Shutdown();
+                return;
+            }
+
+            g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Awaiting });
+            g_pState->Theater.SetTheaterMode(false);
+        }
+
+        g_pUtil->Thread.WaitOrExit(1000ms);
     }
 
-    return false;
+    // TODO: See if there's another place to do this.
+    // Clean thumbnails from video gallery
+    g_pState->Gallery.Cleanup();
+
+    this->UninstallCaptureHooks();
+    this->UninstallLifecycleHooks();
+
+    std::this_thread::sleep_for(200ms);
+    g_pUtil->Log.Append("[MainThread] INFO: Stopped.");
+
+    HMODULE hMod = g_pState->Lifecycle.GetHandleModule();
+    if (hMod != nullptr) FreeLibraryAndExitThread(hMod, 0);
 }
 
 void MainThread::UpdateToPhase(AutoTheaterPhase targetPhase)
@@ -95,97 +103,111 @@ void MainThread::UpdateToPhase(AutoTheaterPhase targetPhase)
     g_pState->Lifecycle.SetCurrentPhase(targetPhase);
 }
 
-void MainThread::Run() {
-    ThreadUtils::WaitOrExit(5000ms);
 
-    Logger::LogAppend("=== Main Thread Started ===");
-
-    if (!TryInstallLifecycleHooks("Initial Boot"))
+void MainThread::InitializeAutoTheater()
+{
+    if (!this->TryInstallLifecycleHooks("Initial Boot"))
     {
-        Logger::LogAppend("ERROR: Timeout waiting for game modules or signatures");
-        ShutdownAndEject();
+        this->Shutdown();
         return;
     }
 
-    Logger::LogAppend("Installing DX11 Present Hook...");
-    Present_Hook::Install();
-    ResizeBuffers_Hook::Install();
-
     g_pState->Lifecycle.SetCurrentPhase(AutoTheaterPhase::Timeline);
     g_pState->Timeline.SetLoggingActive(true);
-
     g_pSystem->Settings.InitializePaths();
     g_pSystem->EventRegistry.LoadEventRegistry();
+}
 
-    Logger::LogAppend("Settings and EventRegistry loaded");
+void MainThread::UninstallLifecycleHooks()
+{
+    g_pHook->EngineInitialize.Uninstall();
+    g_pHook->DestroySubsystems.Uninstall();
+    g_pHook->GameEngineStart.Uninstall();
+}
 
+void MainThread::InstallCaptureHooks()
+{
+    // Video
+    g_pHook->Present.Install();
+    g_pHook->ResizeBuffers.Install();
+
+    // Audio
+    g_pHook->ReleaseBuffer.Install();
+    g_pHook->GetBuffer.Install();
+    g_pHook->AudioClientInitialize.Install();
+    g_pHook->GetService.Install();
+}
+
+void MainThread::UninstallCaptureHooks()
+{
+    // Audio
+    g_pHook->GetService.Uninstall();
+    g_pHook->AudioClientInitialize.Uninstall();
+    g_pHook->GetBuffer.Uninstall();
+    g_pHook->ReleaseBuffer.Uninstall();
+
+    // Video
+    g_pHook->ResizeBuffers.Uninstall();
+    g_pHook->Present.Uninstall();
+}
+
+
+void MainThread::CheckHooksHealth()
+{
+    bool areHooksIntact =
+        !this->IsHookIntact(g_pHook->EngineInitialize.GetFunctionAddress()) ||
+        !this->IsHookIntact(g_pHook->DestroySubsystems.GetFunctionAddress()) ||
+        !this->IsHookIntact(g_pHook->GameEngineStart.GetFunctionAddress());
+
+    if (areHooksIntact && g_pState->Lifecycle.IsRunning())
+    {
+        g_pUtil->Log.Append("[MainThread] WARNING: Hooks corrupted or memory restored, rebooting.");
+        g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Destroyed });
+    }
+}
+
+bool MainThread::IsStillRunning()
+{
+    g_pUtil->Thread.WaitOrExit(1000ms);
+    if (!g_pState->Lifecycle.IsRunning()) return false;
+    return true;
+}
+
+
+bool MainThread::IsHookIntact(void* address)
+{
+    if (address == nullptr) return false;
+
+    unsigned char firstByte{};
+    size_t bytesRead;
+
+    if (ReadProcessMemory(GetCurrentProcess(), address, &firstByte, 1, &bytesRead))
+    {
+        return firstByte == 0xE9;
+    }
+
+    return false;
+}
+
+bool MainThread::TryInstallLifecycleHooks(const char* context)
+{
     while (g_pState->Lifecycle.IsRunning())
     {
-        if (!IsHookIntact(g_EngineInitialize_Address) ||
-            !IsHookIntact(g_DestroySubsystems_Address) ||
-            !IsHookIntact(g_GameEngineStart_Address)
-        ) {
-            if (g_pState->Lifecycle.IsRunning())
-            {
-                Logger::LogAppend("Watchdog: Hook corrupted or memory restored. Rebooting...");
-                g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Destroyed });
-            }
-        }
-
-        if (g_pState->Lifecycle.GetEngineStatus() == EngineStatus::Destroyed)
+        if (g_pHook->EngineInitialize.Install(true) &&
+            g_pHook->DestroySubsystems.Install(true) &&
+            g_pHook->GameEngineStart.Install(true)) 
         {
-            Logger::LogAppend("Game engine destruction detected, resetting lifecycle...");
-
-            ThreadUtils::WaitOrExit(1000ms);
-            if (!g_pState->Lifecycle.IsRunning()) break;
-
-            if (g_pState->Lifecycle.ShouldAutoUpdatePhase() && g_pState->Lifecycle.GetCurrentPhase() != AutoTheaterPhase::Default)
-            {
-                AutoTheaterPhase targetPhase = g_pState->Lifecycle.GetCurrentPhase() == AutoTheaterPhase::Timeline ? AutoTheaterPhase::Director : AutoTheaterPhase::Timeline;
-                if (g_pState->Theater.IsTheaterMode()) MainThread::UpdateToPhase(targetPhase);
-            }
-
-            EngineInitialize_Hook::Uninstall();
-            DestroySubsystems_Hook::Uninstall();
-            GameEngineStart_Hook::Uninstall();
-
-            ThreadUtils::WaitOrExit(1000ms);
-            if (!g_pState->Lifecycle.IsRunning())
-            {
-                Logger::LogAppend("MainThread: Shutdown in progress, skipping re-installation.");
-                break;
-            }
-
-            if (!TryInstallLifecycleHooks("Engine Reset Cycle")) {
-                Logger::LogAppend("ERROR: Failed to re-install hooks after engine reset!");
-                ShutdownAndEject();
-                return;
-            }
-
-            g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Awaiting });
-            g_pState->Theater.SetTheaterMode(false);
+            return true;
         }
 
-        ThreadUtils::WaitOrExit(1000ms);
+        g_pUtil->Thread.WaitOrExit(1000ms);
     }
 
-    Logger::LogAppend("=== Main Thread Stopped ===");
+    return false;
+}
 
-    ResizeBuffers_Hook::Uninstall();
-    Present_Hook::Uninstall();
-
-    EngineInitialize_Hook::Uninstall();
-    DestroySubsystems_Hook::Uninstall();
-    GameEngineStart_Hook::Uninstall();
-
-    std::this_thread::sleep_for(200ms);
-
-    Logger::LogAppend("=== Cleanup complete. Ejecting mod... ===");
-
-    HMODULE hMod = g_pState->Lifecycle.GetHandleModule();
-
-    if (hMod != nullptr)
-    {
-        FreeLibraryAndExitThread(hMod, 0);
-    }
+void MainThread::Shutdown()
+{
+    g_pUtil->Log.Append("[MainThread] ERROR: Initiating emergency shutdown.");
+    g_pState->Lifecycle.SetRunning(false);
 }

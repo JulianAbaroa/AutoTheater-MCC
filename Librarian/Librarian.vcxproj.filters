@@ -10,20 +10,11 @@
     <Filter Include="Proxy">
       <UniqueIdentifier>{b39b8137-507d-42c6-a0bb-e92d9839472c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Utils">
-      <UniqueIdentifier>{33dfcac7-1902-4bb8-be8e-7270d072312a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="External">
       <UniqueIdentifier>{35c61b1a-bb5a-4f20-a1a1-fa3d130e5794}</UniqueIdentifier>
     </Filter>
     <Filter Include="Core\Common">
       <UniqueIdentifier>{c5d8cc20-924e-44e4-8517-a94106c80c2b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\UserInterface">
-      <UniqueIdentifier>{4591bf68-a2aa-4ce6-b51e-3f11c13de7bd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\UserInterface\Tabs">
-      <UniqueIdentifier>{999f3f26-c7cd-42ec-804b-1804f0676a38}</UniqueIdentifier>
     </Filter>
     <Filter Include="External\imgui">
       <UniqueIdentifier>{bc0a8ded-f501-4796-845e-8c9be458ec67}</UniqueIdentifier>
@@ -40,15 +31,6 @@
     <Filter Include="Core\Common\Types">
       <UniqueIdentifier>{5531854e-c72f-494f-a512-8c1593459fbb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Core\UserInterface\Tabs\Primary">
-      <UniqueIdentifier>{3f848fcc-6784-4a6a-a181-cded28d12082}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\UserInterface\Tabs\Optional">
-      <UniqueIdentifier>{71d9ddcf-008b-48f6-8fa4-d78e70585b12}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\UserInterface\Tabs\Logs">
-      <UniqueIdentifier>{914cb15e-9a6c-46dd-ba62-5a0afc6e83ab}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Core\States">
       <UniqueIdentifier>{27a5a46a-6a14-4a14-b92e-d18622ee85eb}</UniqueIdentifier>
     </Filter>
@@ -60,15 +42,6 @@
     </Filter>
     <Filter Include="Core\Hooks\Lifecycle">
       <UniqueIdentifier>{b869ddd3-cd8b-4eb4-b7b7-eb0afa97ccb8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Hooks\MovReader">
-      <UniqueIdentifier>{f28f7099-5825-44af-9bde-4159cdb66c4a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Hooks\UserInterface">
-      <UniqueIdentifier>{0e308943-01e3-4656-9033-c9af46061842}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Hooks\Scanner">
-      <UniqueIdentifier>{a4ba31c2-9a32-4895-9c5f-d4ecc2885114}</UniqueIdentifier>
     </Filter>
     <Filter Include="Core\Threads">
       <UniqueIdentifier>{b1c15104-2fec-44f5-9633-73b57f77e41b}</UniqueIdentifier>
@@ -91,7 +64,40 @@
     <Filter Include="Core\Systems\Infrastructure">
       <UniqueIdentifier>{030948d9-a9be-4e53-8aed-b6c2d1594140}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Core\Hooks\Data\Telemetry">
+    <Filter Include="Core\Hooks\Audio">
+      <UniqueIdentifier>{a60d4b95-cbbd-49aa-a252-4de660e85ebe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\stb">
+      <UniqueIdentifier>{4e942947-8dad-41cd-8b6c-fe00a75e0378}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks\Input">
+      <UniqueIdentifier>{f28f7099-5825-44af-9bde-4159cdb66c4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks\Render">
+      <UniqueIdentifier>{b49cf330-dbb9-432d-97ff-6dbeb624f3fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks\Window">
+      <UniqueIdentifier>{26f298d9-c19a-4d06-b1e5-a60af1e2ef21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\UI">
+      <UniqueIdentifier>{4591bf68-a2aa-4ce6-b51e-3f11c13de7bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\UI\Tabs">
+      <UniqueIdentifier>{999f3f26-c7cd-42ec-804b-1804f0676a38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\UI\Tabs\Primary">
+      <UniqueIdentifier>{3f848fcc-6784-4a6a-a181-cded28d12082}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\UI\Tabs\Optional">
+      <UniqueIdentifier>{71d9ddcf-008b-48f6-8fa4-d78e70585b12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\UI\Tabs\Logs">
+      <UniqueIdentifier>{914cb15e-9a6c-46dd-ba62-5a0afc6e83ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Utils">
+      <UniqueIdentifier>{2d3c11a4-bc06-4d75-b289-b954a1021b4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Hooks\Tables">
       <UniqueIdentifier>{00e374de-5f5b-43be-986d-73d977963244}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -111,20 +117,8 @@
     <ClInclude Include="Proxy\ProxyExports.h">
       <Filter>Proxy</Filter>
     </ClInclude>
-    <ClInclude Include="Utils\Formatting.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\Logger.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="Ignore\BaseHook.h" />
     <ClInclude Include="Core\Common\AppCore.h">
       <Filter>Core\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\UserInterface.h">
-      <Filter>Core\UserInterface</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui\imgui.h">
       <Filter>External\imgui</Filter>
@@ -141,19 +135,13 @@
     <ClInclude Include="External\imgui\backends\imgui_impl_win32.h">
       <Filter>External\imgui\backends</Filter>
     </ClInclude>
-    <ClInclude Include="Utils\ThreadUtils.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils\DXUtils.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Common\Types\BlamTypes.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
     <ClInclude Include="Core\Common\Types\TimelineTypes.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Common\Types\UserInterfaceTypes.h">
+    <ClInclude Include="Core\Common\Types\UITypes.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
     <ClInclude Include="Core\Common\Types\DirectorTypes.h">
@@ -164,30 +152,6 @@
     </ClInclude>
     <ClInclude Include="Core\Common\Types\AutoTheaterTypes.h">
       <Filter>Core\Common\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\Logs\LogsTab.h">
-      <Filter>Core\UserInterface\Tabs\Logs</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.h">
-      <Filter>Core\UserInterface\Tabs\Optional</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\Optional\EventRegistryTab.h">
-      <Filter>Core\UserInterface\Tabs\Optional</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\Primary\TimelineTab.h">
-      <Filter>Core\UserInterface\Tabs\Primary</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\Primary\SettingsTab.h">
-      <Filter>Core\UserInterface\Tabs\Primary</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\Primary\DirectorTab.h">
-      <Filter>Core\UserInterface\Tabs\Primary</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\Primary\TheaterTab.h">
-      <Filter>Core\UserInterface\Tabs\Primary</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Common\EventRegistry.h">
-      <Filter>Core\Common</Filter>
     </ClInclude>
     <ClInclude Include="Core\States\Domain\DirectorState.h">
       <Filter>Core\States\Domain</Filter>
@@ -231,71 +195,190 @@
     <ClInclude Include="Core\Systems\Domain\TimelineSystem.h">
       <Filter>Core\Systems\Domain</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\SpectatorHandleInputHook.h">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\BuildGameEventHook.h">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\UpdateTelemetryTimerHook.h">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Lifecycle\DestroySubsystemsHook.h">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Lifecycle\EngineInitializeHook.h">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Lifecycle\GameEngineStartHook.h">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClInclude>
     <ClInclude Include="Core\Systems\Infrastructure\LifecycleSystem.h">
-      <Filter>Core\Systems\Interface</Filter>
+      <Filter>Core\Systems\Infrastructure</Filter>
     </ClInclude>
     <ClInclude Include="Core\Systems\Infrastructure\RenderSystem.h">
-      <Filter>Core\Systems\Interface</Filter>
+      <Filter>Core\Systems\Infrastructure</Filter>
     </ClInclude>
     <ClInclude Include="Core\Systems\Infrastructure\ReplaySystem.h">
-      <Filter>Core\Systems\Interface</Filter>
+      <Filter>Core\Systems\Infrastructure</Filter>
     </ClInclude>
     <ClInclude Include="Core\Systems\Infrastructure\SettingsSystem.h">
-      <Filter>Core\Systems\Interface</Filter>
+      <Filter>Core\Systems\Infrastructure</Filter>
     </ClInclude>
     <ClInclude Include="Core\Systems\Interface\DebugSystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
+      <Filter>Core\Systems\Interface</Filter>
     </ClInclude>
     <ClInclude Include="Core\Systems\Interface\InputSystem.h">
+      <Filter>Core\Systems\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Audio\AudioClientInitializeHook.h">
+      <Filter>Core\Hooks\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Audio\GetBufferHook.h">
+      <Filter>Core\Hooks\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Audio\GetServiceHook.h">
+      <Filter>Core\Hooks\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Audio\ReleaseBufferHook.h">
+      <Filter>Core\Hooks\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\AudioState.h">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\FFmpegState.h">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\VideoState.h">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\AudioSystem.h">
       <Filter>Core\Systems\Infrastructure</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Data\GetButtonState_Hook.h">
+    <ClInclude Include="Core\Systems\Infrastructure\FFmpegSystem.h">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\VideoSystem.h">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\CaptureThread.h">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\AudioTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\VideoTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\FFmpegTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\GalleryState.h">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\GallerySystem.h">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\GalleryTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="External\stb\stb_image.h">
+      <Filter>External\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\BlamOpenFileHook.h">
       <Filter>Core\Hooks\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Data\SpectatorHandleInput_Hook.h">
+    <ClInclude Include="Core\Hooks\Data\FilmInitializeStateHook.h">
       <Filter>Core\Hooks\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Data\UIBuildDynamicMessage_Hook.h">
-      <Filter>Core\Hooks\Data</Filter>
+    <ClInclude Include="Core\Hooks\Input\GetButtonStateHook.h">
+      <Filter>Core\Hooks\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Data\UpdateTelemetryTimer_Hook.h">
-      <Filter>Core\Hooks\Data</Filter>
+    <ClInclude Include="Core\Hooks\Scanner.h">
+      <Filter>Core\Hooks</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Lifecycle\DestroySubsystems_Hook.h">
-      <Filter>Core\Hooks\Lifecycle</Filter>
+    <ClInclude Include="Core\Hooks\Signatures.h">
+      <Filter>Core\Hooks</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Lifecycle\EngineInitialize_Hook.h">
-      <Filter>Core\Hooks\Lifecycle</Filter>
+    <ClInclude Include="Core\Hooks\Render\ResizeBuffersHook.h">
+      <Filter>Core\Hooks\Render</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Lifecycle\GameEngineStart_Hook.h">
-      <Filter>Core\Hooks\Lifecycle</Filter>
+    <ClInclude Include="Core\Hooks\Render\PresentHook.h">
+      <Filter>Core\Hooks\Render</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\MovReader\BlamOpenFile_Hook.h">
-      <Filter>Core\Hooks\MovReader</Filter>
+    <ClInclude Include="Core\Hooks\Window\WndProcHook.h">
+      <Filter>Core\Hooks\Window</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\MovReader\FilmInitializeState_Hook.h">
-      <Filter>Core\Hooks\MovReader</Filter>
+    <ClInclude Include="Core\Hooks\Input\GetRawInputDataHook.h">
+      <Filter>Core\Hooks\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Scanner\Scanner.h">
-      <Filter>Core\Hooks\Scanner</Filter>
+    <ClInclude Include="Core\UI\MainInterface.h">
+      <Filter>Core\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Scanner\Signatures.h">
-      <Filter>Core\Hooks\Scanner</Filter>
+    <ClInclude Include="Core\UI\Tabs\Logs\LogsTab.h">
+      <Filter>Core\UI\Tabs\Logs</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Data\Telemetry\Telemetry.h">
-      <Filter>Core\Hooks\Data\Telemetry</Filter>
+    <ClInclude Include="Core\UI\Tabs\Optional\CaptureTab.h">
+      <Filter>Core\UI\Tabs\Optional</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\UserInterface\GetRawInputData_Hook.h">
-      <Filter>Core\Hooks\UserInterface</Filter>
+    <ClInclude Include="Core\UI\Tabs\Optional\EventRegistryTab.h">
+      <Filter>Core\UI\Tabs\Optional</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\UserInterface\Present_Hook.h">
-      <Filter>Core\Hooks\UserInterface</Filter>
+    <ClInclude Include="Core\UI\Tabs\Optional\ReplayManagerTab.h">
+      <Filter>Core\UI\Tabs\Optional</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\UserInterface\ResizeBuffers_Hook.h">
-      <Filter>Core\Hooks\UserInterface</Filter>
+    <ClInclude Include="Core\UI\Tabs\Primary\DirectorTab.h">
+      <Filter>Core\UI\Tabs\Primary</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\UserInterface\WndProc_Hook.h">
-      <Filter>Core\Hooks\UserInterface</Filter>
+    <ClInclude Include="Core\UI\Tabs\Primary\SettingsTab.h">
+      <Filter>Core\UI\Tabs\Primary</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UI\Tabs\Primary\TheaterTab.h">
+      <Filter>Core\UI\Tabs\Primary</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UI\Tabs\Primary\TimelineTab.h">
+      <Filter>Core\UI\Tabs\Primary</Filter>
+    </ClInclude>
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Core\Utils\DXUtil.h">
+      <Filter>Core\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Utils\FormatUtil.h">
+      <Filter>Core\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Utils\LogUtil.h">
+      <Filter>Core\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Utils\ThreadUtil.h">
+      <Filter>Core\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Tables\TelemetryTables.h">
+      <Filter>Core\Hooks\Tables</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\CoreHook.h">
+      <Filter>Core\Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\CoreState.h">
+      <Filter>Core\States</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\CoreSystem.h">
+      <Filter>Core\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\CoreThread.h">
+      <Filter>Core\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\UI\CoreUI.h">
+      <Filter>Core\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Utils\CoreUtil.h">
+      <Filter>Core\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\DllMain.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\LogTypes.h">
+      <Filter>Core\Common\Types</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -314,20 +397,9 @@
     <ClCompile Include="Core\Threads\LogThread.cpp">
       <Filter>Core\Threads</Filter>
     </ClCompile>
-    <ClCompile Include="Utils\Formatting.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\Logger.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Ignore\BaseHook.cpp" />
     <ClCompile Include="Ignore\todos.cpp" />
     <ClCompile Include="Core\Common\AppCore.cpp">
       <Filter>Core\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\UserInterface.cpp">
-      <Filter>Core\UserInterface</Filter>
     </ClCompile>
     <ClCompile Include="External\imgui\imgui.cpp">
       <Filter>External\imgui</Filter>
@@ -364,36 +436,6 @@
     </ClCompile>
     <ClCompile Include="External\minhook\src\hde\hde64.c">
       <Filter>External\minhook\hde</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\ThreadUtils.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\DXUtils.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\Logs\LogsTab.cpp">
-      <Filter>Core\UserInterface\Tabs\Logs</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\Optional\EventRegistryTab.cpp">
-      <Filter>Core\UserInterface\Tabs\Optional</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.cpp">
-      <Filter>Core\UserInterface\Tabs\Optional</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\Primary\SettingsTab.cpp">
-      <Filter>Core\UserInterface\Tabs\Primary</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\Primary\DirectorTab.cpp">
-      <Filter>Core\UserInterface\Tabs\Primary</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\Primary\TheaterTab.cpp">
-      <Filter>Core\UserInterface\Tabs\Primary</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\Primary\TimelineTab.cpp">
-      <Filter>Core\UserInterface\Tabs\Primary</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Common\EventRegistry.cpp">
-      <Filter>Core\Common</Filter>
     </ClCompile>
     <ClCompile Include="Core\States\Domain\DirectorState.cpp">
       <Filter>Core\States\Domain</Filter>
@@ -437,68 +479,147 @@
     <ClCompile Include="Core\Systems\Domain\TimelineSystem.cpp">
       <Filter>Core\Systems\Domain</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\SpectatorHandleInputHook.cpp">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\BuildGameEventHook.cpp">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\UpdateTelemetryTimerHook.cpp">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Lifecycle\DestroySubsystemsHook.cpp">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Lifecycle\EngineInitializeHook.cpp">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStartHook.cpp">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClCompile>
     <ClCompile Include="Core\Systems\Infrastructure\LifecycleSystem.cpp">
-      <Filter>Core\Systems\Interface</Filter>
+      <Filter>Core\Systems\Infrastructure</Filter>
     </ClCompile>
     <ClCompile Include="Core\Systems\Infrastructure\RenderSystem.cpp">
-      <Filter>Core\Systems\Interface</Filter>
+      <Filter>Core\Systems\Infrastructure</Filter>
     </ClCompile>
     <ClCompile Include="Core\Systems\Infrastructure\ReplaySystem.cpp">
-      <Filter>Core\Systems\Interface</Filter>
+      <Filter>Core\Systems\Infrastructure</Filter>
     </ClCompile>
     <ClCompile Include="Core\Systems\Infrastructure\SettingsSystem.cpp">
-      <Filter>Core\Systems\Interface</Filter>
+      <Filter>Core\Systems\Infrastructure</Filter>
     </ClCompile>
     <ClCompile Include="Core\Systems\Interface\DebugSystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
+      <Filter>Core\Systems\Interface</Filter>
     </ClCompile>
     <ClCompile Include="Core\Systems\Interface\InputSystem.cpp">
+      <Filter>Core\Systems\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Audio\AudioClientInitializeHook.cpp">
+      <Filter>Core\Hooks\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Audio\GetBufferHook.cpp">
+      <Filter>Core\Hooks\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Audio\GetServiceHook.cpp">
+      <Filter>Core\Hooks\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Audio\ReleaseBufferHook.cpp">
+      <Filter>Core\Hooks\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\AudioState.cpp">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\FFmpegState.cpp">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\VideoState.cpp">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\AudioSystem.cpp">
       <Filter>Core\Systems\Infrastructure</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Data\GetButtonState_Hook.cpp">
+    <ClCompile Include="Core\Systems\Infrastructure\FFmpegSystem.cpp">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\VideoSystem.cpp">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\CaptureThread.cpp">
+      <Filter>Core\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\GalleryState.cpp">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\GallerySystem.cpp">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\BlamOpenFileHook.cpp">
       <Filter>Core\Hooks\Data</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Data\SpectatorHandleInput_Hook.cpp">
+    <ClCompile Include="Core\Hooks\Data\FilmInitializeStateHook.cpp">
       <Filter>Core\Hooks\Data</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Data\UIBuildDynamicMessage_Hook.cpp">
-      <Filter>Core\Hooks\Data</Filter>
+    <ClCompile Include="Core\Hooks\Input\GetButtonStateHook.cpp">
+      <Filter>Core\Hooks\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Data\UpdateTelemetryTimer_Hook.cpp">
-      <Filter>Core\Hooks\Data</Filter>
+    <ClCompile Include="Core\Hooks\Scanner.cpp">
+      <Filter>Core\Hooks</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Lifecycle\DestroySubsystems_Hook.cpp">
-      <Filter>Core\Hooks\Lifecycle</Filter>
+    <ClCompile Include="Core\Hooks\Render\PresentHook.cpp">
+      <Filter>Core\Hooks\Render</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Lifecycle\EngineInitialize_Hook.cpp">
-      <Filter>Core\Hooks\Lifecycle</Filter>
+    <ClCompile Include="Core\Hooks\Render\ResizeBuffersHook.cpp">
+      <Filter>Core\Hooks\Render</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStart_Hook.cpp">
-      <Filter>Core\Hooks\Lifecycle</Filter>
+    <ClCompile Include="Core\Hooks\Window\WndProcHook.cpp">
+      <Filter>Core\Hooks\Window</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\MovReader\BlamOpenFile_Hook.cpp">
-      <Filter>Core\Hooks\MovReader</Filter>
+    <ClCompile Include="Core\Hooks\Input\GetRawInputDataHook.cpp">
+      <Filter>Core\Hooks\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\MovReader\FilmInitializeState_Hook.cpp">
-      <Filter>Core\Hooks\MovReader</Filter>
+    <ClCompile Include="Core\UI\MainInterface.cpp">
+      <Filter>Core\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Scanner\Scanner.cpp">
-      <Filter>Core\Hooks\Scanner</Filter>
+    <ClCompile Include="Core\UI\Tabs\Logs\LogsTab.cpp">
+      <Filter>Core\UI\Tabs\Logs</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Data\Telemetry\Telemetry.cpp">
-      <Filter>Core\Hooks\Data\Telemetry</Filter>
+    <ClCompile Include="Core\UI\Tabs\Optional\CaptureTab.cpp">
+      <Filter>Core\UI\Tabs\Optional</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\UserInterface\GetRawInputData_Hook.cpp">
-      <Filter>Core\Hooks\UserInterface</Filter>
+    <ClCompile Include="Core\UI\Tabs\Optional\EventRegistryTab.cpp">
+      <Filter>Core\UI\Tabs\Optional</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\UserInterface\Present_Hook.cpp">
-      <Filter>Core\Hooks\UserInterface</Filter>
+    <ClCompile Include="Core\UI\Tabs\Optional\ReplayManagerTab.cpp">
+      <Filter>Core\UI\Tabs\Optional</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\UserInterface\ResizeBuffers_Hook.cpp">
-      <Filter>Core\Hooks\UserInterface</Filter>
+    <ClCompile Include="Core\UI\Tabs\Primary\DirectorTab.cpp">
+      <Filter>Core\UI\Tabs\Primary</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\UserInterface\WndProc_Hook.cpp">
-      <Filter>Core\Hooks\UserInterface</Filter>
+    <ClCompile Include="Core\UI\Tabs\Primary\SettingsTab.cpp">
+      <Filter>Core\UI\Tabs\Primary</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UI\Tabs\Primary\TheaterTab.cpp">
+      <Filter>Core\UI\Tabs\Primary</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UI\Tabs\Primary\TimelineTab.cpp">
+      <Filter>Core\UI\Tabs\Primary</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Core\Utils\DXUtil.cpp">
+      <Filter>Core\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Utils\FormatUtil.cpp">
+      <Filter>Core\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Utils\LogUtil.cpp">
+      <Filter>Core\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Utils\ThreadUtil.cpp">
+      <Filter>Core\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Tables\TelemetryTables.cpp">
+      <Filter>Core\Hooks\Tables</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

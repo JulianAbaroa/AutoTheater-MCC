@@ -86,7 +86,7 @@ struct RawWeapon
 	// ... additional fields.
 };
 
-// Base data structure for Game Events used by UIBuildDynamicMessage.
+// Base data structure for Game Events used by BuildGameEvent.
 // Defines interaction between a source (Cause) and a target (Effect).
 struct EventData
 {

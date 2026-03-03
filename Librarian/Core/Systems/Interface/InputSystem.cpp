@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "Utils/Logger.h"
-#include "Core/Common/AppCore.h"
-#include "Core/Systems/Interface/InputSystem.h"
+#include "Core/Utils/CoreUtil.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -23,8 +23,8 @@ void InputSystem::AutomaticInput()
     InputRequest currentReq = { InputContext::Unknown, InputAction::Unknown };
 
     if (!g_pState->Input.DequeueRequest(currentReq) ||
-        currentReq.Action == InputAction::Unknown
-        ) {
+        currentReq.Action == InputAction::Unknown) 
+    {
         return;
     }
     
@@ -51,8 +51,9 @@ void InputSystem::AutomaticInput()
             return g_pState->Theater.GetCameraMode() != initialCamState;
         };
     
-        if (!g_pSystem->Input.InjectInput(currentReq, condition, 500ms, 50ms)) {
-            Logger::LogAppend("[InputThread] Warning: Freecam toggle timed out.");
+        if (!g_pSystem->Input.InjectInput(currentReq, condition, 500ms, 50ms)) 
+        {
+            g_pUtil->Log.Append("[InputThread] WARNING: Freecam toggle timed out.");
         }
 
         return;
@@ -69,8 +70,8 @@ bool InputSystem::InjectInput(
     InputRequest request, 
     std::function<bool()> successCondition, 
     std::chrono::milliseconds timeoutMs,
-    std::chrono::milliseconds stabilizeMs
-) {
+    std::chrono::milliseconds stabilizeMs) 
+{
 	g_pState->Input.SetNextRequest(request.Context, request.Action);
 
 	auto startWait = std::chrono::steady_clock::now();

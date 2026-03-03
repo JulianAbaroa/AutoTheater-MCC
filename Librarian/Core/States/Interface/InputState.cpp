@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Utils/Logger.h"
 #include "Core/States/Interface/InputState.h"
 
 InputRequest InputState::GetNextRequest() const

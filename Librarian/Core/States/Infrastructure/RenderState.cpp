@@ -86,3 +86,35 @@ void RenderState::SetResizing(bool state)
 {
 	m_IsResizing.store(state);
 }
+
+
+int RenderState::GetWidth()
+{
+	return m_Width.load();
+}
+
+void RenderState::SetWidth(int width)
+{
+	m_Width.store(width);
+}
+
+int RenderState::GetHeight()
+{
+	return m_Height.load();
+}
+
+void RenderState::SetHeight(int height)
+{
+	m_Height.store(height);
+}
+
+
+int RenderState::GetFramerate() const
+{
+	return m_Framerate.load();
+}
+
+void RenderState::SetFramerate(int framerate)
+{
+	m_Framerate.store(framerate);
+}

@@ -1,27 +1,26 @@
 #include "pch.h"
-#include "Utils/Logger.h"
-#include "Utils/ThreadUtils.h"
-#include "Core/Common/AppCore.h"
+#include "Core/Utils/CoreUtil.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 #include "Core/Threads/InputThread.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
 
-std::thread g_InputThread;
-
 void InputThread::Run()
 {
-    Logger::LogAppend("=== Input Thread started ===");
+    g_pUtil->Log.Append("[InputThread] INFO: Started.");
 
     while (g_pState->Lifecycle.IsRunning())
     {
-        if (g_pState->Theater.IsTheaterMode()) {
+        if (g_pState->Theater.IsTheaterMode()) 
+        {
             g_pSystem->Input.ManualInput();
             g_pSystem->Input.AutomaticInput();
         }
 
-        ThreadUtils::WaitOrExit(100ms);
+        g_pUtil->Thread.WaitOrExit(100ms);
     }
 
-    Logger::LogAppend("=== Input Thread Stopped ===");
+    g_pUtil->Log.Append("[InputThread] INFO: Stopped.");
 }

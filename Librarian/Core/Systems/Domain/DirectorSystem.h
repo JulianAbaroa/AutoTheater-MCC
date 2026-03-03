@@ -18,6 +18,7 @@ private:
 
 	std::atomic<size_t> m_CurrentCommandIndex{ 0 };
 	std::atomic<float> m_LastReplayTime{ 0.0f };
+	std::atomic<float> m_StopDelayStartTime{ 0.0f };
 
 	void GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp);
 

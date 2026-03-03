@@ -10,7 +10,7 @@ bool EventRegistryState::IsEventRegistered(const std::wstring& templateStr) cons
 EventType EventRegistryState::GetEventType(const std::wstring& templateStr) const
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
-
+	
 	auto it = m_EventRegistry.find(templateStr);
 	if (it != m_EventRegistry.end())
 	{

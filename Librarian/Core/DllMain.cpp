@@ -1,29 +1,55 @@
 #include "pch.h"
-#include "Utils/Logger.h"
+#include "Core/DllMain.h"
 #include "Proxy/ProxyExports.h"
 #include "Core/Common/AppCore.h"
-#include "Core/Threads/MainThread.h"
-#include "Core/Threads/LogThread.h"
-#include "Core/Threads/InputThread.h"
-#include "Core/Threads/DirectorThread.h"
+#include "Core/Utils/CoreUtil.h"
+#include "Core/States/CoreState.h"
+#include "Core/Threads/CoreThread.h"
 #include "External/minhook/include/MinHook.h"
-#include <shlwapi.h>
-#pragma comment(lib, "shlwapi.lib")
 #include <fstream>
 #include <chrono>
+#pragma comment(lib, "shlwapi.lib")
 
 using namespace std::chrono_literals;
 
+AppLoader g_DllInstance;
+
+extern "C" BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpReserved) 
+{
+    switch (ulReasonForCall) 
+    {
+        case DLL_PROCESS_ATTACH: 
+            return g_DllInstance.OnAttach(handleModule);
+            
+        case DLL_PROCESS_DETACH: 
+            g_DllInstance.OnDetach(lpReserved);
+            break;
+    }
+
+    return TRUE;
+}
+
+BOOL AppLoader::OnAttach(HMODULE hModule)
+{
+    DisableThreadLibraryCalls(hModule);
+
+    HANDLE hThread = CreateThread(NULL, 0, AppLoader::InitializeLibrarian, hModule, 0, NULL);
+    if (hThread) CloseHandle(hThread);
+
+    return TRUE;
+}
+
+void AppLoader::OnDetach(LPVOID lpReserved)
+{
+    this->DeinitializeLibrarian(lpReserved);
+}
+
+
 // Responsible for initializing AutoTheater data and core systems.
-static DWORD WINAPI InitializeLibrarian(LPVOID lpParam)
+DWORD WINAPI AppLoader::InitializeLibrarian(LPVOID lpParam)
 {
     // 1. Instantiate the global container.
     g_App = std::make_unique<AppCore>();
-
-    // 2. Configure convenience pointers.
-    g_pState = g_App->State.get();
-    g_pSystem = g_App->System.get();
-    g_pUI = g_App->UI.get();
 
     // 3. Store the Module Handle of the main process (MCC-Win64-Shipping.exe).
     HMODULE handleModule = (HMODULE)lpParam;
@@ -39,12 +65,12 @@ static DWORD WINAPI InitializeLibrarian(LPVOID lpParam)
     g_pState->Settings.SetLoggerPath(g_pState->Settings.GetBaseDirectory() + "\\AutoTheater.txt");
     std::ofstream ofs(g_pState->Settings.GetLoggerPath(), std::ios::trunc);
 
-    Logger::LogAppend("AutoTheater Initializing.");
+    g_pUtil->Log.Append("[DllMain] INFO: Initializing AutoTheater.");
 
     // 6. Attempt to initialize MinHook.
     if (MH_Initialize() != MH_OK)
     {
-        Logger::LogAppend("ERROR: MH_Initialize failed.");
+        g_pUtil->Log.Append("[DllMain] ERROR: MH_Initialize failed.");
         return 0;
     }
 
@@ -52,29 +78,32 @@ static DWORD WINAPI InitializeLibrarian(LPVOID lpParam)
     g_pState->Lifecycle.SetRunning(true);
 
     // 8. Initialize main worker threads.
-    
+
     // Manages the hooks lifecycle and main application state updates.
-    g_MainThread = std::thread(MainThread::Run);
+    g_DllInstance.m_MainThread = std::thread(&MainThread::Run, &g_pThread->Main);
 
     // Process and writes the logs for captured GameEvents.
-    g_LogThread = std::thread(LogThread::Run);
+    g_DllInstance.m_LogThread = std::thread(&LogThread::Run, &g_pThread->Log);
 
     // Handles both manual user input and automated input injection into the game engine.
-    g_InputThread = std::thread(InputThread::Run);
+    g_DllInstance.m_InputThread = std::thread(&InputThread::Run, &g_pThread->Input);
 
     // Manages the director logic, including initialization and update.
-    g_DirectorThread = std::thread(DirectorThread::Run);
+    g_DllInstance.m_DirectorThread = std::thread(&DirectorThread::Run, &g_pThread->Director);
 
-    Logger::LogAppend("AutoTheater Initialized.");
+    // Acts as the core of the capture system.
+    g_DllInstance.m_CaptureThread = std::thread(&CaptureThread::Run, &g_pThread->Capture);
+
+    g_pUtil->Log.Append("[DllMain] INFO: AutoTheater Initialized.");
     return 0;
 }
 
-static void DeinitializeLibrarian(LPVOID lpReserved)
+void AppLoader::DeinitializeLibrarian(LPVOID lpReserved)
 {
     // 1. Check if AutoTheater called FreeLibrary directly.
     if (lpReserved == NULL)
     {
-        Logger::LogAppend("[DLL_PROCESS_DETACH]");
+        g_pUtil->Log.Append("[DllMain] INFO: Deinitializing AutoTheater.");
 
         // 2. Signal that the application has stopped running.
         g_pState->Lifecycle.SetRunning(false);
@@ -85,43 +114,15 @@ static void DeinitializeLibrarian(LPVOID lpReserved)
         MH_Uninitialize();
 
         // 4. If workers are active, release them.
-        if (g_MainThread.joinable()) g_MainThread.detach();
-        if (g_LogThread.joinable()) g_LogThread.detach();
-        if (g_InputThread.joinable()) g_InputThread.detach();
-        if (g_DirectorThread.joinable()) g_DirectorThread.detach();
+        if (m_MainThread.joinable()) m_MainThread.detach();
+        if (m_LogThread.joinable()) m_LogThread.detach();
+        if (m_InputThread.joinable()) m_InputThread.detach();
+        if (m_DirectorThread.joinable()) m_DirectorThread.detach();
+        if (m_CaptureThread.joinable()) m_CaptureThread.detach();
 
         // 5. Destroy the application.
         g_App.reset();
 
-        g_pUI = nullptr;
-        g_pSystem = nullptr;
-        g_pState = nullptr;
-
-        Logger::LogAppend("Cleanup finished.");
+        g_pUtil->Log.Append("[DllMain] INFO: AutoTheater Deinitialized.");
     }
-}
-
-// Manages the AutoTheater lifecycle.
-BOOL APIENTRY DllMain(HMODULE handleModule, DWORD ulReasonForCall, LPVOID lpReserved) {
-    switch (ulReasonForCall) {
-        case DLL_PROCESS_ATTACH: {
-            // 1. Notify Windows not to call DllMain for subsequent thread events.
-            DisableThreadLibraryCalls(handleModule);
-
-            // 2. Create a thread to handle AutoTheater initialization.
-            HANDLE hThread = CreateThread(NULL, 0, InitializeLibrarian, handleModule, 0, NULL);
-            if (hThread) CloseHandle(hThread);
-
-            break;
-        }
-
-        case DLL_PROCESS_DETACH: {
-            // 3. Call the AutoTheater deinitialization routine.
-            DeinitializeLibrarian(lpReserved);
-
-            break;
-        }
-    }
-
-    return TRUE;
 }

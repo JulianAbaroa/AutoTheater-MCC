@@ -1,8 +1,7 @@
 #pragma once
 
-extern std::thread g_InputThread;
-
-namespace InputThread
+class InputThread
 {
+public:
 	void Run();
-}
+};

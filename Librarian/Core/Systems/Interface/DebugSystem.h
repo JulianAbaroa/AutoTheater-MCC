@@ -1,9 +1,10 @@
 #pragma once
 
+#include "Core/Common/Types/LogTypes.h"
 #include <string>
 
 class DebugSystem
 {
 public:
-	void AddLog(std::string message);
+	void AddLog(LogEntry entry);
 };

@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "Utils/Logger.h"
-#include "SettingsSystem.h"
-#include "Core/Common/AppCore.h"
+#include "Core/Utils/CoreUtil.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 #include <shlobj.h>
 #include <fstream>
 
@@ -73,8 +73,8 @@ void SettingsSystem::CreateAppData()
 
 		std::error_code errorCode;
 		if (std::filesystem::create_directories(basePath, errorCode) ||
-			std::filesystem::exists(basePath)
-			) {
+			std::filesystem::exists(basePath)) 
+		{
 			g_pState->Settings.SetAppDataDirectory(basePath.string());
 		}
 
@@ -95,7 +95,6 @@ void SettingsSystem::DeleteAppData()
 
 	if (errorCode)
 	{
-		std::string msg = "ERROR: While deleting AppData, " + errorCode.message();
-		Logger::LogAppend(msg.c_str());
+		g_pUtil->Log.Append("[SettingsSystem] ERROR: While deleting AppData. %s.", errorCode.message().c_str());
 	}
 }

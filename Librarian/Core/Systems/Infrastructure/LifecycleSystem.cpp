@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "Utils/Logger.h"
-#include "LifecycleSystem.h"
-#include "Core/Common/AppCore.h"
+#include "Core/Utils/CoreUtil.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 
 void LifecycleSystem::SignalShutdown()
 {
@@ -12,5 +12,5 @@ void LifecycleSystem::SignalShutdown()
 		g_pState->Lifecycle.GetCV().notify_all();
 	}
 
-	Logger::LogAppend("LifecycleSystem: Shutdown signaled to all threads.");
+	g_pUtil->Log.Append("[LifecycleSystem] WARNING: Shutdown signaled to all threads.");
 }

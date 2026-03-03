@@ -1,26 +1,21 @@
 #include "pch.h"
-#include "LogThread.h"
-#include "Utils/Logger.h"
-#include "Utils/Formatting.h"
-#include "Utils/ThreadUtils.h"
-#include "Core/Common/AppCore.h"
-#include "Core/Hooks/Lifecycle/GameEngineStart_Hook.h"
-#include <sstream>
+#include "Core/Utils/CoreUtil.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
+#include "Core/Threads/LogThread.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
 
-std::thread g_LogThread;
-
 void LogThread::Run()
 {
-    Logger::LogAppend("=== Log Thread Started ===");
+    g_pUtil->Log.Append("[LogThread] INFO: Started.");
 
     while (g_pState->Lifecycle.IsRunning())
     {
         if (!g_pState->Timeline.IsLoggingActive() || !g_pState->Theater.IsTheaterMode()) 
         {
-            ThreadUtils::WaitOrExit(100ms);
+            g_pUtil->Thread.WaitOrExit(100ms);
             continue;
         }
 
@@ -28,29 +23,31 @@ void LogThread::Run()
 
         for (const auto& event : eventsToProcess)
         {
-            std::stringstream ss;
-            ss << "[" << Formatting::ToTimestamp(event.Timestamp) << "] ";
-            ss << Formatting::EventTypeToString(event.Type);
+            std::string timestamp = g_pUtil->Format.ToTimestamp(event.Timestamp);
+            std::string eventType = g_pUtil->Format.EventTypeToString(event.Type);
 
             if (!event.Players.empty()) 
             {
-                // TODO: Maybe do a function to format player on 'Formatting' namespace.
-                ss << ": ";
+                char playerList[256]{};
+                size_t offset = 0;
+
+                // TODO: Maybe do a function to format player on 'Format' class.
                 for (size_t i = 0; i < event.Players.size(); ++i) 
                 {
-                    ss << event.Players[i].Name;
-                    if (i < event.Players.size() - 1) 
-                    {
-                        ss << ", ";
-                    }
-                }
-            }
+                    int written = snprintf(playerList + offset, sizeof(playerList) - offset,
+                        "%s%s", event.Players[i].Name.c_str(), 
+                        (i < event.Players.size() ? ", " : ""));
 
-            Logger::LogAppend(ss.str().c_str());
+                    if (written > 0) offset += written;
+                    if (offset >= sizeof(playerList)) break;
+                }
+                
+                g_pUtil->Log.Append("[LogThread] INFO: [%s] %s: %s", timestamp.c_str(), eventType.c_str(), playerList);
+            }
         }
 
-        ThreadUtils::WaitOrExit(50ms);
+        g_pUtil->Thread.WaitOrExit(50ms);
     }
 
-    Logger::LogAppend("=== Log Thread Stopped ===");
+    g_pUtil->Log.Append("[LogThread] INFO: Stopped.");
 }

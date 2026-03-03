@@ -2,9 +2,8 @@
 
 #include <thread>
 
-extern std::thread g_LogThread;
-
-namespace LogThread
+class LogThread
 {
+public:
 	void Run();
-}
+};

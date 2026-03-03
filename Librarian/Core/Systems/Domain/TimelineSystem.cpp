@@ -1,11 +1,6 @@
 #include "pch.h"
-#include "Utils/Logger.h"
-#include "Utils/Formatting.h"
-#include "Core/Common/AppCore.h"
-#include "Core/Common/EventRegistry.h"
-#include "Core/Common/Types/TimelineTypes.h"
-#include "Core/Systems/Domain/TimelineSystem.h"
-#include <algorithm>
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 
 void TimelineSystem::ProcessEngineEvent(float timestamp, std::wstring& templateStr, EventData* rawData)
 {
@@ -30,7 +25,8 @@ void TimelineSystem::ProcessEngineEvent(float timestamp, std::wstring& templateS
 	if (event.Type == EventType::Wins) g_pSystem->Timeline.SetLastEventReached(true);
 }
 
-std::vector<PlayerInfo> TimelineSystem::ExtractPlayers(EventData* rawData) {
+std::vector<PlayerInfo> TimelineSystem::ExtractPlayers(EventData* rawData) 
+{
 	std::vector<PlayerInfo> detectedPlayers;
 	if (!rawData) return detectedPlayers;
 
@@ -39,14 +35,17 @@ std::vector<PlayerInfo> TimelineSystem::ExtractPlayers(EventData* rawData) {
 	size_t maxPlayers = playerListCopy.size();
 
 	auto AddPlayerBySlot = [&](uint8_t slotIndex) {
-		if (slotIndex < maxPlayers) {
+		if (slotIndex < maxPlayers) 
+		{
 			PlayerInfo& player = playerListCopy[slotIndex];
 
-			if (player.RawPlayer.Name[0] != L'\0') {
+			if (player.RawPlayer.Name[0] != L'\0') 
+			{
 				detectedPlayers.push_back(player);
 				return true;
 			}
 		}
+
 		return false;
 	};
 
@@ -71,20 +70,28 @@ bool TimelineSystem::IsDuplicate(const GameEvent& newEvent)
 		if (!sameType) continue;
 
 		bool samePlayers = false;
-		if (pastEvent.Players.size() == newEvent.Players.size()) {
-			if (pastEvent.Players.empty()) {
+		if (pastEvent.Players.size() == newEvent.Players.size()) 
+		{
+			if (pastEvent.Players.empty()) 
+			{
 				samePlayers = true;
 			}
-			else {
+			else 
+			{
 				int matchCount = 0;
-				for (const auto& pCurrent : newEvent.Players) {
-					for (const auto& pPast : pastEvent.Players) {
-						if (pCurrent.Name == pPast.Name) {
+
+				for (const auto& pCurrent : newEvent.Players) 
+				{
+					for (const auto& pPast : pastEvent.Players) 
+					{
+						if (pCurrent.Name == pPast.Name) 
+						{
 							matchCount++;
 							break;
 						}
 					}
 				}
+
 				if (matchCount == newEvent.Players.size()) samePlayers = true;
 			}
 		}
@@ -93,7 +100,8 @@ bool TimelineSystem::IsDuplicate(const GameEvent& newEvent)
 	}
 
 	m_DeduplicationHistory.push_back(newEvent);
-	if (m_DeduplicationHistory.size() > MAX_HISTORY) {
+	if (m_DeduplicationHistory.size() > MAX_HISTORY) 
+	{
 		m_DeduplicationHistory.pop_front();
 	}
 

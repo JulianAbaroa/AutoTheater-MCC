@@ -4,3 +4,6 @@
 [submodule "Librarian/External/minhook"]
 	path = Librarian/External/minhook
 	url = https://github.com/TsudaKageyu/minhook.git
+[submodule "Librarian/External/ffmpeg/ffmpeg"]
+	path = Librarian/External/ffmpeg/ffmpeg
+	url = https://github.com/BtbN/FFmpeg-Builds.git

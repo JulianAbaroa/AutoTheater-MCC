@@ -1,11 +1,9 @@
 #include "pch.h"
-#include "Utils/Logger.h"
-#include "Utils/Formatting.h"
-#include "Core/Common/AppCore.h"
-#include "Core/Systems/Domain/TheaterSystem.h"
-#include "Core/Hooks/Data/Telemetry/Telemetry.h"
-#include "Core/Hooks/Scanner/Scanner.h"
-#include <sstream>
+#include "Core/Hooks/Scanner.h"
+#include "Core/Utils/CoreUtil.h"
+#include "Core/Hooks/CoreHook.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 
 void TheaterSystem::Update()
 {
@@ -48,7 +46,7 @@ void TheaterSystem::SetReplaySpeed(float speed)
 		}
 		else
 		{
-			Logger::LogAppend("No match found for Signatures::TimeScaleModifier");
+			g_pUtil->Log.Append("[TheaterSystem] ERROR: No match found for Signatures::TimeScaleModifier");
 		}
 	}
 
@@ -57,11 +55,11 @@ void TheaterSystem::SetReplaySpeed(float speed)
 
 void TheaterSystem::RefreshPlayerList()
 {
-	uintptr_t playerTable = Telemetry::GetTelemetryPlayerTable();
-	uintptr_t objectTable = Telemetry::GetTelemetryObjectTable();
+	uintptr_t playerTable = g_pHook->Tables.GetPlayerTable();
+	uintptr_t objectTable = g_pHook->Tables.GetObjectTable();
 	if (!playerTable || !objectTable) return;
 
-	LogTables(playerTable, objectTable);
+	//LogTables(playerTable, objectTable);
 
 	std::vector<PlayerInfo> nextPlayerList;
 	nextPlayerList.resize(16);
@@ -72,8 +70,8 @@ void TheaterSystem::RefreshPlayerList()
 
 		if (RawReadSinglePlayer(playerTable, objectTable, i, newPlayer))
 		{
-			newPlayer.Name = Formatting::WStringToString(newPlayer.RawPlayer.Name);
-			newPlayer.Tag = Formatting::WStringToString(newPlayer.RawPlayer.Tag);
+			newPlayer.Name = g_pUtil->Format.WStringToString(newPlayer.RawPlayer.Name);
+			newPlayer.Tag = g_pUtil->Format.WStringToString(newPlayer.RawPlayer.Tag);
 			newPlayer.Id = i;
 
 			nextPlayerList[i] = newPlayer;
@@ -81,7 +79,7 @@ void TheaterSystem::RefreshPlayerList()
 		else
 		{
 			nextPlayerList[i] = PlayerInfo();
-			Logger::LogAppend("RawReadSinglePlayer failed");
+			g_pUtil->Log.Append("[TheaterSystem] ERROR: RawReadSinglePlayer failed");
 		}
 	}
 
@@ -108,20 +106,24 @@ bool TheaterSystem::TryGetSpectatedPlayerIndex(uint64_t pReplayModule)
 	return false;
 }
 
-bool TheaterSystem::TryGetPlayerName(uint8_t slotID, wchar_t* outName, size_t maxChars) {
-	__try {
-		uintptr_t playerTable = Telemetry::GetTelemetryPlayerTable();
+bool TheaterSystem::TryGetPlayerName(uint8_t slotID, wchar_t* outName, size_t maxChars) 
+{
+	__try 
+	{
+		uintptr_t playerTable = g_pHook->Tables.GetPlayerTable();
 		if (!playerTable) return false;
 
 		uintptr_t playerAddress = playerTable + (slotID * 0x490);
 		wchar_t* pwName = (wchar_t*)(playerAddress + 0xB0);
 
-		if (pwName && pwName[0] != L'\0') {
+		if (pwName && pwName[0] != L'\0') 
+		{
 			wcscpy_s(outName, maxChars, pwName);
 			return true;
 		}
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER) {
+	__except (EXCEPTION_EXECUTE_HANDLER) 
+	{
 		return false;
 	}
 
@@ -135,9 +137,7 @@ void TheaterSystem::LogTables(uintptr_t playerTable, uintptr_t objectTable)
 
 	if (isFirst)
 	{
-		char buf[512];
-		sprintf_s(buf, "DEBUG: PlayerTable: %llx | ObjectTable: %llx", playerTable, objectTable);
-		Logger::LogAppend(buf);
+		g_pUtil->Log.Append("[TheaterSystem] DEBUG: PlayerTable: %llx | ObjectTable: %llx", playerTable, objectTable);
 		isFirst = false;
 	}
 }
@@ -187,8 +187,8 @@ bool TheaterSystem::RawReadSinglePlayer(
 	uintptr_t playerTable, 
 	uintptr_t objectTable, 
 	uint8_t index, 
-	PlayerInfo& outInfo
-) {
+	PlayerInfo& outInfo) 
+{
 	uintptr_t playerAddress = playerTable + (index * 0x490);
 	RawPlayer& rawPlayer = outInfo.RawPlayer;
 	int checkpoint = 0;
@@ -232,29 +232,33 @@ bool TheaterSystem::RawReadSinglePlayer(
 			if (ReadProcessMemory(hProc, (LPCVOID)entryBase, &entryData, sizeof(entryData), &br))
 			{
 				uintptr_t weaponPtr = 0;
-				for (int j = 0; j < 4; j++) {
-					if (entryData[j] > 0x700000000000) {
+				for (int j = 0; j < 4; j++) 
+				{
+					if (entryData[j] > 0x700000000000) 
+					{
 						weaponPtr = entryData[j];
 						break;
 					}
 				}
 
-				if (weaponPtr > 0x10000) {
+				if (weaponPtr > 0x10000) 
+				{
 					checkpoint = 4;
 					RawWeapon tempW = { 0 };
-					if (ReadProcessMemory(hProc, (LPCVOID)weaponPtr, &tempW, sizeof(RawWeapon), &br)) {
+					if (ReadProcessMemory(hProc, (LPCVOID)weaponPtr, &tempW, sizeof(RawWeapon), &br)) 
+					{
 						outInfo.Weapons.push_back(tempW);
 					}
 				}
 			}
 		}
+
 		return true;
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
-		char buf[128];
-		sprintf_s(buf, "CRASH en RawRead: Idx %d | Checkpoint %d | Addr: %llx", index, checkpoint, playerAddress);
-		Logger::LogAppend(buf);
+		g_pUtil->Log.Append("[TheaterSystem] ERROR: In RawRead Idx %d | Checkpoint %d | Addr: %016llx",
+			index, checkpoint, playerAddress);
 		return false;
 	}
 

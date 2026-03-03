@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -146,52 +146,74 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Core\Common\EventRegistry.h" />
     <ClInclude Include="Core\Common\AppCore.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Core\Common\Types\AudioTypes.h" />
     <ClInclude Include="Core\Common\Types\AutoTheaterTypes.h" />
     <ClInclude Include="Core\Common\Types\BlamTypes.h" />
     <ClInclude Include="Core\Common\Types\DirectorTypes.h" />
+    <ClInclude Include="Core\Common\Types\FFmpegTypes.h" />
+    <ClInclude Include="Core\Common\Types\GalleryTypes.h" />
     <ClInclude Include="Core\Common\Types\InputTypes.h" />
+    <ClInclude Include="Core\Common\Types\LogTypes.h" />
     <ClInclude Include="Core\Common\Types\TimelineTypes.h" />
-    <ClInclude Include="Core\Common\Types\UserInterfaceTypes.h" />
-    <ClInclude Include="Core\Hooks\Data\GetButtonState_Hook.h" />
-    <ClInclude Include="Core\Hooks\Data\SpectatorHandleInput_Hook.h" />
-    <ClInclude Include="Core\Hooks\Data\Telemetry\Telemetry.h" />
-    <ClInclude Include="Core\Hooks\Data\UIBuildDynamicMessage_Hook.h" />
-    <ClInclude Include="Core\Hooks\Data\UpdateTelemetryTimer_Hook.h" />
-    <ClInclude Include="Core\Hooks\Lifecycle\DestroySubsystems_Hook.h" />
-    <ClInclude Include="Core\Hooks\Lifecycle\EngineInitialize_Hook.h" />
-    <ClInclude Include="Core\Hooks\Lifecycle\GameEngineStart_Hook.h" />
-    <ClInclude Include="Core\Hooks\MovReader\BlamOpenFile_Hook.h" />
-    <ClInclude Include="Core\Hooks\MovReader\FilmInitializeState_Hook.h" />
-    <ClInclude Include="Core\Hooks\Scanner\Scanner.h" />
-    <ClInclude Include="Core\Hooks\Scanner\Signatures.h" />
-    <ClInclude Include="Core\Hooks\UserInterface\GetRawInputData_Hook.h" />
-    <ClInclude Include="Core\Hooks\UserInterface\Present_Hook.h" />
-    <ClInclude Include="Core\Hooks\UserInterface\ResizeBuffers_Hook.h" />
-    <ClInclude Include="Core\Hooks\UserInterface\WndProc_Hook.h" />
+    <ClInclude Include="Core\Common\Types\UITypes.h" />
+    <ClInclude Include="Core\Common\Types\VideoTypes.h" />
+    <ClInclude Include="Core\DllMain.h" />
+    <ClInclude Include="Core\Hooks\Audio\AudioClientInitializeHook.h" />
+    <ClInclude Include="Core\Hooks\Audio\GetBufferHook.h" />
+    <ClInclude Include="Core\Hooks\Audio\GetServiceHook.h" />
+    <ClInclude Include="Core\Hooks\Audio\ReleaseBufferHook.h" />
+    <ClInclude Include="Core\Hooks\CoreHook.h" />
+    <ClInclude Include="Core\Hooks\Data\BlamOpenFileHook.h" />
+    <ClInclude Include="Core\Hooks\Data\FilmInitializeStateHook.h" />
+    <ClInclude Include="Core\Hooks\Data\SpectatorHandleInputHook.h" />
+    <ClInclude Include="Core\Hooks\Data\BuildGameEventHook.h" />
+    <ClInclude Include="Core\Hooks\Data\UpdateTelemetryTimerHook.h" />
+    <ClInclude Include="Core\Hooks\Input\GetButtonStateHook.h" />
+    <ClInclude Include="Core\Hooks\Input\GetRawInputDataHook.h" />
+    <ClInclude Include="Core\Hooks\Lifecycle\DestroySubsystemsHook.h" />
+    <ClInclude Include="Core\Hooks\Lifecycle\EngineInitializeHook.h" />
+    <ClInclude Include="Core\Hooks\Lifecycle\GameEngineStartHook.h" />
+    <ClInclude Include="Core\Hooks\Render\PresentHook.h" />
+    <ClInclude Include="Core\Hooks\Render\ResizeBuffersHook.h" />
+    <ClInclude Include="Core\Hooks\Scanner.h" />
+    <ClInclude Include="Core\Hooks\Signatures.h" />
+    <ClInclude Include="Core\Hooks\Tables\TelemetryTables.h" />
+    <ClInclude Include="Core\Hooks\Window\WndProcHook.h" />
+    <ClInclude Include="Core\States\CoreState.h" />
     <ClInclude Include="Core\States\Domain\DirectorState.h" />
     <ClInclude Include="Core\States\Domain\EventRegistryState.h" />
     <ClInclude Include="Core\States\Domain\TheaterState.h" />
     <ClInclude Include="Core\States\Domain\TimelineState.h" />
+    <ClInclude Include="Core\States\Infrastructure\AudioState.h" />
+    <ClInclude Include="Core\States\Infrastructure\FFmpegState.h" />
+    <ClInclude Include="Core\States\Infrastructure\GalleryState.h" />
     <ClInclude Include="Core\States\Infrastructure\LifecycleState.h" />
     <ClInclude Include="Core\States\Infrastructure\RenderState.h" />
     <ClInclude Include="Core\States\Infrastructure\ReplayState.h" />
     <ClInclude Include="Core\States\Infrastructure\SettingsState.h" />
+    <ClInclude Include="Core\States\Infrastructure\VideoState.h" />
     <ClInclude Include="Core\States\Interface\DebugState.h" />
     <ClInclude Include="Core\States\Interface\InputState.h" />
+    <ClInclude Include="Core\Systems\CoreSystem.h" />
     <ClInclude Include="Core\Systems\Domain\DirectorSystem.h" />
     <ClInclude Include="Core\Systems\Domain\EventRegistrySystem.h" />
     <ClInclude Include="Core\Systems\Domain\TheaterSystem.h" />
     <ClInclude Include="Core\Systems\Domain\TimelineSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\AudioSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\FFmpegSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\GallerySystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\LifecycleSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\RenderSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\ReplaySystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\SettingsSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\VideoSystem.h" />
     <ClInclude Include="Core\Systems\Interface\DebugSystem.h" />
     <ClInclude Include="Core\Systems\Interface\InputSystem.h" />
+    <ClInclude Include="Core\Threads\CaptureThread.h" />
+    <ClInclude Include="Core\Threads\CoreThread.h" />
     <ClInclude Include="Core\Threads\DirectorThread.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
@@ -204,77 +226,84 @@
     <ClInclude Include="Core\Threads\LogThread.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Core\UserInterface\Tabs\Logs\LogsTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\Optional\EventRegistryTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\Primary\SettingsTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\Primary\DirectorTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\Primary\TheaterTab.h" />
-    <ClInclude Include="Core\UserInterface\Tabs\Primary\TimelineTab.h" />
-    <ClInclude Include="Core\UserInterface\UserInterface.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="Core\UI\CoreUI.h" />
+    <ClInclude Include="Core\UI\Tabs\Logs\LogsTab.h" />
+    <ClInclude Include="Core\UI\Tabs\Optional\CaptureTab.h" />
+    <ClInclude Include="Core\UI\Tabs\Optional\EventRegistryTab.h" />
+    <ClInclude Include="Core\UI\Tabs\Optional\ReplayManagerTab.h" />
+    <ClInclude Include="Core\UI\Tabs\Primary\DirectorTab.h" />
+    <ClInclude Include="Core\UI\Tabs\Primary\SettingsTab.h" />
+    <ClInclude Include="Core\UI\Tabs\Primary\TheaterTab.h" />
+    <ClInclude Include="Core\UI\Tabs\Primary\TimelineTab.h" />
+    <ClInclude Include="Core\UI\MainInterface.h" />
+    <ClInclude Include="Core\Utils\CoreUtil.h" />
+    <ClInclude Include="Core\Utils\DXUtil.h" />
+    <ClInclude Include="Core\Utils\FormatUtil.h" />
+    <ClInclude Include="Core\Utils\LogUtil.h" />
+    <ClInclude Include="Core\Utils\ThreadUtil.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_win32.h" />
     <ClInclude Include="External\imgui\imgui.h" />
     <ClInclude Include="External\imgui\imgui_internal.h" />
     <ClInclude Include="External\minhook\include\MinHook.h" />
+    <ClInclude Include="External\stb\stb_image.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="Ignore\BaseHook.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Proxy\ProxyExports.h" />
-    <ClInclude Include="Utils\DXUtils.h" />
-    <ClInclude Include="Utils\Formatting.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Utils\Logger.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Utils\ThreadUtils.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Core\Common\EventRegistry.cpp" />
     <ClCompile Include="Core\Common\AppCore.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Core\DllMain.cpp" />
-    <ClCompile Include="Core\Hooks\Data\GetButtonState_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\Data\SpectatorHandleInput_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\Data\Telemetry\Telemetry.cpp" />
-    <ClCompile Include="Core\Hooks\Data\UIBuildDynamicMessage_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\Data\UpdateTelemetryTimer_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\Lifecycle\DestroySubsystems_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\Lifecycle\EngineInitialize_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStart_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\MovReader\BlamOpenFile_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\MovReader\FilmInitializeState_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\Scanner\Scanner.cpp" />
-    <ClCompile Include="Core\Hooks\UserInterface\GetRawInputData_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\UserInterface\Present_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\UserInterface\ResizeBuffers_Hook.cpp" />
-    <ClCompile Include="Core\Hooks\UserInterface\WndProc_Hook.cpp" />
+    <ClCompile Include="Core\Hooks\Audio\AudioClientInitializeHook.cpp" />
+    <ClCompile Include="Core\Hooks\Audio\GetBufferHook.cpp" />
+    <ClCompile Include="Core\Hooks\Audio\GetServiceHook.cpp" />
+    <ClCompile Include="Core\Hooks\Audio\ReleaseBufferHook.cpp" />
+    <ClCompile Include="Core\Hooks\Data\BlamOpenFileHook.cpp" />
+    <ClCompile Include="Core\Hooks\Data\FilmInitializeStateHook.cpp" />
+    <ClCompile Include="Core\Hooks\Data\SpectatorHandleInputHook.cpp" />
+    <ClCompile Include="Core\Hooks\Data\BuildGameEventHook.cpp" />
+    <ClCompile Include="Core\Hooks\Data\UpdateTelemetryTimerHook.cpp" />
+    <ClCompile Include="Core\Hooks\Input\GetButtonStateHook.cpp" />
+    <ClCompile Include="Core\Hooks\Input\GetRawInputDataHook.cpp" />
+    <ClCompile Include="Core\Hooks\Lifecycle\DestroySubsystemsHook.cpp" />
+    <ClCompile Include="Core\Hooks\Lifecycle\EngineInitializeHook.cpp" />
+    <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStartHook.cpp" />
+    <ClCompile Include="Core\Hooks\Render\PresentHook.cpp" />
+    <ClCompile Include="Core\Hooks\Render\ResizeBuffersHook.cpp" />
+    <ClCompile Include="Core\Hooks\Scanner.cpp" />
+    <ClCompile Include="Core\Hooks\Tables\TelemetryTables.cpp" />
+    <ClCompile Include="Core\Hooks\Window\WndProcHook.cpp" />
     <ClCompile Include="Core\States\Domain\DirectorState.cpp" />
     <ClCompile Include="Core\States\Domain\EventRegistryState.cpp" />
     <ClCompile Include="Core\States\Domain\TheaterState.cpp" />
     <ClCompile Include="Core\States\Domain\TimelineState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\AudioState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\FFmpegState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\GalleryState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\LifecycleState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\RenderState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\ReplayState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\SettingsState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\VideoState.cpp" />
     <ClCompile Include="Core\States\Interface\DebugState.cpp" />
     <ClCompile Include="Core\States\Interface\InputState.cpp" />
     <ClCompile Include="Core\Systems\Domain\DirectorSystem.cpp" />
     <ClCompile Include="Core\Systems\Domain\EventRegistrySystem.cpp" />
     <ClCompile Include="Core\Systems\Domain\TheaterSystem.cpp" />
     <ClCompile Include="Core\Systems\Domain\TimelineSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\AudioSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\FFmpegSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\GallerySystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\LifecycleSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\RenderSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\ReplaySystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\SettingsSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\VideoSystem.cpp" />
     <ClCompile Include="Core\Systems\Interface\DebugSystem.cpp" />
     <ClCompile Include="Core\Systems\Interface\InputSystem.cpp" />
+    <ClCompile Include="Core\Threads\CaptureThread.cpp" />
     <ClCompile Include="Core\Threads\DirectorThread.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
@@ -287,16 +316,19 @@
     <ClCompile Include="Core\Threads\LogThread.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Core\UserInterface\Tabs\Logs\LogsTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\Optional\EventRegistryTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\Optional\ReplayManagerTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\Primary\SettingsTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\Primary\DirectorTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\Primary\TheaterTab.cpp" />
-    <ClCompile Include="Core\UserInterface\Tabs\Primary\TimelineTab.cpp" />
-    <ClCompile Include="Core\UserInterface\UserInterface.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Core\UI\Tabs\Logs\LogsTab.cpp" />
+    <ClCompile Include="Core\UI\Tabs\Optional\CaptureTab.cpp" />
+    <ClCompile Include="Core\UI\Tabs\Optional\EventRegistryTab.cpp" />
+    <ClCompile Include="Core\UI\Tabs\Optional\ReplayManagerTab.cpp" />
+    <ClCompile Include="Core\UI\Tabs\Primary\DirectorTab.cpp" />
+    <ClCompile Include="Core\UI\Tabs\Primary\SettingsTab.cpp" />
+    <ClCompile Include="Core\UI\Tabs\Primary\TheaterTab.cpp" />
+    <ClCompile Include="Core\UI\Tabs\Primary\TimelineTab.cpp" />
+    <ClCompile Include="Core\UI\MainInterface.cpp" />
+    <ClCompile Include="Core\Utils\DXUtil.cpp" />
+    <ClCompile Include="Core\Utils\FormatUtil.cpp" />
+    <ClCompile Include="Core\Utils\LogUtil.cpp" />
+    <ClCompile Include="Core\Utils\ThreadUtil.cpp" />
     <ClCompile Include="External\imgui\backends\imgui_impl_dx11.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -333,23 +365,12 @@
     <ClCompile Include="External\minhook\src\trampoline.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Ignore\BaseHook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="Ignore\todos.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Utils\DXUtils.cpp" />
-    <ClCompile Include="Utils\Formatting.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Utils\Logger.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Utils\ThreadUtils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

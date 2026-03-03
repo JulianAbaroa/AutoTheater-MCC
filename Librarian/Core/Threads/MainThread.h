@@ -3,11 +3,24 @@
 #include "Core/Common/Types/AutoTheaterTypes.h"
 #include <thread>
 
-extern std::thread g_MainThread;
-
-namespace MainThread
+class MainThread
 {
+public:
 	void Run();
-	void ShutdownAndEject();
+
 	void UpdateToPhase(AutoTheaterPhase targetPhase);
-}
+
+private:
+	void InitializeAutoTheater();
+	void UninstallLifecycleHooks();
+
+	void InstallCaptureHooks();
+	void UninstallCaptureHooks();
+
+	void CheckHooksHealth();
+	bool IsStillRunning();
+
+	bool TryInstallLifecycleHooks(const char* context);
+	bool IsHookIntact(void* address);
+	void Shutdown();
+};

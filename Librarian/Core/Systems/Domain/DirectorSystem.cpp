@@ -1,9 +1,7 @@
 #include "pch.h"
-#include "Utils/Logger.h"
-#include "Core/Common/AppCore.h"
-#include <algorithm>
-#include <sstream>
-#include <iomanip>
+#include "Core/Utils/CoreUtil.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -17,34 +15,34 @@ void DirectorSystem::Initialize()
 
 	g_pState->Director.ClearScript();
 
-	GenerateScript(timelineCopy);
+	if (!timelineCopy.empty())
+	{
+		GenerateScript(timelineCopy);
 
-	Logger::LogAppend("=== Generated Script ===");
-
-	std::vector<DirectorCommand> tempScript = g_pState->Director.GetScriptCopy();
-
-	for (const auto& cmd : tempScript) {
-		std::stringstream ss;
-
-		int totalSeconds = static_cast<int>(cmd.Timestamp);
-		int minutes = totalSeconds / 60;
-		int seconds = totalSeconds % 60;
-
-		ss << "["
-			<< std::setw(2) << std::setfill('0') << minutes << ":"
-			<< std::setw(2) << std::setfill('0') << seconds
-			<< "] ";
-
-		if (cmd.Type == CommandType::Cut) {
-			ss << "Cut to: Player " << cmd.TargetPlayerName << " (" << cmd.Reason << ")";
-		}
-		else {
-			ss << "Speed: " << cmd.SpeedValue << "x";
-		}
+		g_pUtil->Log.Append("[DirectorSystem] INFO: Generated script.");
 	
-		Logger::LogAppend(ss.str().c_str());
+		std::vector<DirectorCommand> tempScript = g_pState->Director.GetScriptCopy();
+		
+		for (const auto& cmd : tempScript) 
+		{
+			int totalSeconds = static_cast<int>(cmd.Timestamp);
+			int minutes = totalSeconds / 60;
+			int seconds = totalSeconds % 60;
+		
+			if (cmd.Type == CommandType::Cut) 
+			{
+				g_pUtil->Log.Append("[DirectorSystem] INFO: [%02d:%02d] Cut to: Player %s (%s)",
+					minutes, seconds, cmd.TargetPlayerName.c_str(), cmd.Reason.c_str());
+			}
+			else 
+			{
+				g_pUtil->Log.Append("[DirectorSystem] INFO: [%02d:%02d] Speed: %.1fx",
+					minutes, seconds, cmd.SpeedValue);
+			}
+		}
+
+		g_pUtil->Log.Append("[DirectorSystem] INFO: Script end.");
 	}
-	Logger::LogAppend("=== Script End ===");
 	
 	g_pSystem->Director.SetCurrentCommandIndex(0);
 	g_pSystem->Director.SetLastReplayTime(0.0f);
@@ -53,15 +51,15 @@ void DirectorSystem::Initialize()
 
 void DirectorSystem::Update()
 {
-	if (!g_pState->Theater.GetTimePtr() || g_pState->Lifecycle.GetCurrentPhase() != AutoTheaterPhase::Director) {
+	if (!g_pState->Theater.GetTimePtr() || g_pState->Lifecycle.GetCurrentPhase() != AutoTheaterPhase::Director) 
+	{
 		return;
 	}
 
-
 	if (g_pState->Theater.GetReplayModule() != 0 && 
 		g_pState->Theater.GetCameraMode() == 0x01 &&
-		g_pState->Theater.IsThirdPersonForced()
-	) {
+		g_pState->Theater.IsThirdPersonForced()) 
+	{
 		InputRequest request{};
 		request.Context = InputContext::Theater;
 		request.Action = InputAction::ToggleFreecam;
@@ -69,12 +67,10 @@ void DirectorSystem::Update()
 	}
 
 	std::vector<DirectorCommand> scriptCopy = g_pState->Director.GetScriptCopy();;
-
 	if (scriptCopy.empty()) return;
 
 	// g_LastReplayTime can produce bugs if it's not reseted correctly
 	float currentTime = SafeGetCurrentTime();
-
 	float* pTime = g_pState->Theater.GetTimePtr();
 	if (!pTime || *pTime < DIRECTOR_WARMUP_TIME) return;
 
@@ -90,15 +86,33 @@ void DirectorSystem::Update()
 		);
 
 		g_pSystem->Director.SetCurrentCommandIndex(std::distance(scriptCopy.begin(), it));
-
-		std::stringstream ss;
-		ss << "[Director] Rewind detected at " << currentTime << "s. Resetting script to index " << g_pSystem->Director.GetCurrentCommandIndex();
-		Logger::LogAppend(ss.str().c_str());
+		g_pUtil->Log.Append("[DirectorSystem] INFO: Rewind detected at %.2fs. Resetting script to index %d", 
+			currentTime, g_pSystem->Director.GetCurrentCommandIndex());
 	}
-
 	g_pSystem->Director.SetLastReplayTime(currentTime);
 
-	if (g_pSystem->Director.GetCurrentCommandIndex() >= scriptCopy.size()) return;
+	size_t currentIndex = g_pSystem->Director.GetCurrentCommandIndex();
+	if (currentIndex >= scriptCopy.size())
+	{
+		if (g_pState->FFmpeg.StopOnLastEvent() && g_pState->FFmpeg.IsRecording())
+		{
+			if (m_StopDelayStartTime == 0.0f)
+			{
+				m_StopDelayStartTime = currentTime;
+				// TODO: change the 3 for the delay duration.
+				g_pUtil->Log.Append("[DirectorSystem] INFO: Script finished, waiting 3 seconds before stop...");
+			}
+
+			if (currentTime - m_StopDelayStartTime >= g_pState->FFmpeg.GetStopDelayDuration())
+			{
+				g_pUtil->Log.Append("[DirectorSystem] INFO: Delay finished, stopping FFmpeg.");
+				g_pSystem->FFmpeg.Stop();
+				m_StopDelayStartTime = 0.0f;
+			}
+		}
+
+		return;
+	}
 
 	DirectorCommand& command = scriptCopy[g_pSystem->Director.GetCurrentCommandIndex()];
 
@@ -108,9 +122,7 @@ void DirectorSystem::Update()
 		{
 			if (command.TargetPlayerIdx != g_pState->Theater.GetSpectatedPlayerIndex())
 			{
-				std::stringstream ss;
-				ss << "Execute: Cut to " << (int)command.TargetPlayerIdx << " Reason [" << command.Reason << "]";
-				Logger::LogAppend(ss.str().c_str());
+				g_pUtil->Log.Append("[DirectorSystem] INFO: Execute: Cut to %d Reason [%s]", command.TargetPlayerIdx, command.Reason);
 
 				size_t nextCommandIndex = g_pSystem->Director.GetCurrentCommandIndex() + 1;
 				float deadline =
@@ -123,10 +135,7 @@ void DirectorSystem::Update()
 		}
 		else if (command.Type == CommandType::SetSpeed)
 		{
-			std::stringstream ss;
-			ss << "Execute: Speed set to [x" << command.SpeedValue << "]";
-			Logger::LogAppend(ss.str().c_str());
-
+			g_pUtil->Log.Append("[DirectorSystem] INFO: Speed set to [%.2fx]", command.SpeedValue);
 			g_pSystem->Theater.SetReplaySpeed(command.SpeedValue);
 		}
 
@@ -134,18 +143,17 @@ void DirectorSystem::Update()
 	}
 }
 
-
 void DirectorSystem::GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 {
 	if (targetIdx >= 16) return;
 
-	Logger::LogAppend(("[Director] Starting navigation to: " + std::to_string(targetIdx)).c_str());
+	g_pUtil->Log.Append("[DirectorSystem] INFO: Starting navigation to: %d", targetIdx);
 
 	while (g_pState->Theater.GetSpectatedPlayerIndex() != targetIdx)
 	{
 		if (*g_pState->Theater.GetTimePtr() >= nextCommandTimestamp)
 		{
-			Logger::LogAppend("[Director] Navigation aborted: Time limit reached.");
+			g_pUtil->Log.Append("[DirectorSystem] WARNING: Navigation aborted, time limit reached.");
 			return;
 		}
 
@@ -170,7 +178,7 @@ void DirectorSystem::GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 		std::this_thread::sleep_for(30ms);
 	}
 
-	Logger::LogAppend("[Director] Navigation successful.");
+	g_pUtil->Log.Append("[DirectorSystem] INFO: Navigation successful.");
 }
 
 void DirectorSystem::GenerateScript(std::vector<GameEvent> timeline)
@@ -207,7 +215,8 @@ void DirectorSystem::GenerateScript(std::vector<GameEvent> timeline)
 			bool isInvolved = false;
 			for (const auto& player : nextEvent.Players)
 			{
-				if (player.Id == targetPlayer->Id) {
+				if (player.Id == targetPlayer->Id) 
+				{
 					isInvolved = true; break;
 				}
 			}
@@ -264,9 +273,10 @@ void DirectorSystem::GenerateScript(std::vector<GameEvent> timeline)
 		cutCmd.TargetPlayerIdx = segment.PlayerID;
 		cutCmd.TargetPlayerName = segment.PlayerName;
 
-		std::stringstream ss;
-		ss << "Score: " << segment.TotalScore << " Events: " << segment.TotalEvents.size();
-		cutCmd.Reason = ss.str();
+		char buffer[128]{};
+		snprintf(buffer, sizeof(buffer), "Score: %d Events: %zu", 
+			segment.TotalScore, segment.TotalEvents.size());
+		cutCmd.Reason = buffer;
 
 		lastSegmentEnd = segment.EndTime;
 
@@ -275,7 +285,7 @@ void DirectorSystem::GenerateScript(std::vector<GameEvent> timeline)
 
 	std::sort(tempScript.begin(), tempScript.end(), [](const DirectorCommand& a, const DirectorCommand& b) {
 		return a.Timestamp < b.Timestamp;
-		});
+	});
 
 	g_pState->Director.SetScript(tempScript);
 }
@@ -286,7 +296,7 @@ void DirectorSystem::OptimizeSegments(std::vector<ActionSegment>& segments)
 
 	std::sort(segments.begin(), segments.end(), [](const ActionSegment& a, const ActionSegment& b) {
 		return a.StartTime < b.StartTime;
-		});
+	});
 
 	std::vector<ActionSegment> merged;
 	merged.push_back(segments[0]);
@@ -415,7 +425,7 @@ void DirectorSystem::RemoveDuplicates(std::vector<GameEvent> timeline)
 
 	std::sort(timeline.begin(), timeline.end(), [](const GameEvent& a, const GameEvent& b) {
 		return a.Timestamp < b.Timestamp;
-		});
+	});
 
 	std::vector<GameEvent> uniqueEvents;
 
@@ -485,15 +495,12 @@ void DirectorSystem::SetCurrentCommandIndex(size_t cmdIndex)
 void DirectorSystem::IncrementCurrentCommandIndex()
 {
 	size_t scriptSize = g_pState->Director.GetScriptSize();
+	size_t current = m_CurrentCommandIndex.load();
 
-	size_t next = m_CurrentCommandIndex.load() + 1;
-	if (next >= scriptSize)
+	if (current < scriptSize)
 	{
-		Logger::LogAppend("WARNING: End of Script reached. Cannot increment further.");
-		return;
+		m_CurrentCommandIndex.store(current + 1);
 	}
-
-	m_CurrentCommandIndex.store(next);
 }
 
 void DirectorSystem::SetLastReplayTime(float lastReplayTime)

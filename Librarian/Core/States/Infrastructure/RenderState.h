@@ -26,6 +26,15 @@ public:
 	bool IsResizing() const;
 	void SetResizing(bool state);
 
+	int GetWidth();
+	void SetWidth(int width);
+
+	int GetHeight();
+	void SetHeight(int height);
+
+	int GetFramerate() const;
+	void SetFramerate(int framerate);
+
 private:
 	ID3D11Device* m_pDevice{ nullptr };
 	ID3D11DeviceContext* m_pContext{ nullptr };
@@ -34,4 +43,9 @@ private:
 
 	std::atomic<bool> m_IsImGuiInitialized{ false };
 	std::atomic<bool> m_IsResizing{ false };
+
+	std::atomic<int> m_Width{ 0 };
+	std::atomic<int> m_Height{ 0 };
+
+	std::atomic<int> m_Framerate{ 0 };
 };

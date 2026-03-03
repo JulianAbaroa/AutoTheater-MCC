@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Common/Types/UserInterfaceTypes.h"
+#include "Core/Common/Types/UITypes.h"
 #include <string>
 #include <vector>
 

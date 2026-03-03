@@ -12,25 +12,19 @@ std::vector<SavedReplay> ReplayState::GetSavedReplaysCacheCopy() const
 	return m_SavedReplaysCache;
 }
 
-FilmMetadata ReplayState::GetFilmMetadata() const
-{
-	std::lock_guard<std::mutex> lock(m_Mutex);
-	return m_FilmMetadata;
-}
-
 std::string ReplayState::GetPreviousReplayPath() const
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
 	return m_PreviousReplayPath;
 }
 
-std::string ReplayState::GetActiveReplayHash() const
+std::string ReplayState::GetPreviousReplayHash() const
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
 	return m_ActiveReplayHash;
 }
 
-std::string ReplayState::GetCurrentFilmPath() const
+std::string ReplayState::GetCurrentReplayPath() const
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
 	return m_CurrentFilmPath;
@@ -48,19 +42,13 @@ void ReplayState::SetSavedReplaysCache(std::vector<SavedReplay> cache)
 	m_SavedReplaysCache = std::move(cache);
 }
 
-void ReplayState::SetFilmMetadata(FilmMetadata metadata)
-{
-	std::lock_guard<std::mutex> lock(m_Mutex);
-	m_FilmMetadata = std::move(metadata);
-}
-
-void ReplayState::SetActiveReplayHash(const std::string& hash)
+void ReplayState::SetPreviousReplayHash(const std::string& hash)
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
 	m_ActiveReplayHash = hash;
 }
 
-void ReplayState::SetCurrentFilmPath(const std::string& path)
+void ReplayState::SetCurrentReplayPath(const std::string& path)
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
 	m_CurrentFilmPath = path;
@@ -70,4 +58,12 @@ void ReplayState::SetPreviousReplayPath(const std::string& path)
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
 	m_PreviousReplayPath = path;
+}
+
+void ReplayState::ClearActiveSession()
+{
+	std::lock_guard<std::mutex> lock(m_Mutex);
+	m_PreviousReplayPath = "";
+	m_ActiveReplayHash = "";
+	m_CurrentFilmPath = "";
 }

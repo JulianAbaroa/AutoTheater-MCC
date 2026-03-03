@@ -1,21 +1,15 @@
 #include "pch.h"
-#include "Utils/Logger.h"
-#include "Utils/ThreadUtils.h"
-#include "Core/Common/AppCore.h"
+#include "Core/Utils/CoreUtil.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 #include "Core/Threads/DirectorThread.h"
-#include "Core/Systems/Domain/DirectorSystem.h"
-#include "Core/Hooks/Lifecycle/DestroySubsystems_Hook.h"
-#include "Core/Hooks/Lifecycle/EngineInitialize_Hook.h"
-#include "Core/Hooks/Lifecycle/GameEngineStart_Hook.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
 
-std::thread g_DirectorThread;
-
 void DirectorThread::Run()
 {
-    Logger::LogAppend("=== Director Thread Started ===");
+    g_pUtil->Log.Append("[DirectorThread] INFO: Started.");
     
     while (g_pState->Lifecycle.IsRunning())
     {
@@ -25,7 +19,7 @@ void DirectorThread::Run()
             {
                 if (g_pState->Director.AreHooksReady())
                 {
-                    Logger::LogAppend("DirectorThread: Phase match and Engine ready. Initializing...");
+                    g_pUtil->Log.Append("[DirectorThread] INFO: Phase match and Engine ready, initializing.");
                     g_pSystem->Director.Initialize();
                 }
             }
@@ -37,12 +31,13 @@ void DirectorThread::Run()
                 }
             }
         
-            ThreadUtils::WaitOrExit(16ms);
+            g_pUtil->Thread.WaitOrExit(16ms);
         }
-        else {
+        else 
+        {
             g_pState->Director.SetHooksReady(false);
         }
     }
-    
-    Logger::LogAppend("=== Director Thread Stopped ===");
+
+    g_pUtil->Log.Append("[DirectorThread] INFO: Stopped.");
 }

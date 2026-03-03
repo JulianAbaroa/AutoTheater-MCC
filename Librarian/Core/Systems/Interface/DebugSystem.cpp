@@ -1,9 +1,9 @@
 #include "pch.h"
-#include "DebugSystem.h"
-#include "Core/Common/AppCore.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 
-void DebugSystem::AddLog(std::string message)
+void DebugSystem::AddLog(LogEntry entry)
 {
-	g_pState->Debug.PushBack(message);
-	g_pState->Debug.TrimToSize(500);
+	g_pState->Debug.PushBack(entry);
+	g_pState->Debug.TrimToSize(g_pState->Debug.GetMaxCapacity());
 }

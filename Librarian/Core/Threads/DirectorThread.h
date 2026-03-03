@@ -2,9 +2,8 @@
 
 #include <thread>
 
-extern std::thread g_DirectorThread;
-
-namespace DirectorThread
+class DirectorThread
 {
+public:
 	void Run();
-}
+};

@@ -1,21 +1,29 @@
 #pragma once
 
+#include "Core/Common/Types/LogTypes.h"
 #include <functional>
 #include <string>
+#include <atomic>
 #include <deque>
 #include <mutex>
 
 struct DebugState
 {
 public:
-	void PushBack(std::string message);
+	void PushBack(LogEntry entry);
 	void TrimToSize(int size);
-	void ForEachLog(std::function<void(const std::string&)> callback) const;
+
+	void ForEachLog(std::function<void(const LogEntry&)> callback) const;
 	void ClearLogs();
 
+	int GetMaxCapacity() const;
+
+	LogEntry GetLogAt(size_t index) const;
+	size_t GetTotalLogs() const;
+
 private:
-	std::deque<std::string> m_Logs{};
+	std::deque<LogEntry> m_Logs{};
 	mutable std::mutex m_Mutex;
 
-	const size_t m_MaxLogs = 500;
+	const std::atomic<int> m_MaxCapacity{ 500 };
 };

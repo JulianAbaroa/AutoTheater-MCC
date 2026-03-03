@@ -1,8 +1,7 @@
 #include "pch.h"
-#include "Utils/Logger.h"
-#include "Utils/Formatting.h"
-#include "Core/Systems/Infrastructure/ReplaySystem.h"
-#include "Core/Common/AppCore.h"
+#include "Core/Utils/CoreUtil.h"
+#include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 #include <fstream>
 
 void ReplaySystem::SaveReplay(const std::string& sourceFilmPath)
@@ -33,14 +32,14 @@ void ReplaySystem::SaveReplay(const std::string& sourceFilmPath)
 
 		this->SaveMetadata(fileHash, src.stem().string(), scannedData.FilmMetadata);
 
-		g_pState->Replay.SetActiveReplayHash(fileHash);
+		g_pState->Replay.SetPreviousReplayHash(fileHash);
 		g_pState->Replay.SetRefreshReplayList(true);
 
-		Logger::LogAppend(("Replay saved & indexed: " + fileHash.substr(0, 8)).c_str());
+		g_pUtil->Log.Append("[ReplaySystem] INFO: Replay saved & indexed: %s", fileHash.substr(0, 8).c_str());
 	}
 	catch (const std::exception& e)
 	{
-		Logger::LogAppend((std::string("Error saving replay: ") + e.what()).c_str());
+		g_pUtil->Log.Append("[ReplaySystem] ERROR: On saving replay, message: %s", e.what());
 	}
 }
 
@@ -55,12 +54,12 @@ void ReplaySystem::DeleteReplay(const std::string& hash)
 		{
 			std::filesystem::remove_all(dir);
 			g_pState->Replay.SetRefreshReplayList(true);
-			Logger::LogAppend(("Replay deleted: " + hash).c_str());
+			g_pUtil->Log.Append("[ReplaySystem] INFO: Replay deleted: %s", hash);
 		}
 	}
 	catch (const std::exception& e)
 	{
-		Logger::LogAppend((std::string("Error deleting replay: ") + e.what()).c_str());
+		g_pUtil->Log.Append("[ReplaySystem] ERROR: On deleting replay: %s", e.what());
 	}
 }
 
@@ -76,17 +75,22 @@ void ReplaySystem::SaveMetadata(const std::string& hash, const std::string& defa
 	std::string author = metadata.Author.empty() ? "Unknown" : metadata.Author;
 	std::string info = metadata.Info.empty() ? "N/A" : metadata.Info;
 
-	if (std::filesystem::exists(path)) {
+	if (std::filesystem::exists(path)) 
+	{
 		std::ifstream inFile(path);
 		std::string line;
-		while (std::getline(inFile, line)) {
+
+		while (std::getline(inFile, line)) 
+		{
 			if (line.find("Name=") == 0) finalName = line.substr(5);
 		}
+
 		inFile.close();
 	}
 
 	std::ofstream file(path, std::ios::trunc);
-	if (file.is_open()) {
+	if (file.is_open()) 
+	{
 		file << "Name=" << finalName << "\n";
 		file << "Hash=" << localHash << "\n";
 		file << "Author=" << author << "\n";
@@ -102,24 +106,28 @@ void ReplaySystem::RenameReplay(const std::string& hash, const std::string& newN
 	metaPath =
 		std::filesystem::path(g_pState->Settings.GetAppDataDirectory()) / "Replays" / hash / "metadata.txt";
 
-	if (std::filesystem::exists(metaPath)) {
+	if (std::filesystem::exists(metaPath)) 
+	{
 		std::ifstream inFile(metaPath);
 		std::string line;
-		while (std::getline(inFile, line)) {
+
+		while (std::getline(inFile, line)) 
+		{
 			if (line.find("Author=") == 0) author = line.substr(7);
 			else if (line.find("Info=") == 0) info = line.substr(5);
 		}
 	}
 
 	std::ofstream outFile(metaPath, std::ios::trunc);
-	if (outFile.is_open()) {
+	if (outFile.is_open()) 
+	{
 		outFile << "Name=" << newName << "\n";
 		outFile << "Author=" << author << "\n";
 		outFile << "Info=" << info << "\n";
 		outFile.close();
 
 		g_pState->Replay.SetRefreshReplayList(true);
-		Logger::LogAppend(("Replay renamed to: " + newName).c_str());
+		g_pUtil->Log.Append("[ReplaySystem] INFO: Replay renamed to: %s", newName);
 	}
 }
 
@@ -134,7 +142,7 @@ void ReplaySystem::RestoreReplay(const SavedReplay& replay)
 
 		if (std::filesystem::exists(dest))
 		{
-			Logger::LogAppend("Restore: File already exists in MCC folder, overwriting...");
+			g_pUtil->Log.Append("[ReplaySystem] WARNING: File already exists in MCC folder, overwriting.");
 		}
 
 		std::filesystem::copy_file(
@@ -142,11 +150,11 @@ void ReplaySystem::RestoreReplay(const SavedReplay& replay)
 			std::filesystem::copy_options::overwrite_existing
 		);
 
-		Logger::LogAppend("Restore: Replay sent to MCC Temp folder. You can now open it in-game.");
+		g_pUtil->Log.Append("[ReplaySystem] INFO: Replay sent to MCC Temp folder, you can now open it in-game.");
 	}
 	catch (const std::exception& e)
 	{
-		Logger::LogAppend((std::string("Restore Error: ") + e.what()).c_str());
+		g_pUtil->Log.Append("[ReplaySystem] ERROR: Restore failed %s.", e.what());
 	}
 }
 
@@ -165,7 +173,7 @@ void ReplaySystem::SaveTimeline(const std::string& replayHash)
 
 		if (currentTimestamp <= existingLastTimestamp)
 		{
-			Logger::LogAppend("SaveTimeline: Existing timeline is more complete. Skipping...");
+			g_pUtil->Log.Append("[ReplaySystem] WARNING: Existing timeline is more complete, skipping.");
 			return;
 		}
 	}
@@ -177,7 +185,7 @@ void ReplaySystem::SaveTimeline(const std::string& replayHash)
 		size_t len = s.length();
 		file.write((char*)&len, sizeof(len));
 		file.write(s.c_str(), len);
-		};
+	};
 
 	std::vector<GameEvent> timelineCopy = g_pState->Timeline.GetTimelineCopy();;
 
@@ -218,7 +226,7 @@ void ReplaySystem::SaveTimeline(const std::string& replayHash)
 
 	file.close();
 	g_pState->Replay.SetRefreshReplayList(true);
-	Logger::LogAppend("Timeline synchronized successfully.");
+	g_pUtil->Log.Append("[ReplaySystem] INFO: Timeline synchronized successfully.");
 }
 
 void ReplaySystem::LoadTimeline(const std::string& hash)
@@ -235,11 +243,12 @@ void ReplaySystem::LoadTimeline(const std::string& hash)
 			size_t len = 0;
 			if (!file.read((char*)&len, sizeof(len))) return;
 
-			if (len > 0 && len < 2048) {
+			if (len > 0 && len < 2048) 
+			{
 				s.resize(len);
 				file.read(&s[0], len);
 			}
-			};
+		};
 
 		size_t eventCount = 0;
 		float lastTimestampHeader = 0.0f;
@@ -252,7 +261,8 @@ void ReplaySystem::LoadTimeline(const std::string& hash)
 		std::vector<GameEvent> tempTimeline;
 		tempTimeline.reserve(eventCount);
 
-		for (size_t i = 0; i < eventCount; i++) {
+		for (size_t i = 0; i < eventCount; i++) 
+		{
 			GameEvent gameEvent;
 			file.read((char*)&gameEvent.Timestamp, sizeof(gameEvent.Timestamp));
 			file.read((char*)&gameEvent.Type, sizeof(gameEvent.Type));
@@ -261,7 +271,8 @@ void ReplaySystem::LoadTimeline(const std::string& hash)
 			size_t playerCount = 0;
 			file.read((char*)&playerCount, sizeof(playerCount));
 
-			for (size_t j = 0; j < playerCount; j++) {
+			for (size_t j = 0; j < playerCount; j++) 
+			{
 				PlayerInfo p;
 				file.read((char*)&p.Id, sizeof(p.Id));
 				loadString(p.Name);
@@ -272,9 +283,12 @@ void ReplaySystem::LoadTimeline(const std::string& hash)
 				size_t weaponCount = 0;
 				file.read((char*)&weaponCount, sizeof(weaponCount));
 
-				if (weaponCount > 0 && weaponCount < 10) {
+				if (weaponCount > 0 && weaponCount < 10) 
+				{
 					p.Weapons.resize(weaponCount);
-					for (size_t k = 0; k < weaponCount; k++) {
+
+					for (size_t k = 0; k < weaponCount; k++) 
+					{
 						file.read((char*)&p.Weapons[k], sizeof(RawWeapon));
 					}
 				}
@@ -284,14 +298,13 @@ void ReplaySystem::LoadTimeline(const std::string& hash)
 		}
 
 		g_pState->Timeline.SetTimeline(tempTimeline);
-		g_pState->Replay.SetActiveReplayHash(hash);
+		g_pState->Replay.SetPreviousReplayHash(hash);
 
-		std::stringstream ss;
-		ss << "Timeline loaded. Active Hash set to: " << hash.c_str();
-		Logger::LogAppend(ss.str().c_str());
+		g_pUtil->Log.Append("[ReplaySystem] INFO: Timeline loaded, active hash set to: %s", hash.c_str());
 	}
-	catch (const std::exception& e) {
-		Logger::LogAppend((std::string("Crash prevented in LoadTimeline: ") + e.what()).c_str());
+	catch (const std::exception& e) 
+	{
+		g_pUtil->Log.Append("[ReplaySystem] WARNING: Crash prevented in LoadTimeline: %s", e.what());
 	}
 
 	file.close();
@@ -356,38 +369,40 @@ std::string ReplaySystem::CalculateFileHash(const std::string& sourceFilmPath)
 	file.seekg(0, std::ios::end);
 	size_t fileSize = file.tellg();
 
-	std::vector<char> buffer;
+	std::vector<char> fileData;
 	const size_t chunkSize = 4096;
 
-	if (fileSize <= chunkSize * 3) {
-		buffer.resize(fileSize);
+	if (fileSize <= chunkSize * 3) 
+	{
+		fileData.resize(fileSize);
 		file.seekg(0, std::ios::beg);
-		file.read(buffer.data(), fileSize);
+		file.read(fileData.data(), fileSize);
 	}
-	else {
-		buffer.resize(chunkSize * 3);
+	else 
+	{
+		fileData.resize(chunkSize * 3);
 
 		file.seekg(0, std::ios::beg);
-		file.read(buffer.data(), chunkSize);
+		file.read(fileData.data(), chunkSize);
 
 		file.seekg(fileSize / 2, std::ios::beg);
-		file.read(buffer.data() + chunkSize, chunkSize);
+		file.read(fileData.data() + chunkSize, chunkSize);
 
 		file.seekg(fileSize - chunkSize, std::ios::beg);
-		file.read(buffer.data() + (chunkSize * 2), chunkSize);
+		file.read(fileData.data() + (chunkSize * 2), chunkSize);
 	}
 
 	// FNV-1a Algorithm (64-bit)
 	uint64_t hash = 0xcbf29ce484222325;
-	for (char c : buffer)
+	for (char c : fileData)
 	{
 		hash ^= static_cast<uint8_t>(c);
 		hash *= 0x100000001b3;
 	}
 
-	std::stringstream ss;
-	ss << std::hex << std::setw(16) << std::setfill('0') << hash;
-	return ss.str();
+	char buffer[32]{};
+	snprintf(buffer, sizeof(buffer), "%016llx", hash);
+	return std::string(buffer);
 }
 
 std::vector<TheaterReplay> ReplaySystem::GetTheaterReplays(const std::filesystem::path& directoryPath)
@@ -429,7 +444,7 @@ TheaterReplay ReplaySystem::ScanReplay(const std::filesystem::path& filePath)
 		wchar_t* wFullInfo = reinterpret_cast<wchar_t*>(buffer + 0x1C0);
 
 		replay.FilmMetadata.Author = std::string(author);
-		replay.FilmMetadata.Info = Formatting::WStringToString(wFullInfo);
+		replay.FilmMetadata.Info = g_pUtil->Format.WStringToString(wFullInfo);
 	}
 
 	return replay;
@@ -442,13 +457,14 @@ void ReplaySystem::DeleteInGameReplay(const std::filesystem::path& replayPath)
 		if (std::filesystem::exists(replayPath))
 		{
 			std::filesystem::remove(replayPath);
-			Logger::LogAppend(("Deleted in-game replay: " + replayPath.filename().string()).c_str());
+			g_pUtil->Log.Append("[ReplaySystem] INFO: Deleted in-game replay: %s",
+				replayPath.filename().string().c_str());
 			this->HotreloadReplays();
 		}
 	}
 	catch (const std::exception& e)
 	{
-		Logger::LogAppend(("Error deleting in-game replay: " + std::string(e.what())).c_str());
+		g_pUtil->Log.Append("[ReplaySystem] ERROR: On deleting in-game replay: %s", e.what());
 	}
 }
 
@@ -486,11 +502,11 @@ void ReplaySystem::HotreloadReplays()
 			std::ofstream file(tempFile);
 			file.close();
 
-			Logger::LogAppend("Replays hotreload executed.");
+			g_pUtil->Log.Append("[ReplaySystem] INFO: Replays hotreload executed.");
 		}
 	}
 	catch (const std::exception& e)
 	{
-		Logger::LogAppend((std::string("Error in hotreload replays: ") + e.what()).c_str());
+		g_pUtil->Log.Append("[ReplaySystem] ERROR: In hotreload replays. %s.", e.what());
 	}
 }

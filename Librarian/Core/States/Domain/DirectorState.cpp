@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Utils/Logger.h"
 #include "Core/States/Domain/DirectorState.h"
 
 bool DirectorState::IsInitialized() const
