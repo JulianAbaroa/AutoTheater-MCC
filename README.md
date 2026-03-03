@@ -34,7 +34,8 @@ AutoTheater-MCC is only compatible with Halo Reach: Custom Game Browser and Cust
 - **Dependencies:**
     - [MinHook](https://github.com/TsudaKageyu/minhook).
     - [Dear ImGui](https://github.com/ocornut/imgui).
-    - [FFmpeg](https://www.ffmpeg.org/)
+    - [FFmpeg](https://www.ffmpeg.org/).
+    - [STB](https://github.com/nothings/stb).
 
 - **Platform:** Windows 10/11 (x64).
 
@@ -49,6 +50,8 @@ AutoTheater-MCC is only compatible with Halo Reach: Custom Game Browser and Cust
 - **ImGui:** For the bloat-free immediate mode graphical user interface library.
 
 - **FFmpeg:** For the in-game capture system. (unstable for now)
+
+- **STB:** For lightweight image loading and decoding from memory.
 
 - **Halo Modding Community:** Contributions to the understanding of the Blam! Engine.
 
