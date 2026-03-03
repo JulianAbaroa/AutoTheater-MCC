@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Common/Types/UITypes.h"
+#include "Core/Common/Types/LogTypes.h"
 #include <atomic>
 
 class LogsTab
@@ -8,22 +10,26 @@ public:
 	void Draw();
 	
 private:
-	void DrawSearchBar(char* buffer, size_t bufferSize);
+	LogFilterState DrawTopBar();
+	void DrawClearButton(bool isFiltering, std::string& searchStr);
+	void DrawCopyButton(bool isFiltering, std::string& searchStr);
+	void DrawHelpMarker();
 
+	std::vector<int> GetFilteredIndices(const LogFilterState& filter);
+	void DrawScrollingRegion(const LogFilterState& filter);
+	void DrawLogLine(int realIndex, const LogEntry& entry, bool& logClickedThisFrame);
+	void DrawLogMessage(const std::string& message);
+	void HandleLogInteraction(int realIndex, const LogEntry& entry, bool& logClickedThisFrame);
+
+	void DrawSearchBar(char* buffer, size_t bufferSize);
+	bool IsIndexSelected(int index) const;
+
+	char m_SearchBuffer[128] = "";
 	std::atomic<bool> m_AutoScroll{ true };
 
+	std::atomic<int> m_SelectionEnd{ -1 };
+	std::atomic<int> m_SelectionStart{ -1 };
+	std::atomic<float> m_AnimationStartTime{ 0.0f };
+	std::atomic<int> m_AnimateIndex{ -1 };
 	const float m_AnimationDuration = 0.8f;
-	float m_AnimationStartTime = 0.0f;
-	int m_AnimateIndex = -1;
-
-    int m_SelectionStart = -1;
-    int m_SelectionEnd = -1;
-
-    bool IsIndexSelected(int index) const 
-    {
-        if (m_SelectionStart == -1 || m_SelectionEnd == -1) return false;
-        int minIdx = (std::min)(m_SelectionStart, m_SelectionEnd);
-        int maxIdx = (std::max)(m_SelectionStart, m_SelectionEnd);
-        return (index >= minIdx && index <= maxIdx);
-    }
 };

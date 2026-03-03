@@ -46,3 +46,9 @@ struct PhaseUI
 	const char* Name;
 	ImVec4 Color;
 };
+
+struct LogFilterState
+{
+	std::string SearchStr;
+	bool IsFiltering;
+};

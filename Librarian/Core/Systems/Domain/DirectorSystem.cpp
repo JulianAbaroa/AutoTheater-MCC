@@ -122,7 +122,7 @@ void DirectorSystem::Update()
 		{
 			if (command.TargetPlayerIdx != g_pState->Theater.GetSpectatedPlayerIndex())
 			{
-				g_pUtil->Log.Append("[DirectorSystem] INFO: Execute: Cut to %d Reason [%s]", command.TargetPlayerIdx, command.Reason);
+				g_pUtil->Log.Append("[DirectorSystem] INFO: Execute: Cut to %d Reason [%s]", command.TargetPlayerIdx, command.Reason.c_str());
 
 				size_t nextCommandIndex = g_pSystem->Director.GetCurrentCommandIndex() + 1;
 				float deadline =

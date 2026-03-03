@@ -26,23 +26,23 @@ void LogThread::Run()
             std::string timestamp = g_pUtil->Format.ToTimestamp(event.Timestamp);
             std::string eventType = g_pUtil->Format.EventTypeToString(event.Type);
 
-            if (!event.Players.empty()) 
+            if (!event.Players.empty())
             {
-                char playerList[256]{};
-                size_t offset = 0;
-
-                // TODO: Maybe do a function to format player on 'Format' class.
-                for (size_t i = 0; i < event.Players.size(); ++i) 
+                std::string playerList;
+                for (size_t i = 0; i < event.Players.size(); ++i)
                 {
-                    int written = snprintf(playerList + offset, sizeof(playerList) - offset,
-                        "%s%s", event.Players[i].Name.c_str(), 
-                        (i < event.Players.size() ? ", " : ""));
+                    playerList += event.Players[i].Name;
 
-                    if (written > 0) offset += written;
-                    if (offset >= sizeof(playerList)) break;
+                    if (i < event.Players.size() - 1)
+                    {
+                        playerList += ", ";
+                    }
                 }
-                
-                g_pUtil->Log.Append("[LogThread] INFO: [%s] %s: %s", timestamp.c_str(), eventType.c_str(), playerList);
+
+                g_pUtil->Log.Append("[LogThread] INFO: [%s] %s: %s",
+                    timestamp.c_str(),
+                    eventType.c_str(),
+                    playerList.c_str());
             }
         }
 

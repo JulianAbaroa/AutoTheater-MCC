@@ -25,7 +25,7 @@ HRESULT __stdcall GetServiceHook::HookedGetService(IAudioClient* pThis, REFIID r
 				format.SamplesPerSec,
 				format.BytesPerFrame);
 
-			g_pUtil->Log.Append("[GetService] INFO: Instance converted.");
+			g_pUtil->Log.Append("[GetService] INFO: Audio instance converted.");
 		}
 	}
 

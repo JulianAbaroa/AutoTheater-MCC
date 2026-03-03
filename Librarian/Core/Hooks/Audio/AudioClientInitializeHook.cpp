@@ -24,7 +24,7 @@ HRESULT __stdcall AudioClientInitializeHook::HookedAudioClientInitialize(
 			pFormat->nSamplesPerSec,
 			pFormat->nBlockAlign);
 
-		g_pUtil->Log.Append("[AudioClientInitialize] INFO: Instance registered.");
+		g_pUtil->Log.Append("[AudioClientInitialize] INFO: Audio instance registered.");
 	}
 
 	return m_OriginalFunction(pThis, ShareMode, StreamFlags, hnsBufferDuration, hnsPeriodicity, pFormat, AudioSessionGuid);

@@ -40,7 +40,7 @@ void BlamOpenFileHook::HookedBlamOpenFile(
 
 				if (!replay.FilmMetadata.Info.empty())
 				{
-					g_pUtil->Log.Append("[BlamOpenFile] INFO: %s", replay.FilmMetadata.Info);
+					g_pUtil->Log.Append("[BlamOpenFile] INFO: %s", replay.FilmMetadata.Info.c_str());
 				}
 			}
 			else if (g_pState->Lifecycle.GetCurrentPhase() == AutoTheaterPhase::Director &&

@@ -21,6 +21,8 @@ public:
 	LogEntry GetLogAt(size_t index) const;
 	size_t GetTotalLogs() const;
 
+	void RemoveIf(std::function<bool(const LogEntry&)> predicate);
+
 private:
 	std::deque<LogEntry> m_Logs{};
 	mutable std::mutex m_Mutex;
