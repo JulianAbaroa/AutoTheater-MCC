@@ -8,32 +8,30 @@
 
 void TheaterTab::Draw()
 {
-	static bool autoScroll = false;
+	this->DrawTheaterStatus();
 
-	DrawTheaterStatus();
 	ImGui::Separator();
 
-	DrawPlaybackControls(autoScroll);
-	ImGui::Separator();
+	bool autoScroll = m_AutoScroll.load();
+	this->DrawPlaybackControls(autoScroll);
 
 	// Section: Player List
-	ImGui::AlignTextToFramePadding();
-	ImGui::TextDisabled("PLAYER LIST");
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Data snapshot from the last event processed.");
-	}
-
 	if (ImGui::BeginChild("PlayerListRegion", ImVec2(0, 0), true))
 	{
-		static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-			ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY;
+		ImVec4 tabActiveColor = ImGui::GetStyleColorVec4(ImGuiCol_TabActive);
+		ImVec4 rowBgAlt = ImVec4(tabActiveColor.x, tabActiveColor.y, tabActiveColor.z, 0.05f);
 
-		if (ImGui::BeginTable("TheaterPlayerTable", 3, tableFlags))
+		ImGui::PushStyleColor(ImGuiCol_TableHeaderBg, tabActiveColor);
+		ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, rowBgAlt);
+
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, tabActiveColor);
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, tabActiveColor);
+
+		if (ImGui::BeginTable("TheaterPlayerTable", 3, m_TableFlags))
 		{
-			ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed, 35.0f);
-			ImGui::TableSetupColumn("Player [Tag]", ImGuiTableColumnFlags_WidthFixed, 180.0f);
-			ImGui::TableSetupColumn("Last Known World Position (X, Y, Z)", ImGuiTableColumnFlags_WidthStretch);
+			ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, 35.0f);
+			ImGui::TableSetupColumn("Player [Tag]", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, 180.0f);
+			ImGui::TableSetupColumn("Last Known World Position (X, Y, Z)", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort);
 			ImGui::TableHeadersRow();
 
 			uint8_t followedIdx = g_pState->Theater.GetSpectatedPlayerIndex();
@@ -49,8 +47,8 @@ void TheaterTab::Draw()
 				{
 					ImGui::TableSetBgColor(
 						ImGuiTableBgTarget_RowBg0,
-						ImGui::GetColorU32(ImVec4(0.4f, 0.4f, 0.1f, 0.5f))
-					);
+						ImGui::GetColorU32(tabActiveColor));
+
 					if (autoScroll) ImGui::SetScrollHereY(0.5f);
 				}
 			
@@ -71,6 +69,8 @@ void TheaterTab::Draw()
 
 			ImGui::EndTable();
 		}
+
+		ImGui::PopStyleColor(4);
 	}
 
 	ImGui::EndChild();
@@ -80,7 +80,7 @@ void TheaterTab::DrawTheaterStatus()
 {
 	bool active = g_pState->Theater.IsTheaterMode();
 	ImGui::AlignTextToFramePadding();
-	if (active) ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "THEATER ACTIVE");
+	if (active) ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "THEATER ACTIVE");
 	else		ImGui::TextDisabled("THEATER INACTIVE");
 
 	ImGui::SameLine();
@@ -128,15 +128,16 @@ void TheaterTab::DrawPlaybackControls(bool& autoScroll)
 		}
 		ImGui::PopItemWidth();
 
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Ctrl + Click to type a custom value (Max: 24x).");
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Ctrl + Click to type a custom value (Max: 24x).");
 
 		if (*pScale > 1.0f && realScale < (*pScale * 0.85f))
 		{
 			ImGui::SameLine();
 			ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "[!] System Bottleneck");
 			if (ImGui::IsItemHovered())
+			{
 				ImGui::SetTooltip("The engine cannot keep up with this speed.\nLimited by Disk I/O, CPU or Blam! limits.");
+			}
 		}
 	}
 	else
@@ -145,7 +146,12 @@ void TheaterTab::DrawPlaybackControls(bool& autoScroll)
 	}
 
 	ImGui::SameLine(ImGui::GetWindowWidth() - 225);
-	ImGui::Checkbox("Auto-Scroll to Target", &autoScroll);
+
+	if (ImGui::Checkbox("Auto-Scroll to Target", &autoScroll))
+	{
+		m_AutoScroll.store(autoScroll);
+	}
+
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Automatically scrolls the list to keep the followed player in view.");
