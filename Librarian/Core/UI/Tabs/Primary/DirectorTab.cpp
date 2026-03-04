@@ -7,28 +7,31 @@
 
 void DirectorTab::Draw()
 {
-	static bool autoScroll = true;
+	this->DrawDirectorSystemStatus();
 
-	DrawDirectorSystemStatus();
 	ImGui::Separator();
 
-	DrawDirectorProgress(autoScroll);
-	ImGui::Separator();
-
-	ImGui::TextDisabled("GENERATED SCRIPT COMMANDS");
+	bool autoScroll = m_AutoScroll.load();
+	this->DrawDirectorProgress(autoScroll);
 
 	if (ImGui::BeginChild("DirectorScriptRegion", ImVec2(0.0f, 0.0f), true))
 	{
-		static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-			ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY;
-
-		if (ImGui::BeginTable("DirectorScriptTable", 5, tableFlags))
+		if (ImGui::BeginTable("DirectorScriptTable", 5, m_TableFlags))
 		{
-			ImGui::TableSetupColumn("Time", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-			ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 80.0f);
-			ImGui::TableSetupColumn("Target Player", ImGuiTableColumnFlags_WidthFixed, 180.0f);
-			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 70.0f);
-			ImGui::TableSetupColumn("Reason", ImGuiTableColumnFlags_WidthStretch);
+			ImVec4 tabActiveColor = ImGui::GetStyleColorVec4(ImGuiCol_TabActive);
+			ImVec4 rowBgAlt = ImVec4(tabActiveColor.x, tabActiveColor.y, tabActiveColor.z, 0.05f);
+
+			ImGui::PushStyleColor(ImGuiCol_TableHeaderBg, tabActiveColor);
+			ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, rowBgAlt);
+
+			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, tabActiveColor);
+			ImGui::PushStyleColor(ImGuiCol_HeaderActive, tabActiveColor);
+
+			ImGui::TableSetupColumn("Time", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, 100.0f);
+			ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, 80.0f);
+			ImGui::TableSetupColumn("Target Player", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, 180.0f);
+			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, 70.0f);
+			ImGui::TableSetupColumn("Reason", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort);
 			ImGui::TableHeadersRow();
 
 			const auto& script = g_pState->Director.GetScriptCopy();
@@ -43,7 +46,7 @@ void DirectorTab::Draw()
 				if (isCurrent)
 				{
 					ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImVec4(0.2f, 0.4f, 0.6f, 0.5f)));
-					if (autoScroll) ImGui::SetScrollHereY(0.5f);
+					if (m_AutoScroll) ImGui::SetScrollHereY(0.5f);
 				}
 
 				// Column: Timestamp
@@ -75,6 +78,8 @@ void DirectorTab::Draw()
 				ImGui::TextUnformatted(cmd.Reason.c_str());
 			}
 
+			ImGui::PopStyleColor(4);
+
 			ImGui::EndTable();
 		}
 	}
@@ -88,22 +93,25 @@ void DirectorTab::DrawDirectorSystemStatus()
 	bool hooks = g_pState->Director.AreHooksReady();
 
 	ImGui::AlignTextToFramePadding();
-	ImGui::TextDisabled("System Status:");
+	ImGui::TextDisabled("SYSTEM STATUS");
 	ImGui::SameLine();
 
 	ImGui::Text("Initialized:");
 	ImGui::SameLine();
-	ImGui::TextColored(init ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(1.0f, 0.0f, 0.0f, 1.0f), init ? "READY" : "OFFLINE");
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Director logic and script engine status.");
-	}
+
+	if (init) ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "YES");
+	else ImGui::TextDisabled("NO");
+
+	if (ImGui::IsItemHovered()) ImGui::SetTooltip("Director logic and script engine status.");
 
 	ImGui::SameLine(0.0f, 20.0f);
 
 	ImGui::Text("Engine Hooks:");
 	ImGui::SameLine();
-	ImGui::TextColored(hooks ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(1.0f, 0.0f, 0.0f, 1.0f), hooks ? "ACTIVE" : "MISSING");
+
+	if (hooks) ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "HOOKED");
+	else ImGui::TextDisabled("MISSING"); 
+
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Direct memory hooks into the game engine for camera/speed control.");
@@ -132,9 +140,9 @@ void DirectorTab::DrawDirectorProgress(bool& autoScroll)
 	ImGui::Text("%zu / %zu Commands", currentIndex, totalCommands);
 
 	ImGui::SameLine(ImGui::GetWindowWidth() - 300);
-	ImGui::Checkbox("Auto-Scroll to Current Command", &autoScroll);
-	if (ImGui::IsItemHovered())
+
+	if (ImGui::Checkbox("Auto-Scroll to Current Command", &autoScroll))
 	{
-		ImGui::SetTooltip("Follow the current executing command in real-time.");
+		m_AutoScroll.store(autoScroll);
 	}
 }
