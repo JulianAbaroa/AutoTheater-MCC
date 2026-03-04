@@ -59,20 +59,20 @@ const char* FormatUtil::GetEventClassName(EventClass eventClass)
 {
     switch (eventClass)
     {
-    case EventClass::Fallback:              return "FallBack";
+    case EventClass::Fallback:              return "Fall Back";
     case EventClass::Server:                return "Server";
     case EventClass::Match:                 return "Match";
     case EventClass::Custom:                return "Custom";
-    case EventClass::CaptureTheFlag:        return "CaptureTheFlag";
+    case EventClass::CaptureTheFlag:        return "Capture The Flag";
     case EventClass::Assault:               return "Assault";
     case EventClass::Slayer:                return "Slayer";
     case EventClass::Juggernaut:            return "Juggernaut";
     case EventClass::Race:                  return "Race";
-    case EventClass::KingOfTheHill:         return "KingOfTheHill";
+    case EventClass::KingOfTheHill:         return "King Of The Hill";
     case EventClass::Territories:           return "Territories";
     case EventClass::Infection:             return "Infection";
     case EventClass::Oddball:               return "Oddball";
-    case EventClass::KillRelated:           return "KillRelated";
+    case EventClass::KillRelated:           return "Kill Related";
     default:                                return "Unknown";
     }
 }
@@ -86,31 +86,31 @@ std::string FormatUtil::EventTypeToString(EventType type)
     case EventType::Rejoin:				    return "Rejoin";
     case EventType::Quit:				    return "Quit";
     case EventType::Booted:                 return "Booted";
-    case EventType::JoinedTeam:             return "JoinedTeam";
+    case EventType::JoinedTeam:             return "Joined Team";
 
         // Match
-    case EventType::TookLead:			    return "TookLead";
-    case EventType::LostLead:			    return "LostLead";
-    case EventType::TiedLead:			    return "TiedLead";
-    case EventType::OneMinuteToWin:         return "OneMinuteToWin";
-    case EventType::ThirtySecondsToWin:     return "ThirtySecondsToWin";
-    case EventType::OneMinuteRemaining:     return "OneMinuteRemaining";
-    case EventType::TenSecondsRemaining:    return "TenSecondsRemaining";
-    case EventType::ThirtySecondsRemaining: return "ThirtySecondsRemaining";
-    case EventType::RoundOver:			    return "RoundOver";
-    case EventType::GameOver:			    return "GameOver";
+    case EventType::TookLead:			    return "Took Lead";
+    case EventType::LostLead:			    return "Lost Lead";
+    case EventType::TiedLead:			    return "Tied Lead";
+    case EventType::OneMinuteToWin:         return "One Minute ToWin";
+    case EventType::ThirtySecondsToWin:     return "Thirty Seconds To Win";
+    case EventType::OneMinuteRemaining:     return "One Minute Remaining";
+    case EventType::TenSecondsRemaining:    return "Ten Seconds Remaining";
+    case EventType::ThirtySecondsRemaining: return "Thirty Seconds Remaining";
+    case EventType::RoundOver:			    return "Round Over";
+    case EventType::GameOver:			    return "Game Over";
     case EventType::Wins:				    return "Wins";
 
         // Custom
     case EventType::Custom:                 return "Custom";
 
         // CTF
-    case EventType::CaptureTheFlag:		    return "CaptureTheFlag";
-    case EventType::FlagCaptured:	        return "FlagCaptured";
-    case EventType::FlagStolen:	            return "FlagStolen";
-    case EventType::FlagDropped:	        return "FlagDropped";
-    case EventType::FlagReseted:	        return "FlagReseted";
-    case EventType::FlagRecovered:	        return "FlagRecovered";
+    case EventType::CaptureTheFlag:		    return "Capture The Flag";
+    case EventType::FlagCaptured:	        return "Flag Captured";
+    case EventType::FlagStolen:	            return "Flag Stolen";
+    case EventType::FlagDropped:	        return "Flag Dropped";
+    case EventType::FlagReseted:	        return "Flag Reseted";
+    case EventType::FlagRecovered:	        return "Flag Recovered";
 
         // Slayer
     case EventType::Slayer:		            return "Slayer";
@@ -120,43 +120,43 @@ std::string FormatUtil::EventTypeToString(EventType type)
 
         // Assault
     case EventType::Assault:		        return "Assault";
-    case EventType::HasTheBomb:	            return "HasTheBomb";
-    case EventType::ArmedTheBomb:	        return "ArmedTheBomb";
-    case EventType::DroppedTheBomb:	        return "DroppedTheBomb";
-    case EventType::TeamScored:	            return "TeamScored";
-    case EventType::BombReset:	            return "BombReset";
+    case EventType::HasTheBomb:	            return "Has The Bomb";
+    case EventType::ArmedTheBomb:	        return "Armed The Bomb";
+    case EventType::DroppedTheBomb:	        return "Dropped The Bomb";
+    case EventType::TeamScored:	            return "Team Scored";
+    case EventType::BombReset:	            return "Bomb Reset";
 
         // Juggernaut
     case EventType::Juggernaut:             return "Juggernaut";
-    case EventType::IsTheJuggernaut:		return "IsTheJuggernaut";
-    case EventType::YouKilledTheJuggernaut:	return "YouKilledTheJuggernaut";
+    case EventType::IsTheJuggernaut:		return "Is The Juggernaut";
+    case EventType::YouKilledTheJuggernaut:	return "You Killed The Juggernaut";
 
         // KOTH
-    case EventType::KingOfTheHill:		    return "KingOfTheHill";
-    case EventType::ControlsTheHill:	    return "ControlsTheHill";
-    case EventType::HillContested:	        return "HillContested";
-    case EventType::HillMoved:	            return "HillMoved";
+    case EventType::KingOfTheHill:		    return "King Of The Hill";
+    case EventType::ControlsTheHill:	    return "Controls The Hill";
+    case EventType::HillContested:	        return "Hill Contested";
+    case EventType::HillMoved:	            return "Hill Moved";
 
         // Territories
     case EventType::Territories:		    return "Territories";
-    case EventType::TeamCapturedATerritory:	return "TeamCapturedATerritory";
-    case EventType::TerritoryContested:		return "TerritoryContested";
-    case EventType::TerritoryLost:		    return "TerritoryLost";
+    case EventType::TeamCapturedATerritory:	return "Team Captured A Territory";
+    case EventType::TerritoryContested:		return "Territory Contested";
+    case EventType::TerritoryLost:		    return "Territory Lost";
 
         // Infection
     case EventType::Infection:		        return "Infection";
-    case EventType::YouAreAZombie:		    return "YouAreAZombie";
+    case EventType::YouAreAZombie:		    return "You Are A Zombie";
     case EventType::Infected:	            return "Infected";
-    case EventType::IsTheLastManStanding:	return "IsTheLastManStanding";
-    case EventType::ZombiesWin:	            return "ZombiesWin";
-    case EventType::SurvivorsWin:	        return "SurvivorsWin";
+    case EventType::IsTheLastManStanding:	return "Is The Last Man Standing";
+    case EventType::ZombiesWin:	            return "Zombies Win";
+    case EventType::SurvivorsWin:	        return "Survivors Win";
 
         // Oddball
     case EventType::Oddball:		        return "Oddball";
-    case EventType::PlayBall:	            return "PlayBall";
-    case EventType::PickedUpTheBall:	    return "PickedUpTheBall";
-    case EventType::BallDropped:	        return "BallDropped";
-    case EventType::BallReset:	            return "BallReset";
+    case EventType::PlayBall:	            return "Play Ball";
+    case EventType::PickedUpTheBall:	    return "Picked Up The Ball";
+    case EventType::BallDropped:	        return "Ball Dropped";
+    case EventType::BallReset:	            return "Ball Reset";
 
         // Kill
     case EventType::Killionaire:			return "Killionaire";
@@ -171,34 +171,34 @@ std::string FormatUtil::EventTypeToString(EventType type)
     case EventType::Assassinated:			return "Assassinated";
     case EventType::ShowStopper:			return "ShowStopper";
     case EventType::Yoink:			        return "Yoink";
-    case EventType::TripleKill:			    return "TripleKill";
-    case EventType::DoubleKill:			    return "DoubleKill";
-    case EventType::BeatDown:			    return "BeatDown";
+    case EventType::TripleKill:			    return "Triple Kill";
+    case EventType::DoubleKill:			    return "Double Kill";
+    case EventType::BeatDown:			    return "Beat Down";
     case EventType::Headcase:			    return "Headcase";
     case EventType::Bulltrue:			    return "Bulltrue";
-    case EventType::SplatterSpree:		    return "SplatterSpree";
-    case EventType::VehicularManslaughter:	return "VehicularManslaughter";
-    case EventType::SundayDriver:			return "SundayDriver";
-    case EventType::StickySpree:			return "StickySpree";
-    case EventType::StickyFingers:			return "StickyFingers";
+    case EventType::SplatterSpree:		    return "Splatter Spree";
+    case EventType::VehicularManslaughter:	return "Vehicular Manslaughter";
+    case EventType::SundayDriver:			return "Sunday Driver";
+    case EventType::StickySpree:			return "Sticky Spree";
+    case EventType::StickyFingers:			return "Sticky Fingers";
     case EventType::Corrected:			    return "Corrected";
-    case EventType::ShotgunSpree:           return "ShotgunSpree";
-    case EventType::OpenSeason:			    return "OpenSeason";
-    case EventType::BuckWild:		        return "BuckWild";
+    case EventType::ShotgunSpree:           return "Shotgun Spree";
+    case EventType::OpenSeason:			    return "Open Season";
+    case EventType::BuckWild:		        return "Buck Wild";
     case EventType::Dreamcrusher:		    return "Dreamcrusher";
-    case EventType::WreckingCrew:			return "WreckingCrew";
-    case EventType::HammerSpree:		    return "HammerSpree";
-    case EventType::SwordSpree:			    return "SwordSpree";
-    case EventType::SliceNDice:			    return "SliceNDice";
-    case EventType::CuttingCrew:			return "CuttingCrew";
-    case EventType::JuggernautSpree:		return "JuggernautSpree";
+    case EventType::WreckingCrew:			return "Wrecking Crew";
+    case EventType::HammerSpree:		    return "Hammer Spree";
+    case EventType::SwordSpree:			    return "Sword Spree";
+    case EventType::SliceNDice:			    return "Slice N'Dice";
+    case EventType::CuttingCrew:			return "Cutting Crew";
+    case EventType::JuggernautSpree:		return "Juggernaut Spree";
     case EventType::Wheelman:		        return "Wheelman";
-    case EventType::WheelmanSpree:	        return "WheelmanSpree";
+    case EventType::WheelmanSpree:	        return "Wheelman Spree";
     case EventType::Roadhog:	            return "Roadhog";
     case EventType::Roadrage:	            return "Roadrage";
-    case EventType::KillingSpree:		    return "KillingSpree";
-    case EventType::KillingFrenzy:		    return "KillingFrenzy";
-    case EventType::RunningRiot:		    return "RunningRiot";
+    case EventType::KillingSpree:		    return "Killing Spree";
+    case EventType::KillingFrenzy:		    return "Killing Frenzy";
+    case EventType::RunningRiot:		    return "Running Riot";
     case EventType::Rampage:		        return "Rampage";
     case EventType::Untouchable:			return "Untouchable";
     case EventType::Invincible:			    return "Invincible";
@@ -207,30 +207,30 @@ std::string FormatUtil::EventTypeToString(EventType type)
     case EventType::Splattered:			    return "Splattered";
     case EventType::Pummeled:			    return "Pummeled";
     case EventType::Headshot:			    return "Headshot";
-    case EventType::KillFromTheGrave:		return "KillFromTheGrave";
+    case EventType::KillFromTheGrave:		return "Kill From The Grave";
     case EventType::Revenge:			    return "Revenge";
-    case EventType::FirstStrike:		    return "FirstStrike";
-    case EventType::ReloadThis:			    return "ReloadThis";
-    case EventType::CloseCall:			    return "CloseCall";
+    case EventType::FirstStrike:		    return "First Strike";
+    case EventType::ReloadThis:			    return "Reload This";
+    case EventType::CloseCall:			    return "Close Call";
     case EventType::Protector:		        return "Protector";
     case EventType::Firebird:		        return "Firebird";
     case EventType::Killjoy:			    return "Killjoy";
     case EventType::Avenger:			    return "Avenger";
     case EventType::Pull:				    return "Pull";
     case EventType::Struck:				    return "Struck";
-    case EventType::KillWithGrenades:		return "KillWithGrenades";
+    case EventType::KillWithGrenades:		return "Kill With Grenades";
     case EventType::Lasered:		        return "Lasered";
     case EventType::Sniped:		            return "Sniped";
-    case EventType::SecondGunman:	        return "SecondGunman";
+    case EventType::SecondGunman:	        return "Second Gunman";
     case EventType::Sidekick:	            return "Sidekick";
-    case EventType::AssistSpree:	        return "AssistSpree";
+    case EventType::AssistSpree:	        return "Assist Spree";
     case EventType::Assist:				    return "Assist";
     case EventType::Kill:				    return "Kill";
     case EventType::Betrayal:			    return "Betrayal";
     case EventType::Suicide:			    return "Suicide";
-    case EventType::KilledByTheGuardians:	return "KilledByTheGuardians";
-    case EventType::FellToYourDeath:	    return "FellToYourDeath";
-    case EventType::SpawnSpree:	            return "SpawnSpree";
+    case EventType::KilledByTheGuardians:	return "Killed By The Guardians";
+    case EventType::FellToYourDeath:	    return "Fell To Your Death";
+    case EventType::SpawnSpree:	            return "Spawn Spree";
     case EventType::Wingman:	            return "Wingman";
     case EventType::Broseidon:	            return "Broseidon";
 
