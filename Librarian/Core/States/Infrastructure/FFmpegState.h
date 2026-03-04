@@ -45,6 +45,7 @@ public:
 	int GetTargetHeight();
 
 	float GetTargetFramerate() const;
+	void SetTargetFramerate(float framerate);
 
 	bool ShouldRecordUI() const;
 	void SetRecordUI(bool value);

@@ -20,6 +20,10 @@ LRESULT __stdcall WndProcHook::HookedWndProc(
 		if (g_pState->Lifecycle.IsRunning())
 		{
 			g_pUtil->Log.Append("[WndProc] WARNING: MCC shutdown detected.");
+
+			g_pSystem->Preferences.SavePreferences();
+			g_pState->Gallery.Cleanup();
+
 			g_pSystem->Lifecycle.SignalShutdown();
 		}
 		

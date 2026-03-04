@@ -38,6 +38,7 @@ int FFmpegState::GetTargetWidth() { return TargetResolution::Get(m_ResolutionTyp
 int FFmpegState::GetTargetHeight() { return TargetResolution::Get(m_ResolutionType.load()).Height; }
 
 float FFmpegState::GetTargetFramerate() const { return m_TargetFramerate.load(); }
+void FFmpegState::SetTargetFramerate(float framerate) { m_TargetFramerate.store(framerate); }
 
 bool FFmpegState::ShouldRecordUI() const { return m_ShouldRecordUI.load(); }
 void FFmpegState::SetRecordUI(bool value) { m_ShouldRecordUI.store(value); }

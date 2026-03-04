@@ -20,7 +20,6 @@ private:
 	void DrawConfirmDisableAppData();
 	void DrawDeleteAllAppData();
 
-	std::atomic<float> m_MenuAlpha{ 1.0f };
 	ImGuiTableFlags m_TableFlags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_NoBordersInBody;
 
 	std::string m_AnimatePathLabel = "";

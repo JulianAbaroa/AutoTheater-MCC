@@ -25,7 +25,6 @@ private:
 	bool IsIndexSelected(int index) const;
 
 	char m_SearchBuffer[128] = "";
-	std::atomic<bool> m_AutoScroll{ true };
 
 	std::atomic<int> m_SelectionEnd{ -1 };
 	std::atomic<int> m_SelectionStart{ -1 };

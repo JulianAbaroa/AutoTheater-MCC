@@ -7,7 +7,7 @@
 
 void TimelineTab::Draw()
 {
-	bool autoScroll = m_AutoScroll.load();
+	bool autoScroll = g_pState->Settings.GetTimelineAutoScroll();
 	this->DrawTimelineControls(autoScroll);
 
 	ImGui::Separator();
@@ -56,7 +56,7 @@ void TimelineTab::Draw()
 				}
 			}
 
-			if (m_AutoScroll.load() && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+			if (g_pState->Settings.GetTimelineAutoScroll() && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
 			{
 				ImGui::SetScrollHereY(1.0f);
 			}
@@ -76,7 +76,7 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 
 	if (ImGui::Checkbox("Auto-Scroll", &autoScroll))
 	{
-		m_AutoScroll.store(autoScroll);
+		g_pState->Settings.SetTimelineAutoScroll(autoScroll);
 	}
 
 	if (ImGui::IsItemHovered()) ImGui::SetTooltip("Keep the list scrolled to the most recent event.");
@@ -102,6 +102,13 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 		[&]() { return g_pSystem->Timeline.HasReachedLastEvent(); },
 		[&](bool val) { g_pSystem->Timeline.SetLastEventReached(val); },
 		"Stop capturing any new GameEvents from the engine.");
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Clear Timeline"))
+	{
+		g_pState->Timeline.ClearTimeline();
+	}
 
 	ImGui::SameLine();
 

@@ -99,8 +99,7 @@ void DirectorSystem::Update()
 			if (m_StopDelayStartTime == 0.0f)
 			{
 				m_StopDelayStartTime = currentTime;
-				// TODO: change the 3 for the delay duration.
-				g_pUtil->Log.Append("[DirectorSystem] INFO: Script finished, waiting 3 seconds before stop...");
+				g_pUtil->Log.Append("[DirectorSystem] INFO: Script finished, waiting %.2f seconds before stop...", g_pState->FFmpeg.GetStopDelayDuration());
 			}
 
 			if (currentTime - m_StopDelayStartTime >= g_pState->FFmpeg.GetStopDelayDuration())

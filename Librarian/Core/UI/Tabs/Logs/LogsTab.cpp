@@ -32,8 +32,8 @@ LogFilterState LogsTab::DrawTopBar()
 
     ImGui::SameLine();
 
-    bool autoScroll = m_AutoScroll.load();
-    if (ImGui::Checkbox("Auto-Scroll", &autoScroll)) m_AutoScroll.store(autoScroll);
+    bool autoScroll = g_pState->Settings.GetLogsAutoScroll();
+    if (ImGui::Checkbox("Auto-Scroll", &autoScroll)) g_pState->Settings.SetLogsAutoScroll(autoScroll);
 
     ImGui::SameLine();
 
@@ -180,7 +180,7 @@ void LogsTab::DrawScrollingRegion(const LogFilterState& filter)
         m_SelectionEnd.store(-1);
     }
 
-    if (m_AutoScroll.load() && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+    if (g_pState->Settings.GetLogsAutoScroll() && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
     {
         ImGui::SetScrollHereY(1.0f);
     }

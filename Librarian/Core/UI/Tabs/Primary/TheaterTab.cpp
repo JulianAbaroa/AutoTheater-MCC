@@ -12,7 +12,7 @@ void TheaterTab::Draw()
 
 	ImGui::Separator();
 
-	bool autoScroll = m_AutoScroll.load();
+	bool autoScroll = g_pState->Settings.GetTheaterAutoScroll();
 	this->DrawPlaybackControls(autoScroll);
 
 	// Section: Player List
@@ -149,7 +149,7 @@ void TheaterTab::DrawPlaybackControls(bool& autoScroll)
 
 	if (ImGui::Checkbox("Auto-Scroll to Target", &autoScroll))
 	{
-		m_AutoScroll.store(autoScroll);
+		g_pState->Settings.SetTheaterAutoScroll(autoScroll);
 	}
 
 	if (ImGui::IsItemHovered())

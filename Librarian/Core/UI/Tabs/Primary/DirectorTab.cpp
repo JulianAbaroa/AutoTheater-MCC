@@ -11,7 +11,7 @@ void DirectorTab::Draw()
 
 	ImGui::Separator();
 
-	bool autoScroll = m_AutoScroll.load();
+	bool autoScroll = g_pState->Settings.GetDirectorAutoScroll();
 	this->DrawDirectorProgress(autoScroll);
 
 	if (ImGui::BeginChild("DirectorScriptRegion", ImVec2(0.0f, 0.0f), true))
@@ -46,7 +46,7 @@ void DirectorTab::Draw()
 				if (isCurrent)
 				{
 					ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImVec4(0.2f, 0.4f, 0.6f, 0.5f)));
-					if (m_AutoScroll) ImGui::SetScrollHereY(0.5f);
+					if (g_pState->Settings.GetDirectorAutoScroll()) ImGui::SetScrollHereY(0.5f);
 				}
 
 				// Column: Timestamp
@@ -143,6 +143,6 @@ void DirectorTab::DrawDirectorProgress(bool& autoScroll)
 
 	if (ImGui::Checkbox("Auto-Scroll to Current Command", &autoScroll))
 	{
-		m_AutoScroll.store(autoScroll);
+		g_pState->Settings.SetDirectorAutoScroll(autoScroll);
 	}
 }

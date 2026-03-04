@@ -43,6 +43,19 @@ void SettingsState::SetFreezeMouse(bool value)
 }
 
 
+float SettingsState::GetMenuAlpha() const { return m_MenuAlpha.load(); }
+bool SettingsState::GetTimelineAutoScroll() const { return m_TimelineAutoScroll.load(); }
+bool SettingsState::GetTheaterAutoScroll() const { return m_TheaterAutoScroll.load(); }
+bool SettingsState::GetDirectorAutoScroll() const { return m_DirectorAutoScroll.load(); }
+bool SettingsState::GetLogsAutoScroll() const { return m_LogsAutoScroll.load(); }
+
+void SettingsState::SetMenuAlpha(float value) { m_MenuAlpha.store(value); }
+void SettingsState::SetTimelineAutoScroll(bool value) { m_TimelineAutoScroll.store(value); }
+void SettingsState::SetTheaterAutoScroll(bool value) { m_TheaterAutoScroll.store(value); }
+void SettingsState::SetDirectorAutoScroll(bool value) { m_DirectorAutoScroll.store(value); }
+void SettingsState::SetLogsAutoScroll(bool value) { m_LogsAutoScroll.store(value); }
+
+
 std::string SettingsState::GetBaseDirectory() const
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);

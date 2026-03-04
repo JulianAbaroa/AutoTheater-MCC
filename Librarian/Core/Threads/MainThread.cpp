@@ -19,6 +19,8 @@ void MainThread::Run()
     this->InitializeAutoTheater();
     this->InstallCaptureHooks();
 
+    g_pSystem->Preferences.LoadPreferences();
+
     while (g_pState->Lifecycle.IsRunning())
     {
         this->CheckHooksHealth();
@@ -52,10 +54,6 @@ void MainThread::Run()
 
         g_pUtil->Thread.WaitOrExit(1000ms);
     }
-
-    // TODO: See if there's another place to do this.
-    // Clean thumbnails from video gallery
-    g_pState->Gallery.Cleanup();
 
     this->UninstallCaptureHooks();
     this->UninstallLifecycleHooks();

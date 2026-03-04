@@ -17,6 +17,19 @@ public:
 	void SetForceMenuReset(bool value);
 	void SetFreezeMouse(bool value);
 
+	// UI
+	float GetMenuAlpha() const;
+	bool GetTimelineAutoScroll() const;
+	bool GetTheaterAutoScroll() const;
+	bool GetDirectorAutoScroll() const;
+	bool GetLogsAutoScroll() const;
+
+	void SetMenuAlpha(float value);
+	void SetTimelineAutoScroll(bool value);
+	void SetTheaterAutoScroll(bool value);
+	void SetDirectorAutoScroll(bool value);
+	void SetLogsAutoScroll(bool value);
+
 	std::string GetBaseDirectory() const;
 	std::string GetAppDataDirectory() const;
 	std::string GetMovieTempDirectory() const;
@@ -36,6 +49,13 @@ private:
 	std::atomic<bool> m_IsMenuVisible{ true };
 	std::atomic<bool> m_MustResetMenu{ false };
 	std::atomic<bool> m_ShouldFreezeMouse{ true };
+
+	// UI
+	std::atomic<float> m_MenuAlpha{ 1.0f };
+	std::atomic<bool> m_TimelineAutoScroll{ true };
+	std::atomic<bool> m_TheaterAutoScroll{ true };
+	std::atomic<bool> m_DirectorAutoScroll{ true };
+	std::atomic<bool> m_LogsAutoScroll{ true };
 
 	std::string m_BaseDirectory{};
 	std::string m_AppDataDirectory{};

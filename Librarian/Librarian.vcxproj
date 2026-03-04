@@ -209,6 +209,7 @@
     <ClInclude Include="Core\Systems\Infrastructure\RenderSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\ReplaySystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\SettingsSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\UserPreferencesSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\VideoSystem.h" />
     <ClInclude Include="Core\Systems\Interface\DebugSystem.h" />
     <ClInclude Include="Core\Systems\Interface\InputSystem.h" />
@@ -300,6 +301,7 @@
     <ClCompile Include="Core\Systems\Infrastructure\RenderSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\ReplaySystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\SettingsSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\UserPreferencesSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\VideoSystem.cpp" />
     <ClCompile Include="Core\Systems\Interface\DebugSystem.cpp" />
     <ClCompile Include="Core\Systems\Interface\InputSystem.cpp" />

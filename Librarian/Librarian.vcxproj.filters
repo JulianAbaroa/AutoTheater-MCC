@@ -380,6 +380,9 @@
     <ClInclude Include="Core\Common\Types\LogTypes.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\UserPreferencesSystem.h">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\DllMain.cpp">
@@ -620,6 +623,9 @@
     </ClCompile>
     <ClCompile Include="Core\Hooks\Tables\TelemetryTables.cpp">
       <Filter>Core\Hooks\Tables</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\UserPreferencesSystem.cpp">
+      <Filter>Core\Systems\Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

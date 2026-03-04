@@ -66,11 +66,11 @@ void SettingsTab::DrawUserPreferences()
 	ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
 	ImGui::PushItemWidth(200.0f);
 
-	float menuAlpha = m_MenuAlpha.load();
+	float menuAlpha = g_pState->Settings.GetMenuAlpha();
 	if (ImGui::SliderFloat("##Global Opacity", &menuAlpha, 0.2f, 1.0f, "%.2f"))
 	{
 		ImGui::GetStyle().Alpha = (std::max)(menuAlpha, 0.20f);
-		m_MenuAlpha.store(menuAlpha);
+		g_pState->Settings.SetMenuAlpha(menuAlpha);
 	}
 	ImGui::PopItemWidth();
 
@@ -132,6 +132,14 @@ void SettingsTab::DrawHotkeysTable()
 
 		this->DrawHotkeyRow("Toggle Menu", "CTRL + 1", "Show or hide the AutoTheater Control Panel.");
 		this->DrawHotkeyRow("Emergency Reset", "CTRL + 2", "Centers the window if it gets lost off-screen.");
+		this->DrawHotkeyRow("Speed 0.0x", "3", "Set the replay speed to 0.0x");
+		this->DrawHotkeyRow("Speed 0.1x", "4", "Set the replay speed to 0.1x");
+		this->DrawHotkeyRow("Speed 0.25x", "5", "Set the replay speed to 0.25x");
+		this->DrawHotkeyRow("Speed 0.5x", "6", "Set the replay speed to 0.5x");
+		this->DrawHotkeyRow("Speed 1.0x", "7", "Set the replay speed to 1.0x");
+		this->DrawHotkeyRow("Speed 4.0x", "8", "Set the replay speed to 4.0x");
+		this->DrawHotkeyRow("Speed 8.0x", "9", "Set the replay speed to 8.0x");
+		this->DrawHotkeyRow("Speed 16.0x", "0", "Set the replay speed to 16.0x");
 
 		ImGui::PopStyleColor(3);
 		ImGui::EndTable();
@@ -212,9 +220,6 @@ void SettingsTab::DrawSystemDirectories()
 
 	ImGui::Spacing();
 	ImGui::Indent(10.0f);
-	ImGui::Spacing();
-
-	ImGui::TextDisabled("SYSTEM DIRECTORIES & PATHS");
 	ImGui::Spacing();
 
 	this->DrawPathField("Base Installation", g_pState->Settings.GetBaseDirectory());

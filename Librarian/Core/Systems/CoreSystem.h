@@ -14,6 +14,7 @@
 #include "Core/Systems/Infrastructure/LifecycleSystem.h"
 #include "Core/Systems/Infrastructure/ReplaySystem.h"
 #include "Core/Systems/Infrastructure/GallerySystem.h"
+#include "Core/Systems/Infrastructure/UserPreferencesSystem.h"
 
 struct CoreSystem
 {
@@ -36,6 +37,7 @@ struct CoreSystem
 	VideoSystem Video;
 	FFmpegSystem FFmpeg;
 	GallerySystem Gallery;
+	UserPreferencesSystem Preferences;
 };
 
 extern CoreSystem* g_pSystem;
