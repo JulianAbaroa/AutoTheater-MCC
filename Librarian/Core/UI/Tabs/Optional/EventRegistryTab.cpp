@@ -158,7 +158,7 @@ void EventRegistryTab::DrawSearchBar(char* buffer, size_t bufferSize)
 	float availableWidth = ImGui::GetContentRegionAvail().x;
 
 	ImGui::PushItemWidth(availableWidth - clearBtnWidth - ImGui::GetStyle().ItemSpacing.x);
-	if (ImGui::InputTextWithHint("##event_filter", "Search specific events...", buffer, bufferSize)) {}
+	if (ImGui::InputTextWithHint("##event_filter", "Search for specific events...", buffer, bufferSize)) {}
 	ImGui::PopItemWidth();
 	ImGui::SameLine();
 

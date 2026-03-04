@@ -334,7 +334,7 @@ void LogsTab::DrawSearchBar(char* buffer, size_t bufferSize)
     float availableWidth = ImGui::GetContentRegionAvail().x;
 
     ImGui::PushItemWidth(availableWidth - clearBtnWidth - ImGui::GetStyle().ItemSpacing.x);
-    if (ImGui::InputTextWithHint("##log_filter", "Search specific logs...", buffer, bufferSize)) { }
+    if (ImGui::InputTextWithHint("##log_filter", "Search for specific logs...", buffer, bufferSize)) { }
     ImGui::PopItemWidth();
     ImGui::SameLine();
 
