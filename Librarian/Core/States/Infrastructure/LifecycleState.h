@@ -25,7 +25,7 @@ public:
 private:
 	std::atomic<bool> m_IsRunning{ false };
 	std::atomic<HMODULE> m_HandleModule{ nullptr };
-	std::atomic<EngineStatus> m_EngineStatus{ EngineStatus::Awaiting };
+	std::atomic<EngineStatus> m_EngineStatus{ EngineStatus::Waiting };
 	std::atomic<AutoTheaterPhase> m_CurrentPhase{ AutoTheaterPhase::Default };
 	std::atomic<bool> m_AutoUpdatePhase{ true };
 

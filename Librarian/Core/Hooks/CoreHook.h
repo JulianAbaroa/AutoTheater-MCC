@@ -18,6 +18,7 @@
 #include "Core/Hooks/Render/ResizeBuffersHook.h"
 #include "Core/Hooks/Render/PresentHook.h"
 #include "Core/Hooks/Window/WndProcHook.h"
+#include "Core/Hooks/Tables/TargetFPS.h"
 
 struct CoreHook
 {
@@ -41,6 +42,7 @@ struct CoreHook
 
 	// Memory
 	TelemetryTables Tables;
+	TargetFPS TargetFPS;
 
 	// Input
 	GetButtonStateHook GetButtonState;

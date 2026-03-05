@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
+#include "Core/Hooks/CoreHook.h"
 #include "Core/States/CoreState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Threads/CaptureThread.h"
@@ -36,9 +37,21 @@ void CaptureThread::Run()
         {
             if (this->VideoQueueOverflow()) continue;
 
-            if (g_pState->FFmpeg.RecordingStopped())
+            int currentFPS = g_pHook->TargetFPS.GetCurrentFPSValue();
+            int targetFPS = static_cast<int>(g_pState->FFmpeg.GetTargetFramerate());
+
+            bool wasFramerateChanged = (currentFPS != targetFPS);
+            if (g_pState->FFmpeg.RecordingStopped() || wasFramerateChanged)
             {
+                if (wasFramerateChanged)
+                {
+                    g_pUtil->Log.Append("[CaptureThread] WARNING: Recording stopped, the game framerate"
+                        " was changed from %d to %d FPS.", targetFPS, currentFPS);
+                }
+
                 this->StopRecording();
+
+                g_pState->FFmpeg.SetTargetFramerate(static_cast<float>(currentFPS));
                 continue;
             }
 
@@ -108,10 +121,20 @@ void CaptureThread::StartRecording()
     g_pSystem->Audio.ExtractQueue();
     m_LastFrameBuffer.clear();
 
+    int currentFPS = g_pHook->TargetFPS.GetCurrentFPSValue();
+    int targetFPS = static_cast<int>(g_pState->FFmpeg.GetTargetFramerate());
+
+    if (currentFPS != targetFPS)
+    {
+        g_pState->FFmpeg.SetTargetFramerate(static_cast<float>(currentFPS));
+        g_pUtil->Log.Append("[CaptureThread] WARNING: Detected framerate change from %d to %d,"
+            "recording at %d FPS.", targetFPS, currentFPS, currentFPS);
+    }
+
     bool started = g_pSystem->FFmpeg.Start(
         g_pState->FFmpeg.GetOutputPath(),
         g_pState->Render.GetWidth(), g_pState->Render.GetHeight(),
-        g_pState->FFmpeg.GetTargetFramerate()
+        static_cast<float>(currentFPS)
     );
 
     if (started)
@@ -171,8 +194,7 @@ bool CaptureThread::CaptureBaselineEstablished(std::deque<AudioChunk>& audioQueu
     {
         m_RecordingStartTime = std::chrono::steady_clock::now();
 
-        float initialEngineTime = audioQueue.back().engineTime;
-        g_pState->FFmpeg.SetStartRecordingTime(initialEngineTime);
+        g_pState->FFmpeg.SetStartRecordingTime(std::chrono::steady_clock::now());
 
         m_TotalVideoFramesWritten = 0;
         m_TotalAudioSamplesWritten = 0;

@@ -22,6 +22,16 @@ std::string FFmpegSystem::GenerateTimestampName()
 	return "timestamp_error";
 }
 
+float FFmpegSystem::GetRecordingDuration() const
+{
+	if (!g_pState->FFmpeg.IsRecording()) return 0.0f;
+
+	auto now = std::chrono::steady_clock::now();
+	auto duration = now - g_pState->FFmpeg.GetStartRecordingTime();
+
+	return std::chrono::duration<float>(duration).count();
+}
+
 std::string FFmpegSystem::BuildFFmpegCommand(std::string outputPath, int width, int height, float fps, std::string videoPipeName, std::string audioPipeName)
 {
 	std::string ffmpegExe = g_pState->FFmpeg.GetExecutablePath();

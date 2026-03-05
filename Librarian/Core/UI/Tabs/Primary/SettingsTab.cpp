@@ -100,6 +100,38 @@ void SettingsTab::DrawUserPreferences()
 
 	ImGui::Spacing();
 
+	ImGui::AlignTextToFramePadding();
+	ImGui::Text("Preferred Phase:");
+	ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
+	ImGui::SetNextItemWidth(205.0f);
+
+	AutoTheaterPhase prefPhase = g_pState->Settings.GetPreferredPhase();
+	const char* phaseNames[] = { "Default", "Timeline", "Director" };
+	int currentIdx = (int)prefPhase;
+
+	if (ImGui::BeginCombo("##PreferredPhaseCombo", phaseNames[currentIdx]))
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(phaseNames); n++)
+		{
+			bool isSelected = (currentIdx == n);
+			if (ImGui::Selectable(phaseNames[n], isSelected))
+			{
+				g_pState->Settings.SetPreferredPhase((AutoTheaterPhase)n);
+			}
+
+			if (isSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("The phase that will be automatically selected when the application starts.");
+	}
+
+	ImGui::Spacing();
+
 	bool blockMouse = g_pState->Settings.ShouldFreezeMouse();
 	if (ImGui::Checkbox("Freeze Mouse Input", &blockMouse))
 	{

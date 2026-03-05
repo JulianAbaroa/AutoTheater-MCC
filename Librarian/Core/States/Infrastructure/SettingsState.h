@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Common/Types/AutoTheaterTypes.h"
 #include <string>
 #include <atomic>
 #include <mutex>
@@ -23,12 +24,14 @@ public:
 	bool GetTheaterAutoScroll() const;
 	bool GetDirectorAutoScroll() const;
 	bool GetLogsAutoScroll() const;
+	AutoTheaterPhase GetPreferredPhase() const;
 
 	void SetMenuAlpha(float value);
 	void SetTimelineAutoScroll(bool value);
 	void SetTheaterAutoScroll(bool value);
 	void SetDirectorAutoScroll(bool value);
 	void SetLogsAutoScroll(bool value);
+	void SetPreferredPhase(AutoTheaterPhase phase);
 
 	std::string GetBaseDirectory() const;
 	std::string GetAppDataDirectory() const;
@@ -56,6 +59,7 @@ private:
 	std::atomic<bool> m_TheaterAutoScroll{ true };
 	std::atomic<bool> m_DirectorAutoScroll{ true };
 	std::atomic<bool> m_LogsAutoScroll{ true };
+	std::atomic<AutoTheaterPhase> m_PreferredPhase{ AutoTheaterPhase::Default };
 
 	std::string m_BaseDirectory{};
 	std::string m_AppDataDirectory{};

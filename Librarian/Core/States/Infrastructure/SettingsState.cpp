@@ -48,12 +48,14 @@ bool SettingsState::GetTimelineAutoScroll() const { return m_TimelineAutoScroll.
 bool SettingsState::GetTheaterAutoScroll() const { return m_TheaterAutoScroll.load(); }
 bool SettingsState::GetDirectorAutoScroll() const { return m_DirectorAutoScroll.load(); }
 bool SettingsState::GetLogsAutoScroll() const { return m_LogsAutoScroll.load(); }
+AutoTheaterPhase SettingsState::GetPreferredPhase() const { return m_PreferredPhase.load(); }
 
 void SettingsState::SetMenuAlpha(float value) { m_MenuAlpha.store(value); }
 void SettingsState::SetTimelineAutoScroll(bool value) { m_TimelineAutoScroll.store(value); }
 void SettingsState::SetTheaterAutoScroll(bool value) { m_TheaterAutoScroll.store(value); }
 void SettingsState::SetDirectorAutoScroll(bool value) { m_DirectorAutoScroll.store(value); }
 void SettingsState::SetLogsAutoScroll(bool value) { m_LogsAutoScroll.store(value); }
+void SettingsState::SetPreferredPhase(AutoTheaterPhase phase) { m_PreferredPhase.store(phase); }
 
 
 std::string SettingsState::GetBaseDirectory() const

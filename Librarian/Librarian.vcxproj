@@ -179,6 +179,7 @@
     <ClInclude Include="Core\Hooks\Render\PresentHook.h" />
     <ClInclude Include="Core\Hooks\Render\ResizeBuffersHook.h" />
     <ClInclude Include="Core\Hooks\Signatures.h" />
+    <ClInclude Include="Core\Hooks\Tables\TargetFPS.h" />
     <ClInclude Include="Core\Hooks\Tables\TelemetryTables.h" />
     <ClInclude Include="Core\Hooks\Window\WndProcHook.h" />
     <ClInclude Include="Core\States\CoreState.h" />
@@ -273,6 +274,7 @@
     <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStartHook.cpp" />
     <ClCompile Include="Core\Hooks\Render\PresentHook.cpp" />
     <ClCompile Include="Core\Hooks\Render\ResizeBuffersHook.cpp" />
+    <ClCompile Include="Core\Hooks\Tables\TargetFPS.cpp" />
     <ClCompile Include="Core\Hooks\Tables\TelemetryTables.cpp" />
     <ClCompile Include="Core\Hooks\Window\WndProcHook.cpp" />
     <ClCompile Include="Core\States\Domain\DirectorState.cpp" />

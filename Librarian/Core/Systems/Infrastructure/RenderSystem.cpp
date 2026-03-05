@@ -29,11 +29,6 @@ void RenderSystem::Initialize(IDXGISwapChain* pSwapChain)
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-        if (g_pState->Settings.ShouldUseAppData())
-        {
-            g_pSystem->Preferences.LoadPreferences();
-        }
-
         UINT width = sd.BufferDesc.Width;
         UINT height = sd.BufferDesc.Height;
         int evenWidth = static_cast<int>(width & ~1);

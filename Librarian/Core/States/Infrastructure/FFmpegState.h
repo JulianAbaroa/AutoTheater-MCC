@@ -20,8 +20,8 @@ public:
 	bool IsCaptureActive() const;
 	void SetCaptureActive(bool value);
 
-	float GetStartRecordingTime() const;
-	void SetStartRecordingTime(float time);
+	std::chrono::steady_clock::time_point GetStartRecordingTime() const;
+	void SetStartRecordingTime(std::chrono::steady_clock::time_point time_point);
 	
 	HANDLE GetVideoPipeHandle() const;
 	void SetVideoPipeHandle(HANDLE h);
@@ -72,13 +72,12 @@ private:
 	std::atomic<bool> m_StopRecording{ false };
 	std::atomic<bool> m_IsRecording{ false };
 	std::atomic<bool> m_IsCaptureActive{ false };
-
 	
 	std::atomic<HANDLE> m_hVideoPipe{ INVALID_HANDLE_VALUE };
 	std::atomic<HANDLE> m_hAudioPipe{ INVALID_HANDLE_VALUE };
 	std::atomic<HANDLE> m_hProcess{ INVALID_HANDLE_VALUE };
 
-	std::atomic<float> m_StartRecordingTime;
+	std::chrono::steady_clock::time_point m_StartRecordingTime;
 	std::atomic<ResolutionType> m_ResolutionType{ ResolutionType::UHD_4K };
 	std::atomic<float> m_TargetFramerate{ 60.0f };
 	std::atomic<bool> m_ShouldRecordUI{ false };

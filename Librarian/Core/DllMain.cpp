@@ -4,6 +4,7 @@
 #include "Core/Common/AppCore.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 #include "Core/Threads/CoreThread.h"
 #include "External/minhook/include/MinHook.h"
 #include <fstream>
@@ -61,11 +62,12 @@ DWORD WINAPI AppLoader::InitializeLibrarian(LPVOID lpParam)
     PathRemoveFileSpecA(buffer);
 
     // 5. Store the base directory and logger path, and creates the logger file.
-    g_pState->Settings.SetBaseDirectory(std::string(buffer));
-    g_pState->Settings.SetLoggerPath(g_pState->Settings.GetBaseDirectory() + "\\AutoTheater.txt");
+    g_pSystem->Settings.InitializePaths(buffer);
     std::ofstream ofs(g_pState->Settings.GetLoggerPath(), std::ios::trunc);
-
-    g_pUtil->Log.Append("[DllMain] INFO: Initializing AutoTheater.");
+    if (g_pState->Settings.ShouldUseAppData())
+    {
+        g_pSystem->Preferences.LoadPreferences();
+    }
 
     // 6. Attempt to initialize MinHook.
     if (MH_Initialize() != MH_OK)

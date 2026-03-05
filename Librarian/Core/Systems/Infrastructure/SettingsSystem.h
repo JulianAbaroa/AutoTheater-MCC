@@ -3,7 +3,7 @@
 class SettingsSystem
 {
 public:	
-	void InitializePaths();
+	void InitializePaths(char* buffer);
 
 	void SaveUseAppData();
 	void LoadUseAppData();

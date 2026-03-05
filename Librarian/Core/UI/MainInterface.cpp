@@ -135,8 +135,8 @@ void MainInterface::DrawStatusBar()
 
 	switch (status) 
 	{
-	case EngineStatus::Awaiting:
-		statusText = "AWAITING";
+	case EngineStatus::Waiting:
+		statusText = "WAITING";
 		statusColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
 		break;
 

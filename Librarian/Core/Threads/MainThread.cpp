@@ -45,7 +45,7 @@ void MainThread::Run()
                 return;
             }
 
-            g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Awaiting });
+            g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Waiting });
             g_pState->Theater.SetTheaterMode(false);
         }
 
@@ -107,9 +107,8 @@ void MainThread::InitializeAutoTheater()
         return;
     }
 
-    g_pState->Lifecycle.SetCurrentPhase(AutoTheaterPhase::Timeline);
+    g_pState->Lifecycle.SetCurrentPhase(g_pState->Settings.GetPreferredPhase());
     g_pState->Timeline.SetLoggingActive(true);
-    g_pSystem->Settings.InitializePaths();
     g_pSystem->EventRegistry.LoadEventRegistry();
 }
 

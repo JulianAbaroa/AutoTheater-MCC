@@ -19,7 +19,7 @@ enum class AutoTheaterPhase
 enum class EngineStatus
 {
 	// The engine it has either not been initialized yet or has been fuly deallocated.
-	Awaiting,		
+	Waiting,		
 
 	// The engine is active and currently executing game logic.
 	Running,

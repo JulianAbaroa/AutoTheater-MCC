@@ -23,6 +23,8 @@ public:
 	
 	std::string GenerateTimestampName();
 
+	float GetRecordingDuration() const;
+
 	bool IsAudioConnected();
 	void Cleanup();
 

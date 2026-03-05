@@ -383,6 +383,9 @@
     <ClInclude Include="Core\Systems\Infrastructure\ScannerSystem.h">
       <Filter>Core\Systems\Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Hooks\Tables\TargetFPS.h">
+      <Filter>Core\Hooks\Tables</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\DllMain.cpp">
@@ -626,6 +629,9 @@
     </ClCompile>
     <ClCompile Include="Core\Systems\Infrastructure\ScannerSystem.cpp">
       <Filter>Core\Systems\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Tables\TargetFPS.cpp">
+      <Filter>Core\Hooks\Tables</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

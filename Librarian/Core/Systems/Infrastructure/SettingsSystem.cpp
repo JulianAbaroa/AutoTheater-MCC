@@ -5,8 +5,11 @@
 #include <shlobj.h>
 #include <fstream>
 
-void SettingsSystem::InitializePaths()
+void SettingsSystem::InitializePaths(char* buffer)
 {
+	g_pState->Settings.SetBaseDirectory(std::string(buffer));
+	g_pState->Settings.SetLoggerPath(g_pState->Settings.GetBaseDirectory() + "\\AutoTheater.txt");
+
 	PWSTR localLowPath = NULL;
 	if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppDataLow, 0, NULL, &localLowPath)))
 	{

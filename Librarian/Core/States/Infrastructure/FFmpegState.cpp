@@ -19,8 +19,8 @@ void FFmpegState::SetStopOnLastEvent(bool value) { m_StopOnLastEvent.store(value
 float FFmpegState::GetStopDelayDuration() const { return m_StopDelayDuration.load(); }
 void FFmpegState::SetStopDelayDuration(float value) { m_StopDelayDuration.store(value); }
 
-float FFmpegState::GetStartRecordingTime() const { return m_StartRecordingTime.load(); }
-void FFmpegState::SetStartRecordingTime(float time) { m_StartRecordingTime.store(time); }
+std::chrono::steady_clock::time_point FFmpegState::GetStartRecordingTime() const { return m_StartRecordingTime; }
+void FFmpegState::SetStartRecordingTime(std::chrono::steady_clock::time_point time_point) { m_StartRecordingTime = time_point; }
 
 HANDLE FFmpegState::GetVideoPipeHandle() const { return m_hVideoPipe.load(); }
 void FFmpegState::SetVideoPipeHandle(HANDLE h) { m_hVideoPipe.store(h); }

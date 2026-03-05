@@ -16,6 +16,7 @@ HRESULT __stdcall ResizeBuffersHook::HookedResizeBuffers(IDXGISwapChain* pSwapCh
 	{
 		g_pUtil->Log.Append("[ResizeBuffers] WARNING: Capture stopped due to resolution change.");
 		g_pSystem->FFmpeg.Stop();
+		g_pSystem->Gallery.RefreshList(g_pState->FFmpeg.GetOutputPath());
 	}
 
 	UINT evenWidth = Width & ~1;

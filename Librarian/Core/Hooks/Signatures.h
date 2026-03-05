@@ -79,4 +79,14 @@ namespace Signatures
 		"TelemetryIdModifier",
 		"8B 0D ?? ?? ?? ?? 65 48 8B 04 25 58 00 00 00 48 8B 04 C8",
 	};
+
+	const Signature TargetFPS_Ref = {
+		"TargetFPS",
+		"83 E9 01 74 52 83 E9 01 74 46 83 E9 01 74 34"
+	};
+
+	const Signature TargetFPS_Var = {
+		"TargetFPS_Var",
+		"83 25 ?? ?? ?? ?? 00 0F 57 C0 F3 0F 11 05"
+	};
 }

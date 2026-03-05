@@ -19,7 +19,9 @@ void UserPreferencesSystem::SavePreferences()
 
 	// FFmpegState
 	file << "FFmpeg_ResolutionType=" << static_cast<int>(g_pState->FFmpeg.GetResolutionType()) << "\n";
+	file << std::fixed << std::setprecision(2);
 	file << "FFmpeg_TargetFramerate=" << g_pState->FFmpeg.GetTargetFramerate() << "\n";
+	file << std::defaultfloat;
 	file << "FFmpeg_ShouldRecordUI=" << (g_pState->FFmpeg.ShouldRecordUI() ? "1" : "0") << "\n";
 	file << "FFmpeg_OutputPath=" << g_pState->FFmpeg.GetOutputPath() << "\n";
 	file << "FFmpeg_StopOnLastEvent=" << g_pState->FFmpeg.StopOnLastEvent() << "\n";
@@ -36,6 +38,7 @@ void UserPreferencesSystem::SavePreferences()
 	file << "Settings_MenuAlpha=" << g_pState->Settings.GetMenuAlpha() << "\n";
 	file << "Settings_UIScale=" << g_pState->Render.GetUIScale() << "\n";
 	file << std::defaultfloat;
+	file << "Settings_PreferredPhase=" << static_cast<int>(g_pState->Settings.GetPreferredPhase()) << "\n";
 
 	// UI
 	file << "UI_TimelineAutoScroll=" << (g_pState->Settings.GetTimelineAutoScroll() ? "1" : "0") << "\n";
@@ -92,7 +95,17 @@ void UserPreferencesSystem::ParseLine(const std::string& line)
 			g_pState->FFmpeg.SetResolutionType(ResolutionType::FullHD);
 		}
 	}
-	else if (key == "FFmpeg_TargetFramerate") g_pState->FFmpeg.SetTargetFramerate(std::stof(value));
+	else if (key == "FFmpeg_TargetFramerate") 
+	{
+		try
+		{
+			g_pState->FFmpeg.SetTargetFramerate(std::stof(value));
+		}
+		catch (...)
+		{
+			g_pState->FFmpeg.SetTargetFramerate(60.0f);
+		}
+	}
 	else if (key == "FFmpeg_ShouldRecordUI") g_pState->FFmpeg.SetRecordUI(value == "1" || value == "true");
 	else if (key == "FFmpeg_OutputPath") g_pState->FFmpeg.SetOutputPath(value);
 	else if (key == "FFmpeg_StopOnLastEvent") g_pState->FFmpeg.SetStopOnLastEvent(value == "1" || value == "true");
@@ -115,7 +128,7 @@ void UserPreferencesSystem::ParseLine(const std::string& line)
 	else if (key == "Settings_ShouldFreezeMouse") g_pState->Settings.SetFreezeMouse(value == "1" || value == "true");
 	else if (key == "Settings_MenuAlpha")
 	{
-		try 
+		try
 		{
 			g_pState->Settings.SetMenuAlpha(std::stof(value));
 		}
@@ -133,6 +146,26 @@ void UserPreferencesSystem::ParseLine(const std::string& line)
 		catch (...)
 		{
 			g_pState->Render.SetUIScale(1.0f);
+		}
+	}
+	else if (key == "Settings_PreferredPhase")
+	{
+		try
+		{
+			int phaseInt = std::stoi(value);
+
+			if (phaseInt >= 0 && phaseInt <= 2)
+			{
+				g_pState->Settings.SetPreferredPhase(static_cast<AutoTheaterPhase>(phaseInt));
+			}
+			else
+			{
+				g_pState->Settings.SetPreferredPhase(AutoTheaterPhase::Default);
+			}
+		}
+		catch (...)
+		{
+			g_pState->Settings.SetPreferredPhase(AutoTheaterPhase::Default);
 		}
 	}
 

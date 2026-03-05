@@ -4,7 +4,9 @@
 #include "Core/UI/Tabs/Optional/CaptureTab.h"
 #include <shobjidl.h>
 
-// TODO: Add the recording time.
+// TODO: Execute refresh gallery from Force Stop or from Resolution Change detected.
+// TODO: Fix the recording time!!!
+// TODO: Unlimited FPS sets the value to zero, so fix capture system to prevent it.
 
 void CaptureTab::Draw()
 {
@@ -13,7 +15,6 @@ void CaptureTab::Draw()
 	this->DrawTopBar(isRecording);
 
 	ImGui::Separator();
-	ImGui::Spacing();
 
 	if (g_pState->FFmpeg.IsFFmpegInstalled())
 	{
@@ -51,12 +52,13 @@ void CaptureTab::DrawTopBar(bool isRecording)
     this->DrawFFmpegControls(isRecording, totalWidth);
 }
 
+
 void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
 {
     ImGui::BeginGroup();
 
     const char* statusText = "WAITING";
-    ImVec4 statusColor = ImVec4(1, 1, 1, 1);
+    ImVec4 statusColor = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
 
     if (g_pState->FFmpeg.RecordingStarted() || (isRecording && !isCaptureActive))
     {
@@ -75,7 +77,7 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
     }
 
     ImGui::AlignTextToFramePadding();
-    ImGui::TextDisabled("Status:");
+    ImGui::TextDisabled("STATUS:");
 
     ImGui::SameLine();
 
@@ -139,16 +141,24 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
 
     ImGui::SameLine(0, 10.0f);
 
-    if (isRecording) ImGui::BeginDisabled();
-    if (ImGui::Button("Recording Settings"))
+    if (g_pState->FFmpeg.IsCaptureActive())
     {
-        m_OpenRecordingSettingsModal.store(true);
-    }
-    if (isRecording) ImGui::EndDisabled();
+        // Draw recording time.
+        float recordingDuration = g_pSystem->FFmpeg.GetRecordingDuration();
 
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && isRecording)
+        int hours = (int)(recordingDuration / 3600);
+        int minutes = (int)(recordingDuration - hours * 3600) / 60;
+        int seconds = (int)(recordingDuration - hours * 3600 - minutes * 60);
+
+        ImGui::Text("%02d:%02d:%02d", hours, minutes, seconds);
+    }
+    else if (!isRecording)
     {
-        ImGui::SetTooltip("These settings cannot be changed while AutoTheater is recording.");
+        // Draw recording settings button.
+        if (ImGui::Button("Recording Settings"))
+        {
+            m_OpenRecordingSettingsModal.store(true);
+        }
     }
 
     ImGui::EndGroup();
@@ -215,9 +225,8 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
             if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
             {
                 ImGui::BeginTooltip();
-                ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Action Blocked:");
-                ImGui::BulletText("Cannot uninstall FFmpeg while recording is in progress.");
-                ImGui::BulletText("Stop the current session before removing dependencies.");
+                ImGui::SetTooltip("Cannot uninstall FFmpeg while recording is in progress.\n"
+                    "Stop the current session before removing dependencies.");
                 ImGui::EndTooltip();
             }
 
@@ -243,13 +252,14 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
 
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("FFmpeg is required for recording and processing video.");
+            ImGui::SetTooltip("FFmpeg is required for recording and processing videos.");
         }
     }
     ImGui::EndGroup();
 }
 
 
+// TODO: It cannot be scaled, it closes!
 void CaptureTab::DrawRecordingSettingsPopup()
 {
     if (m_OpenRecordingSettingsModal.load())
@@ -259,17 +269,28 @@ void CaptureTab::DrawRecordingSettingsPopup()
     }
 
     bool keepOpen = true;
-    ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, ImVec4(0, 0, 0, 0));
-    if (ImGui::BeginPopupModal("Recording Settings", &keepOpen, ImGuiWindowFlags_AlwaysAutoResize))
+    ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, ImVec4(0, 0, 0, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(550, 0), ImGuiCond_Appearing);
+
+    if (ImGui::BeginPopupModal("Recording Settings", &keepOpen, ImGuiWindowFlags_NoSavedSettings))
     {
-        if (ImGui::IsMouseClicked(0) && !ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows))
+        if (ImGui::IsMouseClicked(0))
         {
-            ImGui::CloseCurrentPopup();
+            bool clickedInside = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+
+            bool popupActive = ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId);
+
+            if (!clickedInside && !popupActive)
+            {
+                ImGui::CloseCurrentPopup();
+            }
         }
+
         this->DrawRecordingSettings();
 
-        if (!keepOpen) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
     }
+
     ImGui::PopStyleColor();
 }
 
@@ -285,149 +306,159 @@ void CaptureTab::DrawRecordingSettings()
         }
     }
 
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Resolution Scale:");
-    ImGui::SameLine(160);
+    auto DrawSectionCard = [&](const char* header, std::function<void()> content, bool defaultOpen = false) {
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_CollapsingHeader;
+        if (defaultOpen) flags |= ImGuiTreeNodeFlags_DefaultOpen;
 
-    const char* resolutions[] = { "1080p", "1440p", "2160p" };
-    int currentRes = (int)g_pState->FFmpeg.GetResolutionType();
+        if (ImGui::CollapsingHeader(header, flags))
+        {
+            ImGui::Indent(10.0f);
 
-    ImGui::SetNextItemWidth(150);
-    if (ImGui::Combo("##ResCombo", &currentRes, resolutions, IM_ARRAYSIZE(resolutions)))
-    {
-        g_pState->FFmpeg.SetResolutionType((ResolutionType)currentRes);
-    }
+            ImVec2 p_min = ImGui::GetCursorScreenPos();
+            p_min.x -= 5.0f;
 
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-    {
-        ImGui::BeginTooltip();
+            ImGui::BeginGroup();
+            ImGui::Spacing();
+            ImGui::Indent(10.0f);
 
-        ImGui::Text("Output Resolution Scaling");
+            content();
+
+            ImGui::Spacing();
+            ImGui::Unindent(10.0f);
+            ImGui::EndGroup();
+
+            ImVec2 p_max = ImVec2(p_min.x + ImGui::GetItemRectSize().x + 10.0f,
+                p_min.y + ImGui::GetItemRectSize().y);
+
+            ImGui::GetWindowDrawList()->AddRectFilled(p_min, p_max, ImColor(255, 255, 255, 15), 5.0f);
+            ImGui::GetWindowDrawList()->AddRect(p_min, p_max, ImColor(255, 255, 255, 30), 5.0f);
+
+            ImGui::Unindent(10.0f);
+            ImGui::Spacing();
+        }
+    };
+
+    DrawSectionCard("Encoder Configuration", [&]() {
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Resolution Scale:");
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
+        ImGui::SetNextItemWidth(205.0f);
+
+        const char* resolutions[] = { "1080p", "1440p", "2160p" };
+        int currentRes = (int)g_pState->FFmpeg.GetResolutionType();
+
+        if (ImGui::Combo("##ResCombo", &currentRes, resolutions, IM_ARRAYSIZE(resolutions)))
+        {
+            g_pState->FFmpeg.SetResolutionType((ResolutionType)currentRes);
+        }
+
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+
+            ImGui::Text("Output Resolution Scaling");
+            ImGui::Spacing();
+            ImGui::TextDisabled("Available scales (1080p, 1440p, 2160p) are software-level\n"
+                "adjustments applied via FFmpeg's bicubic filter.");
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Smart Scaling");
+            ImGui::Text("If the selected scale matches your current in-game resolution,\n"
+                "no scaling is applied. The frames are passed directly to\n"
+                "the encoder to preserve 1:1 original pixel quality.");
+
+            ImGui::EndTooltip();
+        }
+
         ImGui::Spacing();
-        ImGui::TextDisabled("Available scales (1080p, 1440p, 2160p) are software-level\n"
-            "adjustments applied via FFmpeg's bicubic filter.");
-        
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-        
-        ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Smart Scaling");
-        ImGui::Text("If the selected scale matches your current in-game resolution,\n"
-            "no scaling is applied. The frames are passed directly to\n"
-            "the encoder to preserve 1:1 original pixel quality.");
 
-        ImGui::EndTooltip();
-    }
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("Target Framerate:");
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
+        ImGui::SetNextItemWidth(205.0f);
 
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextDisabled("Target Framerate:");
-    ImGui::SameLine(160);
+        ImGui::BeginDisabled();
 
-    int currentFPS = (int)g_pState->FFmpeg.GetTargetFramerate();
+        const char* fpsOptions[] = { "60 FPS", "120 FPS", "180 FPS", "240 FPS" };
+        float currentFPS = g_pState->FFmpeg.GetTargetFramerate();
+        int fpsIdx = (currentFPS >= 240) ? 3 : (currentFPS >= 180) ? 2 : (currentFPS >= 120) ? 1 : 0;
 
-    ImGui::SetNextItemWidth(150);
-    if (ImGui::SliderInt("##FPSSlider", &currentFPS, 60, 240, "%d FPS"))
-    {
-        if (currentFPS > 240) currentFPS = 240;
-        else if (currentFPS < 60) currentFPS = 60;
-        g_pState->FFmpeg.SetTargetFramerate((float)currentFPS);
-    }
-
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::BeginTooltip();
-        ImGui::Text("Adjust the recording frame rate.");
-        ImGui::TextDisabled("Allowed range: 60 - 240 FPS.");
-        ImGui::EndTooltip();
-    }
-
-    bool recordUI = g_pState->FFmpeg.ShouldRecordUI();
-    bool stopOnLast = g_pState->FFmpeg.StopOnLastEvent();
-
-    ImGui::AlignTextToFramePadding();
-    ImGui::Text("Interface:");
-    ImGui::SameLine(160);
-
-    if (ImGui::Checkbox("Capture ImGui Overlay", &recordUI))
-    {
-        g_pState->FFmpeg.SetRecordUI(recordUI);
-    }
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("If enabled, the video will include the AutoTheater UI.");
-    }
-
-    ImGui::SetCursorPosX(160);
-
-    if(ImGui::Checkbox("Stop on last script event", &stopOnLast))
-    {
-        g_pState->FFmpeg.SetStopOnLastEvent(stopOnLast);
-    }
-
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("The recording will automatically finish once the Director\n"
-            "executes the last command in the current script.");
-    }
-
-    float stopDelay = g_pState->FFmpeg.GetStopDelayDuration();
-
-    if (!stopOnLast) ImGui::BeginDisabled();
-
-    ImGui::SetCursorPosX(175);
-    ImGui::SetNextItemWidth(135);
-
-    if (ImGui::SliderFloat("Post-roll Delay##DelaySlider", &stopDelay, 0.0f, 20.0f, "%.1fs"))
-    {
-        if (stopDelay > 20.0f) stopDelay = 20.0f;
-        else if (stopDelay < 0.0f) stopDelay = 0.0f;
-
-        g_pState->FFmpeg.SetStopDelayDuration(stopDelay);
-    }
-
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-    {
-        ImGui::SetTooltip("Additional seconds to record after the last event executes.");
-    }
-
-    if (!stopOnLast) ImGui::EndDisabled();
-
-    ImGui::Spacing();
-
-    ImGui::Text("Output Directory:");
-
-    std::string outputPath = g_pState->FFmpeg.GetOutputPath();
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
-    ImGui::SetNextItemWidth(300.0f);
-    ImGui::InputText("##OutputPath", (char*)outputPath.c_str(), outputPath.size(), ImGuiInputTextFlags_ReadOnly);
-    ImGui::PopStyleColor();
-
-    ImGui::SameLine();
-
-    if (m_FolderPickerActive.load()) ImGui::BeginDisabled();
-
-    const char* btnText = m_FolderPickerActive.load() ? "Opening..." : "Select Folder";
-    if (ImGui::Button(btnText))
-    {
-        m_FolderPickerActive.store(true);
-
-        std::thread([this]() {
-            std::string selectedPath = this->OpenFolderDialog();
-
-            if (!selectedPath.empty())
+        if (ImGui::BeginCombo("##FPSCombo", fpsOptions[fpsIdx])) 
+        {
+            for (int n = 0; n < IM_ARRAYSIZE(fpsOptions); n++) 
             {
-                std::lock_guard<std::mutex> lock(m_Mutex);
-                this->m_PendingNewPath = selectedPath;
+                if (ImGui::Selectable(fpsOptions[n], fpsIdx == n)) 
+                {
+                    float val = (n == 0) ? 60.0f : (n == 1) ? 120.0f : (n == 2) ? 180.0f : 240.0f;
+                    g_pState->FFmpeg.SetTargetFramerate(val);
+                }
             }
+            ImGui::EndCombo();
+        }
 
-            this->m_FolderPickerActive.store(false);
-        }).detach();
-    }
+        ImGui::EndDisabled();
 
-    if (m_FolderPickerActive.load()) ImGui::EndDisabled();
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) 
+        {
+            ImGui::SetTooltip("Target Framerate is automatically synchronized with your in-game settings.");
+        }
+    }, true);
 
-    ImGui::EndPopup();
-}
+    DrawSectionCard("Automation", [&]() {
+        bool stopOnLast = g_pState->FFmpeg.StopOnLastEvent();
+        if (ImGui::Checkbox("Stop on last event", &stopOnLast))
+        {
+            g_pState->FFmpeg.SetStopOnLastEvent(stopOnLast);
+        }
+
+        if (!stopOnLast) ImGui::BeginDisabled();
+
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Post-roll Delay:");
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
+        ImGui::SetNextItemWidth(205.0f);
+
+        float stopDelay = g_pState->FFmpeg.GetStopDelayDuration();
+
+        if (ImGui::SliderFloat("##DelaySlider", &stopDelay, 0.0f, 20.0f, "%.1fs"))
+        {
+            g_pState->FFmpeg.SetStopDelayDuration(stopDelay);
+        }
+
+        if (!stopOnLast) ImGui::EndDisabled();
+    });
+
+    DrawSectionCard("Storage & Paths", [&]() {
+        ImGui::Text("Output Directory:");
+
+        std::string outputPath = g_pState->FFmpeg.GetOutputPath();
+
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 110.0f);
+        ImGui::InputText("##OutputPath", (char*)outputPath.c_str(), outputPath.size(), ImGuiInputTextFlags_ReadOnly);
+        
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+
+        if (ImGui::Button("Browse...", ImVec2(100, 0))) 
+        {
+            m_FolderPickerActive.store(true);
+            std::thread([this]() {
+                std::string selectedPath = this->OpenFolderDialog();
+                if (!selectedPath.empty()) 
+                {
+                    std::lock_guard<std::mutex> lock(m_Mutex);
+                    this->m_PendingNewPath = selectedPath;
+                }
+
+                this->m_FolderPickerActive.store(false);
+            }).detach();
+        }
+    });
+}   
 
 void CaptureTab::DrawGallery(bool isRecording)
 {
@@ -536,27 +567,41 @@ void CaptureTab::DrawGallery(bool isRecording)
                         float oneLineHeight = ImGui::GetTextLineHeight();
                         std::string titleChildId = "TitleArea_" + std::to_string(i);
 
-                        if (ImGui::BeginChild(titleChildId.c_str(), ImVec2(contentWidth, oneLineHeight + 2.0f), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+                        float titleAreaHeight = oneLineHeight + 8.0f;
+
+                        if (ImGui::BeginChild(titleChildId.c_str(), ImVec2(contentWidth, titleAreaHeight), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
                         {
                             if (m_EditingVideoIndex == i)
                             {
                                 ImGui::SetNextItemWidth(contentWidth);
                                 ImGui::SetKeyboardFocusHere();
+
+                                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 2));
                                 if (ImGui::InputText("##edit_video_name", RenameVideoBuf, IM_ARRAYSIZE(RenameVideoBuf), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                                 {
                                     g_pSystem->Gallery.RenameVideo(i, RenameVideoBuf);
                                     m_EditingVideoIndex = -1;
                                 }
+                                ImGui::PopStyleVar();
+
                                 if (ImGui::IsItemDeactivated() && !ImGui::IsItemActive()) m_EditingVideoIndex = -1;
                             }
                             else
                             {
-                                ImGui::TextUnformatted(video.FileName.c_str());
+                                std::string displayName = video.FileName;
+                                size_t lastDot = displayName.find_last_of(".");
+                                if (lastDot != std::string::npos)
+                                {
+                                    displayName = displayName.substr(0, lastDot);
+                                }
+
+                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+                                ImGui::TextUnformatted(displayName.c_str());
 
                                 if (ImGui::IsWindowHovered() && ImGui::IsMouseDoubleClicked(0))
                                 {
                                     m_EditingVideoIndex = i;
-                                    strncpy_s(RenameVideoBuf, video.FileName.c_str(), sizeof(RenameVideoBuf));
+                                    strncpy_s(RenameVideoBuf, displayName.c_str(), sizeof(RenameVideoBuf));
                                 }
                             }
                         }
@@ -621,6 +666,7 @@ void CaptureTab::DrawPopups()
     if (ImGui::BeginPopupModal("Confirm Uninstall", NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
         this->DrawUninstallPopup();
+        ImGui::EndPopup();
     }
 
     if (m_OpenDeleteVideoModal.load())
@@ -632,6 +678,7 @@ void CaptureTab::DrawPopups()
     if (ImGui::BeginPopupModal("Delete Video", NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
         this->DrawDeleteVideoPopup();
+        ImGui::EndPopup();
     }
 }
 
@@ -660,8 +707,6 @@ void CaptureTab::DrawUninstallPopup()
     {
         ImGui::CloseCurrentPopup();
     }
-    
-    ImGui::EndPopup();
 }
 
 void CaptureTab::DrawDeleteVideoPopup()
@@ -669,18 +714,25 @@ void CaptureTab::DrawDeleteVideoPopup()
     ImGui::Text("Are you sure you want to delete this video?\nThis action cannot be undone.\n\n");
     ImGui::Separator();
 
+    float buttonWidth = 120.0f;
+
+    float totalWidth = (buttonWidth * 2.0f) + ImGui::GetStyle().ItemSpacing.x;
+    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
+
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
-    if (ImGui::Button("Yes", ImVec2(120, 0)))
+    if (ImGui::Button("Yes", ImVec2(buttonWidth, 0)))
     {
-        g_pSystem->Gallery.DeleteVideo(m_VideoIndexToDelete); 
+        g_pSystem->Gallery.DeleteVideo(m_VideoIndexToDelete);
         ImGui::CloseCurrentPopup();
     }
     ImGui::PopStyleColor();
 
-    if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
     ImGui::SameLine();
 
-    ImGui::EndPopup();
+    if (ImGui::Button("Cancel", ImVec2(buttonWidth, 0)))
+    {
+        ImGui::CloseCurrentPopup();
+    }
 }
 
 std::string CaptureTab::OpenFolderDialog() 
