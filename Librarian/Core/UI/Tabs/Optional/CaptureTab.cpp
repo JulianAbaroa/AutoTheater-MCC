@@ -20,47 +20,8 @@ void CaptureTab::Draw()
         this->DrawGallery(isRecording);
 	}
 
-    if (m_OpenRecordingSettingsModal.load())
-    {
-        ImGui::OpenPopup("Recording Settings");
-        m_OpenRecordingSettingsModal.store(false);
-    }
-
-    bool keepOpen = true;
-    ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, ImVec4(0, 0, 0, 0));
-    if (ImGui::BeginPopupModal("Recording Settings", &keepOpen, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        if (ImGui::IsMouseClicked(0) && !ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows))
-        {
-            ImGui::CloseCurrentPopup();
-        }
-        this->DrawRecordingSettings();
-
-        if (!keepOpen) ImGui::CloseCurrentPopup();
-    }
-    ImGui::PopStyleColor();
-
-    if (m_OpenUninstallModal.load())
-    {
-        ImGui::OpenPopup("Confirm Uninstall");
-        m_OpenUninstallModal.store(false);
-    }
-
-    if (ImGui::BeginPopupModal("Confirm Uninstall", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        this->DrawUninstallPopup();
-    }
-
-    if (m_OpenDeleteVideoModal.load())
-    {
-        ImGui::OpenPopup("Delete Video");
-        m_OpenDeleteVideoModal.store(false);
-    }
-
-    if (ImGui::BeginPopupModal("Delete Video", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        this->DrawDeleteVideoPopup();
-    }
+    this->DrawRecordingSettingsPopup();
+    this->DrawPopups();
 }
 
 void CaptureTab::DrawTopBar(bool isRecording)
@@ -115,10 +76,12 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
 
     ImGui::AlignTextToFramePadding();
     ImGui::TextDisabled("Status:");
+
     ImGui::SameLine();
+
     ImGui::TextColored(statusColor, statusText);
 
-    ImGui::SameLine(0, 20.0f);
+    ImGui::SameLine(0, 10.0f);
     if (!isRecording)
     {
         bool canRecord = g_pState->Theater.IsTheaterMode() &&
@@ -174,7 +137,7 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
         }
     }
 
-    ImGui::SameLine(0, 20.0f);
+    ImGui::SameLine(0, 10.0f);
 
     if (isRecording) ImGui::BeginDisabled();
     if (ImGui::Button("Recording Settings"))
@@ -286,6 +249,30 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
     ImGui::EndGroup();
 }
 
+
+void CaptureTab::DrawRecordingSettingsPopup()
+{
+    if (m_OpenRecordingSettingsModal.load())
+    {
+        ImGui::OpenPopup("Recording Settings");
+        m_OpenRecordingSettingsModal.store(false);
+    }
+
+    bool keepOpen = true;
+    ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, ImVec4(0, 0, 0, 0));
+    if (ImGui::BeginPopupModal("Recording Settings", &keepOpen, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        if (ImGui::IsMouseClicked(0) && !ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        this->DrawRecordingSettings();
+
+        if (!keepOpen) ImGui::CloseCurrentPopup();
+    }
+    ImGui::PopStyleColor();
+}
+
 void CaptureTab::DrawRecordingSettings()
 {
     {
@@ -335,15 +322,22 @@ void CaptureTab::DrawRecordingSettings()
     ImGui::AlignTextToFramePadding();
     ImGui::TextDisabled("Target Framerate:");
     ImGui::SameLine(160);
-    ImGui::TextDisabled("%.1f FPS", g_pState->FFmpeg.GetTargetFramerate());
+
+    int currentFPS = (int)g_pState->FFmpeg.GetTargetFramerate();
+
+    ImGui::SetNextItemWidth(150);
+    if (ImGui::SliderInt("##FPSSlider", &currentFPS, 60, 240, "%d FPS"))
+    {
+        if (currentFPS > 240) currentFPS = 240;
+        else if (currentFPS < 60) currentFPS = 60;
+        g_pState->FFmpeg.SetTargetFramerate((float)currentFPS);
+    }
 
     if (ImGui::IsItemHovered())
     {
         ImGui::BeginTooltip();
-        ImGui::Text("Target Framerate: %.1f FPS", g_pState->FFmpeg.GetTargetFramerate());
-        ImGui::Separator();
-        ImGui::TextDisabled("This value is managed by the Capture System");
-        ImGui::TextDisabled("and cannot be modified manually to ensure sync.");
+        ImGui::Text("Adjust the recording frame rate.");
+        ImGui::TextDisabled("Allowed range: 60 - 240 FPS.");
         ImGui::EndTooltip();
     }
 
@@ -372,11 +366,8 @@ void CaptureTab::DrawRecordingSettings()
 
     if (ImGui::IsItemHovered())
     {
-        ImGui::BeginTooltip();
-        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Automated Stop");
-        ImGui::Text("The recording will automatically finish once the Director\n"
+        ImGui::SetTooltip("The recording will automatically finish once the Director\n"
             "executes the last command in the current script.");
-        ImGui::EndTooltip();
     }
 
     float stopDelay = g_pState->FFmpeg.GetStopDelayDuration();
@@ -386,8 +377,11 @@ void CaptureTab::DrawRecordingSettings()
     ImGui::SetCursorPosX(175);
     ImGui::SetNextItemWidth(135);
 
-    if (ImGui::SliderFloat("Post-roll Delay##DelaySlider", &stopDelay, 0.0f, 10.0f, "%.1fs"))
+    if (ImGui::SliderFloat("Post-roll Delay##DelaySlider", &stopDelay, 0.0f, 20.0f, "%.1fs"))
     {
+        if (stopDelay > 20.0f) stopDelay = 20.0f;
+        else if (stopDelay < 0.0f) stopDelay = 0.0f;
+
         g_pState->FFmpeg.SetStopDelayDuration(stopDelay);
     }
 
@@ -613,6 +607,32 @@ void CaptureTab::DrawGallery(bool isRecording)
         }
     }
     ImGui::EndChild();
+}
+
+
+void CaptureTab::DrawPopups()
+{
+    if (m_OpenUninstallModal.load())
+    {
+        ImGui::OpenPopup("Confirm Uninstall");
+        m_OpenUninstallModal.store(false);
+    }
+
+    if (ImGui::BeginPopupModal("Confirm Uninstall", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        this->DrawUninstallPopup();
+    }
+
+    if (m_OpenDeleteVideoModal.load())
+    {
+        ImGui::OpenPopup("Delete Video");
+        m_OpenDeleteVideoModal.store(false);
+    }
+
+    if (ImGui::BeginPopupModal("Delete Video", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        this->DrawDeleteVideoPopup();
+    }
 }
 
 void CaptureTab::DrawUninstallPopup()

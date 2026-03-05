@@ -50,14 +50,14 @@ void VideoSystem::PushFrame(const uint8_t* pData, UINT width, UINT height, UINT 
     // Protect RAM
     {
         std::lock_guard<std::mutex> lock(m_QueueMutex);
-        if (m_FrameQueue.size() < 64)
+
+        if (m_FrameQueue.size() >= 64)
         {
-            m_FrameQueue.push_back(std::move(frame));
+            g_pUtil->Log.Append("[VideoSystem] Frame queue full, dropping this frame.");
+            m_FrameQueue.pop_front();
         }
-        else if (g_pState->FFmpeg.IsCaptureActive())
-        {
-            g_pUtil->Log.Append("[VideoSystem] WARNING: Frame queue full, dropping frames.");
-        }
+
+        m_FrameQueue.push_back(std::move(frame));
     }
 }
 

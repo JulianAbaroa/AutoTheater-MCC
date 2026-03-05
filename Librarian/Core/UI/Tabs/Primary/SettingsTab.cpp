@@ -88,10 +88,10 @@ void SettingsTab::DrawUserPreferences()
 	ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
 
 	ImGui::PushItemWidth(200.0f);
-	if (ImGui::SliderFloat("##GlobalScale", &m_UIScalePreview, 0.8f, 4.0f, "%.2f")) {}
+	if (ImGui::SliderFloat("##GlobalScale", &m_UIScalePreview, 1.0f, 4.0f, "%.2f")) {}
 	if (ImGui::IsItemDeactivatedAfterEdit())
 	{
-		m_UIScalePreview = std::clamp(m_UIScalePreview, 0.8f, 4.0f);
+		m_UIScalePreview = std::clamp(m_UIScalePreview, 1.0f, 4.0f);
 		g_pState->Render.SetUIScale(m_UIScalePreview);
 
 		g_pUtil->Log.Append("[SettingsTab] INFO: Applied scale: %.2f", m_UIScalePreview);

@@ -34,11 +34,7 @@ void CaptureThread::Run()
 
         if (g_pState->FFmpeg.IsRecording())
         {
-            this->MonitorRecordingHealth();
-            if (this->VideoQueueOverflow())
-            {
-                continue;
-            }
+            if (this->VideoQueueOverflow()) continue;
 
             if (g_pState->FFmpeg.RecordingStopped())
             {
@@ -48,35 +44,36 @@ void CaptureThread::Run()
 
             if (!m_SyncInitialized)
             {
-                if (g_pSystem->Audio.GetQueueSize() > 0 && g_pSystem->Video.GetQueueSize() > 0)
+                if (g_pSystem->Video.GetQueueSize() > 0)
                 {
                     auto audioQueue = g_pSystem->Audio.ExtractQueue();
                     auto videoQueue = g_pSystem->Video.ExtractQueue();
 
-                    if (this->CaptureBaselineEstablished(audioQueue, videoQueue))
+                    if (this->CaptureBaselineEstablished(audioQueue, videoQueue) || !videoQueue.empty())
                     {
                         this->ProcessSynchronizedStreams(audioQueue, videoQueue);
                     }
                 }
-                else 
-                {
-                    std::this_thread::sleep_for(1ms);
-                }
 
+                std::this_thread::sleep_for(1ms);
                 continue;
             }
 
-            // Now we are sure that the video started recording.
-            if (!g_pState->FFmpeg.IsRecording())
+            bool dataProcessed = false;
+            while (true)
             {
-                g_pState->FFmpeg.SetRecording(true);
+                auto audio = g_pSystem->Audio.ExtractQueue();
+                auto video = g_pSystem->Video.ExtractQueue();
+
+                if (audio.empty() && video.empty()) break;
+
+                this->ProcessSynchronizedStreams(audio, video);
+                dataProcessed = true;
             }
 
-            auto audioQueue = g_pSystem->Audio.ExtractQueue();
-            auto videoQueue = g_pSystem->Video.ExtractQueue();
-            this->ProcessSynchronizedStreams(audioQueue, videoQueue);
+            if (!dataProcessed) std::this_thread::sleep_for(1ms);
         }
-        else 
+        else
         {
             std::this_thread::sleep_for(10ms);
         }
@@ -199,24 +196,18 @@ bool CaptureThread::CaptureBaselineEstablished(std::deque<AudioChunk>& audioQueu
 
 void CaptureThread::ProcessSynchronizedStreams(std::deque<AudioChunk>& audioQueue, std::deque<FrameData>& videoQueue)
 {
-    if (m_MasterFormat.BytesPerFrame == 0 || m_MasterFormat.SamplesPerSec == 0)
-    {
-        return;
-    }
+    if (m_MasterFormat.BytesPerFrame == 0 || m_MasterFormat.SamplesPerSec == 0) return;
 
     if (!m_SyncTimeInitialized)
     {
         m_RecordingStartTime = std::chrono::steady_clock::now();
         m_SyncTimeInitialized = true;
-
         g_pState->FFmpeg.SetCaptureActive(true);
     }
 
     auto now = std::chrono::steady_clock::now();
     float elapsedRealTime = std::chrono::duration<float>(now - m_RecordingStartTime).count();
-    float targetFramerate = g_pState->FFmpeg.GetTargetFramerate();
-
-    uint64_t expectedFrames = static_cast<uint64_t>(elapsedRealTime * targetFramerate);
+    uint64_t expectedFrames = static_cast<uint64_t>(elapsedRealTime * g_pState->FFmpeg.GetTargetFramerate());
     uint64_t expectedSamples = static_cast<uint64_t>(elapsedRealTime * m_MasterFormat.SamplesPerSec);
 
     for (auto& frame : videoQueue)
@@ -225,14 +216,7 @@ void CaptureThread::ProcessSynchronizedStreams(std::deque<AudioChunk>& audioQueu
         {
             g_pSystem->FFmpeg.WriteVideo(frame.buffer.data(), frame.buffer.size());
             m_TotalVideoFramesWritten++;
-            m_LastFrameBuffer = frame.buffer;
         }
-    }
-
-    while (m_TotalVideoFramesWritten < expectedFrames && !m_LastFrameBuffer.empty())
-    {
-        g_pSystem->FFmpeg.WriteVideo(m_LastFrameBuffer.data(), m_LastFrameBuffer.size());
-        m_TotalVideoFramesWritten++;
     }
 
     for (auto& chunk : audioQueue)

@@ -47,7 +47,8 @@ std::string FFmpegSystem::BuildFFmpegCommand(std::string outputPath, int width, 
 
 	// Video
 	snprintf(buffer, sizeof(buffer),
-		"-f rawvideo -pix_fmt rgba -s %dx%d -r %.2f "
+		"-f rawvideo -pix_fmt rgba -s %dx%d "
+		"-r %.2f "
 		"-probesize 32M -formatprobesize 0 -analyzeduration 0 -thread_queue_size 128 -i \"%s\" ",
 		inW, inH, fps, videoPipeName.c_str());
 	command += buffer;
@@ -61,14 +62,17 @@ std::string FFmpegSystem::BuildFFmpegCommand(std::string outputPath, int width, 
 	// Scale
 	if (inW != outW || inH != outH)
 	{
-		snprintf(buffer, sizeof(buffer),
-			"-vf \"scale=%d:%d:flags=bicubic\" ",
-			outW, outH);
-		command += buffer;
+		snprintf(buffer, sizeof(buffer), "-vf \"scale=%d:%d:flags=bicubic\" ", outW, outH);
 	}
+	else
+	{
+		buffer[0] = '\0';
+	}
+	command += buffer;
 
 	// Codecs & Output
 	command += "-c:v h264_nvenc -preset p1 -tune hq -rc cbr -b:v 80M -maxrate 80M -bufsize 160M ";
+	command += "-fps_mode cfr ";
 	command += "-pix_fmt yuv420p -c:a aac -b:a 384k -map 0:v:0 -map 1:a:0 ";
 	command += "-f matroska \"";
 	command += finalOutputFile;
@@ -232,7 +236,7 @@ bool FFmpegSystem::VerifyExecutable(const std::string& path)
 void FFmpegSystem::WriteVideo(void* data, size_t size)
 {
 	if (!g_pState->FFmpeg.IsRecording()) return;
-	if (!this->WriteWithTimeout(g_pState->FFmpeg.GetVideoPipeHandle(), data, size, 5000))
+	if (!this->WriteWithTimeout(g_pState->FFmpeg.GetVideoPipeHandle(), data, size, 50))
 	{
 		g_pUtil->Log.Append("[FFmpegSystem] ERROR: Aborting recording due to video block.");
 		this->ForceStop();
@@ -243,7 +247,7 @@ void FFmpegSystem::WriteAudio(const void* data, size_t size)
 {
 	if (!g_pState->FFmpeg.IsRecording()) return;
 	if (!m_AudioConnected.load()) return;
-	if (!this->WriteWithTimeout(g_pState->FFmpeg.GetAudioPipeHandle(), data, size, 5000))
+	if (!this->WriteWithTimeout(g_pState->FFmpeg.GetAudioPipeHandle(), data, size, 50))
 	{
 		g_pUtil->Log.Append("[FFmpegSystem]ERROR: Aborting recording due to audio block.");
 		this->ForceStop();

@@ -20,12 +20,6 @@ public:
 	bool IsCaptureActive() const;
 	void SetCaptureActive(bool value);
 
-	bool StopOnLastEvent() const;
-	void SetStopOnLastEvent(bool value);
-
-	float GetStopDelayDuration() const;
-	void SetStopDelayDuration(float value);
-
 	float GetStartRecordingTime() const;
 	void SetStartRecordingTime(float time);
 	
@@ -53,6 +47,12 @@ public:
 	std::string GetOutputPath() const;
 	void SetOutputPath(std::string outputPath);
 
+	bool StopOnLastEvent() const;
+	void SetStopOnLastEvent(bool value);
+
+	float GetStopDelayDuration() const;
+	void SetStopDelayDuration(float value);
+
 	bool IsFFmpegInstalled() const;
 	void SetFFmpegInstalled(bool value);
 
@@ -73,9 +73,7 @@ private:
 	std::atomic<bool> m_IsRecording{ false };
 	std::atomic<bool> m_IsCaptureActive{ false };
 
-	std::atomic<bool> m_StopOnLastEvent{ false };
-	std::atomic<float> m_StopDelayDuration{ 0.0f };
-
+	
 	std::atomic<HANDLE> m_hVideoPipe{ INVALID_HANDLE_VALUE };
 	std::atomic<HANDLE> m_hAudioPipe{ INVALID_HANDLE_VALUE };
 	std::atomic<HANDLE> m_hProcess{ INVALID_HANDLE_VALUE };
@@ -84,6 +82,8 @@ private:
 	std::atomic<ResolutionType> m_ResolutionType{ ResolutionType::UHD_4K };
 	std::atomic<float> m_TargetFramerate{ 60.0f };
 	std::atomic<bool> m_ShouldRecordUI{ false };
+	std::atomic<bool> m_StopOnLastEvent{ false };
+	std::atomic<float> m_StopDelayDuration{ 0.0f };
 
 	std::string m_OutputPath{};
 

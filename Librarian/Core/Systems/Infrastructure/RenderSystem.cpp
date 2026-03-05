@@ -136,22 +136,7 @@ void RenderSystem::TickCapture(IDXGISwapChain* pSwapChain)
         return;
     }
 
-    float targetFPS = g_pState->FFmpeg.GetTargetFramerate();
-    std::chrono::nanoseconds targetFrameDuration(static_cast<long long>(1000000000.0f / targetFPS));
-
-    auto now = std::chrono::steady_clock::now();
-
-    if (now - m_LastCaptureTime >= targetFrameDuration)
-    {
-        this->CaptureFrame(pSwapChain);
-
-        m_LastCaptureTime += targetFrameDuration;
-
-        if (now - m_LastCaptureTime > targetFrameDuration)
-        {
-            m_LastCaptureTime = now;
-        }
-    }
+    this->CaptureFrame(pSwapChain);
 }
 
 void RenderSystem::CaptureFrame(IDXGISwapChain* pSwapChain)
@@ -216,6 +201,8 @@ void RenderSystem::BeginFrame(IDXGISwapChain* pSwapChain)
     ImGui::NewFrame();
 
     bool menuVisible = g_pState->Settings.IsMenuVisible();
+    ImGuiIO& io = ImGui::GetIO();
+
     if (menuVisible)
     {
         if (g_pState->Settings.ShouldFreezeMouse() && GetForegroundWindow() == g_pState->Render.GetHWND()) 
@@ -224,15 +211,15 @@ void RenderSystem::BeginFrame(IDXGISwapChain* pSwapChain)
             GetWindowRect(g_pState->Render.GetHWND(), &rect);
             ClipCursor(&rect);
         }
-        // HERE
-        ImGui::GetIO().MouseDrawCursor = false;
+        
+        io.MouseDrawCursor = true;
     }
     else 
     {
-        if (ImGui::GetIO().MouseDrawCursor) 
+        if (io.MouseDrawCursor)
         {
             ClipCursor(NULL);
-            ImGui::GetIO().MouseDrawCursor = false;
+            io.MouseDrawCursor = false;
         }
     }
 }
@@ -305,6 +292,7 @@ void RenderSystem::UpdateUIScale()
     if (!g_pState->Render.ShouldRebuildFonts()) return;
 
     float newScale = g_pState->Render.GetUIScale();
+    if (newScale < 1.0f) newScale = 1.0f;
 
     UINT width = g_pState->Render.GetWidth();
     float baseFontSize = 22.0f;

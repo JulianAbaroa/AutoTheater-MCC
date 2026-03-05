@@ -12,10 +12,12 @@ private:
 	void DrawRecordingControls(bool recording, bool isCaptureActive);
 	void DrawFFmpegControls(bool isRecoring, float totalWidth);
 
-	void DrawRecordingSettings();
-
 	void DrawGallery(bool isRecording);
 
+	void DrawRecordingSettingsPopup();
+	void DrawRecordingSettings();
+
+	void DrawPopups();
 	void DrawUninstallPopup();
 	void DrawDeleteVideoPopup();
 

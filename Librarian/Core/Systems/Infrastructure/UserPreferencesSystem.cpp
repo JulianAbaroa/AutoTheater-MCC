@@ -18,9 +18,14 @@ void UserPreferencesSystem::SavePreferences()
 	file << "; AutoTheater User Preferences\n";
 
 	// FFmpegState
+	file << "FFmpeg_ResolutionType=" << static_cast<int>(g_pState->FFmpeg.GetResolutionType()) << "\n";
 	file << "FFmpeg_TargetFramerate=" << g_pState->FFmpeg.GetTargetFramerate() << "\n";
 	file << "FFmpeg_ShouldRecordUI=" << (g_pState->FFmpeg.ShouldRecordUI() ? "1" : "0") << "\n";
 	file << "FFmpeg_OutputPath=" << g_pState->FFmpeg.GetOutputPath() << "\n";
+	file << "FFmpeg_StopOnLastEvent=" << g_pState->FFmpeg.StopOnLastEvent() << "\n";
+	file << std::fixed << std::setprecision(2);
+	file << "FFmpeg_StopDelayDuration=" << g_pState->FFmpeg.GetStopDelayDuration() << "\n";
+	file << std::defaultfloat;
 
 	// LifecycleState
 	file << "Lifecycle_AutoUpdatePhase=" << (g_pState->Lifecycle.ShouldAutoUpdatePhase() ? "1" : "0") << "\n";
@@ -30,7 +35,6 @@ void UserPreferencesSystem::SavePreferences()
 	file << std::fixed << std::setprecision(2);
 	file << "Settings_MenuAlpha=" << g_pState->Settings.GetMenuAlpha() << "\n";
 	file << "Settings_UIScale=" << g_pState->Render.GetUIScale() << "\n";
-
 	file << std::defaultfloat;
 
 	// UI
@@ -73,9 +77,36 @@ void UserPreferencesSystem::ParseLine(const std::string& line)
 	std::string value = line.substr(delimiterPos + 1);
 
 	// FFmpegState
-	if (key == "FFmpeg_TargetFramerate") g_pState->FFmpeg.SetTargetFramerate(std::stof(value));
+	if (key == "FFmpeg_ResolutionType")
+	{
+		try
+		{
+			int resolutionInt = std::stoi(value);
+			if (resolutionInt >= 0 && resolutionInt <= 2)
+			{
+				g_pState->FFmpeg.SetResolutionType(static_cast<ResolutionType>(resolutionInt));
+			}
+		}
+		catch (...)
+		{
+			g_pState->FFmpeg.SetResolutionType(ResolutionType::FullHD);
+		}
+	}
+	else if (key == "FFmpeg_TargetFramerate") g_pState->FFmpeg.SetTargetFramerate(std::stof(value));
 	else if (key == "FFmpeg_ShouldRecordUI") g_pState->FFmpeg.SetRecordUI(value == "1" || value == "true");
 	else if (key == "FFmpeg_OutputPath") g_pState->FFmpeg.SetOutputPath(value);
+	else if (key == "FFmpeg_StopOnLastEvent") g_pState->FFmpeg.SetStopOnLastEvent(value == "1" || value == "true");
+	else if (key == "FFmpeg_StopDelayDuration")
+	{
+		try
+		{
+			g_pState->FFmpeg.SetStopDelayDuration(std::stof(value));
+		}
+		catch (...)
+		{
+			g_pState->FFmpeg.SetStopDelayDuration(0.0f);
+		}
+	}
 
 	// LifecycleState
 	else if (key == "Lifecycle_AutoUpdatePhase") g_pState->Lifecycle.SetAutoUpdatePhase(value == "1" || value == "true");

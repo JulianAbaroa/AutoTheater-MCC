@@ -248,37 +248,28 @@ void AudioSystem::WriteAudio(void* instance, BYTE* pData, size_t size, bool isSi
     {
         AudioChunk chunk;
         float* pTime = g_pState->Theater.GetTimePtr();
-
         chunk.engineTime = (pTime) ? *pTime : 0.0f;
         chunk.isSilent = isSilent;
 
-        if (!isSilent) 
-        {
-            float* samples = reinterpret_cast<float*>(pData);
-            size_t numSamples = size / sizeof(float);
-            bool containsInvalid = false;
+        chunk.data.resize(size);
 
-            for (size_t i = 0; i < numSamples; ++i)
+        if (!isSilent && pData != nullptr)
+        {
+            memcpy(chunk.data.data(), pData, size);
+
+            float* samples = reinterpret_cast<float*>(chunk.data.data());
+            size_t numSamples = size / sizeof(float);
+
+            for (size_t i = 0; i < numSamples; ++i) 
             {
-                if (!std::isfinite(samples[i]))
-                {
-                    samples[i] = 0.0f;
-                    containsInvalid = true;
-                }
+                if (!std::isfinite(samples[i])) samples[i] = 0.0f;
                 else if (samples[i] > 1.0f) samples[i] = 1.0f;
                 else if (samples[i] < -1.0f) samples[i] = -1.0f;
             }
-
-            if (containsInvalid)
-            {
-                g_pUtil->Log.Append("[AudioSystem] WARNING: NaN/Inf detected in Master buffer. Sanitized to silence.");
-            }
-
-            chunk.data.assign(pData, pData + size);
         }
         else 
         {
-            chunk.data.resize(size, 0);
+            memset(chunk.data.data(), 0, size);
         }
 
         std::lock_guard<std::mutex> lock(m_QueueMutex);
