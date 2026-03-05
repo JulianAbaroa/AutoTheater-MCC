@@ -2,6 +2,7 @@
 
 #include "Core/Common/Types/InputTypes.h"
 #include <functional>
+#include <chrono>
 #include <map>
 
 class InputSystem

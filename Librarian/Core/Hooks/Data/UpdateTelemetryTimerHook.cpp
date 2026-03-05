@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "Core/Hooks/Scanner.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 #include "Core/Hooks/DAta/UpdateTelemetryTimerHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -21,7 +21,7 @@ void UpdateTelemetryTimerHook::HookedUpdateTelemetryTimer(uint64_t timerContext,
 
 	if (currentPtr == nullptr)
 	{
-		uintptr_t match = Scanner::FindPattern(Signatures::TimeModifier);
+		uintptr_t match = g_pSystem->Scanner.FindPattern(Signatures::TimeModifier);
 		if (match)
 		{
 			int32_t relativeOffset = *(int32_t*)(match + 4);
@@ -47,7 +47,7 @@ void UpdateTelemetryTimerHook::Install()
 {
 	if (m_IsHookInstalled.load()) return;
 
-	void* functionAddress = (void*)Scanner::FindPattern(Signatures::UpdateTelemetryTimer);
+	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::UpdateTelemetryTimer);
 	if (!functionAddress)
 	{
 		g_pUtil->Log.Append("[UpdateTelemetryTimer] ERROR: Failed to obtain the function address.");

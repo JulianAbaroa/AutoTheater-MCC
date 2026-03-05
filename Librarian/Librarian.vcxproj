@@ -178,7 +178,6 @@
     <ClInclude Include="Core\Hooks\Lifecycle\GameEngineStartHook.h" />
     <ClInclude Include="Core\Hooks\Render\PresentHook.h" />
     <ClInclude Include="Core\Hooks\Render\ResizeBuffersHook.h" />
-    <ClInclude Include="Core\Hooks\Scanner.h" />
     <ClInclude Include="Core\Hooks\Signatures.h" />
     <ClInclude Include="Core\Hooks\Tables\TelemetryTables.h" />
     <ClInclude Include="Core\Hooks\Window\WndProcHook.h" />
@@ -208,6 +207,7 @@
     <ClInclude Include="Core\Systems\Infrastructure\LifecycleSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\RenderSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\ReplaySystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\ScannerSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\SettingsSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\UserPreferencesSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\VideoSystem.h" />
@@ -273,7 +273,6 @@
     <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStartHook.cpp" />
     <ClCompile Include="Core\Hooks\Render\PresentHook.cpp" />
     <ClCompile Include="Core\Hooks\Render\ResizeBuffersHook.cpp" />
-    <ClCompile Include="Core\Hooks\Scanner.cpp" />
     <ClCompile Include="Core\Hooks\Tables\TelemetryTables.cpp" />
     <ClCompile Include="Core\Hooks\Window\WndProcHook.cpp" />
     <ClCompile Include="Core\States\Domain\DirectorState.cpp" />
@@ -300,6 +299,7 @@
     <ClCompile Include="Core\Systems\Infrastructure\LifecycleSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\RenderSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\ReplaySystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\ScannerSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\SettingsSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\UserPreferencesSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\VideoSystem.cpp" />

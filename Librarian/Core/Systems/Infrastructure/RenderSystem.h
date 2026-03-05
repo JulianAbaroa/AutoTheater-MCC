@@ -20,6 +20,8 @@ public:
 
 	void* CreateTextureFromMemory(const unsigned char* data, size_t size);
 
+	void UpdateUIScale();
+
 private:
 	void ApplyCustomStyle();
 

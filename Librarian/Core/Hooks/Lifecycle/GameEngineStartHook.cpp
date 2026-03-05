@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "Core/Hooks/Scanner.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/Systems/CoreSystem.h"
 #include "Core/Hooks/Lifecycle/GameEngineStartHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -34,7 +34,7 @@ bool GameEngineStartHook::Install(bool silent)
 {
 	if (m_IsHookInstalled.load()) return true;
 
-	void* functionAddress = (void*)Scanner::FindPattern(Signatures::GameEngineStart);
+	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::GameEngineStart);
 	if (!functionAddress)
 	{
 		if (!silent) g_pUtil->Log.Append("[GameEngineStart] ERROR: Failed to obtain the function address.");

@@ -20,9 +20,16 @@ HRESULT __stdcall PresentHook::HookedPresent(IDXGISwapChain* pSwapChain, UINT Sy
         g_pSystem->Render.Initialize(pSwapChain);
     }
 
+    // Rebuild ImGui UI
+    if (g_pState->Render.ShouldRebuildFonts())
+    {
+        g_pSystem->Render.UpdateUIScale();
+    }
+
     // Calculate Framerate 
     g_pSystem->Render.UpdateFramerate();
 
+    // Record UI disabled.
     if (!g_pState->FFmpeg.ShouldRecordUI())
     {
         g_pSystem->Render.TickCapture(pSwapChain);
@@ -36,6 +43,7 @@ HRESULT __stdcall PresentHook::HookedPresent(IDXGISwapChain* pSwapChain, UINT Sy
         g_pSystem->Render.EndFrame();
     }
 
+    // Record UI enabled.
     if (g_pState->FFmpeg.ShouldRecordUI())
     {
         g_pSystem->Render.TickCapture(pSwapChain);

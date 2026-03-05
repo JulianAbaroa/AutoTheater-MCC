@@ -10,7 +10,6 @@ using namespace std::chrono_literals;
 
 void MainThread::Run() 
 {
-    // TODO: Maybe make this customizable.
     // Initial delay.
     g_pUtil->Thread.WaitOrExit(5000ms);
 
@@ -18,8 +17,6 @@ void MainThread::Run()
 
     this->InitializeAutoTheater();
     this->InstallCaptureHooks();
-
-    g_pSystem->Preferences.LoadPreferences();
 
     while (g_pState->Lifecycle.IsRunning())
     {

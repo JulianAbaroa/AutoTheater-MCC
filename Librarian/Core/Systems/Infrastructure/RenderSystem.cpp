@@ -29,6 +29,11 @@ void RenderSystem::Initialize(IDXGISwapChain* pSwapChain)
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
+        if (g_pState->Settings.ShouldUseAppData())
+        {
+            g_pSystem->Preferences.LoadPreferences();
+        }
+
         UINT width = sd.BufferDesc.Width;
         UINT height = sd.BufferDesc.Height;
         int evenWidth = static_cast<int>(width & ~1);
@@ -40,13 +45,22 @@ void RenderSystem::Initialize(IDXGISwapChain* pSwapChain)
         if (width >= 2560) baseFontSize = 30.0f;
         if (width >= 3840) baseFontSize = 38.0f;
 
-        ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", baseFontSize);
-        if (!font) font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", baseFontSize);
+        float savedScale = g_pState->Render.GetUIScale();
+        if (savedScale < 0.8f || savedScale > 4.0f) savedScale = 1.0f;
+
+        float finalFontSize = baseFontSize * savedScale;
+
+        ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", finalFontSize);
+        if (!font) font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", finalFontSize);
 
         ApplyCustomStyle();
 
-        float scaleFactor = baseFontSize / 18.0f;
-        ImGui::GetStyle().ScaleAllSizes(scaleFactor);
+        if (g_pState->Settings.ShouldUseAppData())
+        {
+            ImGui::GetStyle().Alpha = g_pState->Settings.GetMenuAlpha();
+        }
+
+        ImGui::GetStyle().ScaleAllSizes(savedScale);
 
         ImGui_ImplWin32_Init(sd.OutputWindow);
         ImGui_ImplDX11_Init(device, context);
@@ -210,7 +224,8 @@ void RenderSystem::BeginFrame(IDXGISwapChain* pSwapChain)
             GetWindowRect(g_pState->Render.GetHWND(), &rect);
             ClipCursor(&rect);
         }
-        ImGui::GetIO().MouseDrawCursor = true;
+        // HERE
+        ImGui::GetIO().MouseDrawCursor = false;
     }
     else 
     {
@@ -285,9 +300,49 @@ void* RenderSystem::CreateTextureFromMemory(const unsigned char* data, size_t si
 }
 
 
+void RenderSystem::UpdateUIScale()
+{
+    if (!g_pState->Render.ShouldRebuildFonts()) return;
+
+    float newScale = g_pState->Render.GetUIScale();
+
+    UINT width = g_pState->Render.GetWidth();
+    float baseFontSize = 22.0f;
+    if (width >= 2560) baseFontSize = 30.0f;
+    if (width >= 3840) baseFontSize = 38.0f;
+
+    float finalFontSize = baseFontSize * newScale;
+
+    ImGuiIO& io = ImGui::GetIO();
+    ImVec2 oldDisplaySize = io.DisplaySize;
+
+    io.Fonts->Clear();
+
+    ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", finalFontSize);
+    if (!font) io.Fonts->AddFontDefault();
+
+    ImGui_ImplDX11_InvalidateDeviceObjects();
+    ImGui_ImplDX11_CreateDeviceObjects();
+
+    io.DisplaySize = oldDisplaySize;
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style = ImGuiStyle();
+    this->ApplyCustomStyle();
+
+    style.ScaleAllSizes(newScale);
+    style.Alpha = g_pState->Settings.GetMenuAlpha();
+
+    g_pState->Render.ResetFontRebuild();
+}
+
+
 void RenderSystem::ApplyCustomStyle()
 {
     ImGuiStyle& style = ImGui::GetStyle();
+
+    style = ImGuiStyle();
+
     style.WindowRounding = 5.0f;
     style.FrameRounding = 3.0f;
     style.FramePadding = ImVec2(8, 6);

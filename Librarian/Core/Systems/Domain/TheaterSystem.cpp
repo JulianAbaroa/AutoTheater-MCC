@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Hooks/Scanner.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/States/CoreState.h"
@@ -36,7 +35,7 @@ void TheaterSystem::SetReplaySpeed(float speed)
 
 	if (!pTimeScale)
 	{
-		uintptr_t match = Scanner::FindPattern(Signatures::TimeScaleModifier);
+		uintptr_t match = g_pSystem->Scanner.FindPattern(Signatures::TimeScaleModifier);
 		if (match)
 		{
 			int32_t relativeOffset = *(int32_t*)(match + 4);

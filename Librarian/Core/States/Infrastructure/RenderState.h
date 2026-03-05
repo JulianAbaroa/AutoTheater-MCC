@@ -35,6 +35,12 @@ public:
 	int GetFramerate() const;
 	void SetFramerate(int framerate);
 
+	float GetUIScale() const;
+	void SetUIScale(float scale);
+
+	bool ShouldRebuildFonts() const;
+	void ResetFontRebuild();
+
 private:
 	ID3D11Device* m_pDevice{ nullptr };
 	ID3D11DeviceContext* m_pContext{ nullptr };
@@ -46,6 +52,8 @@ private:
 
 	std::atomic<int> m_Width{ 0 };
 	std::atomic<int> m_Height{ 0 };
-
 	std::atomic<int> m_Framerate{ 0 };
+
+	std::atomic<float> m_UIScale{ 1.0f };
+	std::atomic<bool> m_NeedFontRebuild{ false };
 };

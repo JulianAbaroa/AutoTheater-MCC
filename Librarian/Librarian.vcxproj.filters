@@ -294,9 +294,6 @@
     <ClInclude Include="Core\Hooks\Input\GetButtonStateHook.h">
       <Filter>Core\Hooks\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Scanner.h">
-      <Filter>Core\Hooks</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Hooks\Signatures.h">
       <Filter>Core\Hooks</Filter>
     </ClInclude>
@@ -381,6 +378,9 @@
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
     <ClInclude Include="Core\Systems\Infrastructure\UserPreferencesSystem.h">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\ScannerSystem.h">
       <Filter>Core\Systems\Infrastructure</Filter>
     </ClInclude>
   </ItemGroup>
@@ -566,9 +566,6 @@
     <ClCompile Include="Core\Hooks\Input\GetButtonStateHook.cpp">
       <Filter>Core\Hooks\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Scanner.cpp">
-      <Filter>Core\Hooks</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Hooks\Render\PresentHook.cpp">
       <Filter>Core\Hooks\Render</Filter>
     </ClCompile>
@@ -625,6 +622,9 @@
       <Filter>Core\Hooks\Tables</Filter>
     </ClCompile>
     <ClCompile Include="Core\Systems\Infrastructure\UserPreferencesSystem.cpp">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\ScannerSystem.cpp">
       <Filter>Core\Systems\Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>

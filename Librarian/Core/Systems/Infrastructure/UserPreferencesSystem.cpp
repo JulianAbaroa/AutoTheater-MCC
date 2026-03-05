@@ -27,9 +27,11 @@ void UserPreferencesSystem::SavePreferences()
 	
 	// SettingsState
 	file << "Settings_ShouldFreezeMouse=" << (g_pState->Settings.ShouldFreezeMouse() ? "1" : "0") << "\n";
-	
 	file << std::fixed << std::setprecision(2);
 	file << "Settings_MenuAlpha=" << g_pState->Settings.GetMenuAlpha() << "\n";
+	file << "Settings_UIScale=" << g_pState->Render.GetUIScale() << "\n";
+
+	file << std::defaultfloat;
 
 	// UI
 	file << "UI_TimelineAutoScroll=" << (g_pState->Settings.GetTimelineAutoScroll() ? "1" : "0") << "\n";
@@ -91,12 +93,23 @@ void UserPreferencesSystem::ParseLine(const std::string& line)
 			g_pState->Settings.SetMenuAlpha(1.0f);
 		}
 	}
+	else if (key == "Settings_UIScale")
+	{
+		try
+		{
+			g_pState->Render.SetUIScale(std::stof(value));
+		}
+		catch (...)
+		{
+			g_pState->Render.SetUIScale(1.0f);
+		}
+	}
 
 	// Tabs
 	else if (key == "UI_TimelineAutoScroll") g_pState->Settings.SetTimelineAutoScroll(value == "1" || value == "true");
 	else if (key == "UI_TheaterAutoScroll") g_pState->Settings.SetTheaterAutoScroll(value == "1" || value == "true");
 	else if (key == "UI_DirectorAutoScroll") g_pState->Settings.SetDirectorAutoScroll(value == "1" || value == "true");
-	else if (key == "UI_LogAutoScroll") g_pState->Settings.SetLogsAutoScroll(value == "1" || value == "true");
+	else if (key == "UI_LogsAutoScroll") g_pState->Settings.SetLogsAutoScroll(value == "1" || value == "true");
 }
 
 

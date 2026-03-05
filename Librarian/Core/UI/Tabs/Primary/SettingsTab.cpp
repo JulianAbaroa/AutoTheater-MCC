@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/UI/Tabs/Primary/SettingsTab.h"
@@ -53,6 +54,12 @@ void SettingsTab::Draw()
 
 void SettingsTab::DrawUserPreferences()
 {
+	if (!m_IsInitialized)
+	{
+		m_UIScalePreview = g_pState->Render.GetUIScale();
+		m_IsInitialized = true;
+	}
+
 	ImGui::BeginGroup();
 	ImVec2 p_min = ImGui::GetCursorScreenPos();
 
@@ -71,6 +78,23 @@ void SettingsTab::DrawUserPreferences()
 	{
 		ImGui::GetStyle().Alpha = (std::max)(menuAlpha, 0.20f);
 		g_pState->Settings.SetMenuAlpha(menuAlpha);
+	}
+	ImGui::PopItemWidth();
+
+	ImGui::Spacing();
+
+	ImGui::AlignTextToFramePadding();
+	ImGui::Text("UI Scale");
+	ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
+
+	ImGui::PushItemWidth(200.0f);
+	if (ImGui::SliderFloat("##GlobalScale", &m_UIScalePreview, 0.8f, 4.0f, "%.2f")) {}
+	if (ImGui::IsItemDeactivatedAfterEdit())
+	{
+		m_UIScalePreview = std::clamp(m_UIScalePreview, 0.8f, 4.0f);
+		g_pState->Render.SetUIScale(m_UIScalePreview);
+
+		g_pUtil->Log.Append("[SettingsTab] INFO: Applied scale: %.2f", m_UIScalePreview);
 	}
 	ImGui::PopItemWidth();
 
@@ -178,7 +202,7 @@ void SettingsTab::DrawDataPersistence()
 		else {
 			g_pState->Settings.SetUseAppData(true);
 			g_pSystem->Settings.CreateAppData();
-			g_pSystem->Settings.SavePreferences();
+			g_pSystem->Settings.SaveUseAppData();
 		}
 	}
 	ImGui::EndGroup();
@@ -189,7 +213,7 @@ void SettingsTab::DrawDataPersistence()
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.15f, 0.15f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
 
-	if (ImGui::Button("Delete All Data", ImVec2(130, 0)))
+	if (ImGui::Button("Delete Data", ImVec2(130, 0)))
 		openDeletePopup = true;
 
 	ImGui::PopStyleColor(2);
@@ -343,7 +367,7 @@ void SettingsTab::DrawConfirmDisableAppData()
 	if (ImGui::Button("Yes", ImVec2(buttonWidth, 0.0f)))
 	{
 		g_pState->Settings.SetUseAppData(false);
-		g_pSystem->Settings.SavePreferences();
+		g_pSystem->Settings.SaveUseAppData();
 		ImGui::CloseCurrentPopup();
 	}
 	

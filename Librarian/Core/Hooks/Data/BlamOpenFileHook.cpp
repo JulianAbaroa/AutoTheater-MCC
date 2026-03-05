@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Hooks/Scanner.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/Systems/CoreSystem.h"
@@ -63,7 +62,7 @@ void BlamOpenFileHook::Install()
 {
 	if (m_IsHookInstalled.load()) return;
 
-	void* functionAddress = (void*)Scanner::FindPattern(Signatures::BlamOpenFile);
+	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::BlamOpenFile);
 	if (!functionAddress)
 	{
 		g_pUtil->Log.Append("[BlamOpenFile] ERROR: Failed to obtain the function address.");

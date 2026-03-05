@@ -25,4 +25,7 @@ private:
 	std::string m_AnimatePathLabel = "";
 	float m_AnimationStartTime = 0.0f;
 	const float m_AnimationDuration = 0.6f;
+
+	float m_UIScalePreview = 1.0f;
+	bool m_IsInitialized = false;
 };

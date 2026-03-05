@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Hooks/Scanner.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/Systems/CoreSystem.h"
@@ -53,7 +52,7 @@ void SpectatorHandleInputHook::Install()
 {
 	if (m_IsHookInstalled.load()) return;
 
-	void* functionAddress = (void*)Scanner::FindPattern(Signatures::SpectatorHandleInput);
+	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::SpectatorHandleInput);
 	if (!functionAddress)
 	{
 		g_pUtil->Log.Append("[SpectatorHandleInput] ERROR: Failed to obtain the function address.");

@@ -118,3 +118,9 @@ void RenderState::SetFramerate(int framerate)
 {
 	m_Framerate.store(framerate);
 }
+
+float RenderState::GetUIScale() const { return m_UIScale.load(); }
+void RenderState::SetUIScale(float scale) { m_UIScale.store(scale); m_NeedFontRebuild.store(true); }
+
+bool RenderState::ShouldRebuildFonts() const { return m_NeedFontRebuild.load(); }
+void RenderState::ResetFontRebuild() { m_NeedFontRebuild.store(false); }

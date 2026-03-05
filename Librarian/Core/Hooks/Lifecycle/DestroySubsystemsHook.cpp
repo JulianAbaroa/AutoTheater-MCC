@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Hooks/Scanner.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/States/CoreState.h"
@@ -41,7 +40,7 @@ bool DestroySubsystemsHook::Install(bool silent)
 {
 	if (m_IsHookInstalled.load()) return true;
 
-	void* functionAddress = (void*)Scanner::FindPattern(Signatures::DestroySubsystems);
+	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::DestroySubsystems);
 	if (!functionAddress)
 	{
 		if (!silent) g_pUtil->Log.Append("[DestroySubsystems] ERROR: Failed to obtain the function address.");

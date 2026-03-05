@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Hooks/Scanner.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/States/CoreState.h"
@@ -61,7 +60,7 @@ bool EngineInitializeHook::Install(bool silent)
 {
 	if (m_IsHookInstalled.load()) return true;
 
-	void* functionAddress = (void*)Scanner::FindPattern(Signatures::EngineInitialize);
+	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::EngineInitialize);
 	if (!functionAddress)
 	{
 		if (!silent) g_pUtil->Log.Append("[EngineInitialize] ERROR: Failed to obtain the function address.");

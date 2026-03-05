@@ -1,5 +1,10 @@
 #pragma once
 
+#include "Core/Common/Types/DirectorTypes.h"
+#include <unordered_map>
+#include <vector>
+#include <atomic>
+
 class DirectorSystem
 {
 public:

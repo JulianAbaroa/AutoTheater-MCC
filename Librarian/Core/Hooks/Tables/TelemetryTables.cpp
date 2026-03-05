@@ -3,7 +3,7 @@
 // This is why these functions must be called within the scope of a Blam! function hook (or a game-managed thread).
 
 #include "pch.h"
-#include "Core/Hooks/Scanner.h"
+#include "Core/Systems/CoreSystem.h"
 #include "Core/Hooks/Tables/TelemetryTables.h"
 
 // Returns the pointer to the PlayerTable within the game's memory.
@@ -19,7 +19,7 @@ uintptr_t TelemetryTables::GetPlayerTable()
 	{
 		uintptr_t tlsArray = (uintptr_t)__readgsqword(0x58);
 
-        uintptr_t match = Scanner::FindPattern(Signatures::TelemetryIdModifier);
+        uintptr_t match = g_pSystem->Scanner.FindPattern(Signatures::TelemetryIdModifier);
 
         if (match)
         {
@@ -66,7 +66,7 @@ uintptr_t TelemetryTables::GetObjectTable()
     {
         uintptr_t tlsArray = (uintptr_t)__readgsqword(0x58);
 
-        uintptr_t match = Scanner::FindPattern(Signatures::TelemetryIdModifier);
+        uintptr_t match = g_pSystem->Scanner.FindPattern(Signatures::TelemetryIdModifier);
 
         if (match)
         {

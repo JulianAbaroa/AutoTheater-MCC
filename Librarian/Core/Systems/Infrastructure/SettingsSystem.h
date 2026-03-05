@@ -4,8 +4,9 @@ class SettingsSystem
 {
 public:	
 	void InitializePaths();
-	void SavePreferences();
-	void LoadPreferences();
+
+	void SaveUseAppData();
+	void LoadUseAppData();
 
 	void CreateAppData();
 	void DeleteAppData();

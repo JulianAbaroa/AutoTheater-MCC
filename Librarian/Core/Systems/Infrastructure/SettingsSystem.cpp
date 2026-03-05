@@ -16,7 +16,7 @@ void SettingsSystem::InitializePaths()
 		CoTaskMemFree(localLowPath);
 	}
 
-	LoadPreferences();
+	LoadUseAppData();
 
 	if (g_pState->Settings.ShouldUseAppData())
 	{
@@ -24,7 +24,7 @@ void SettingsSystem::InitializePaths()
 	}
 }
 
-void SettingsSystem::SavePreferences()
+void SettingsSystem::SaveUseAppData()
 {
 	std::string configPath = g_pState->Settings.GetBaseDirectory() + "\\config.ini";
 	std::ofstream file(configPath);
@@ -35,7 +35,7 @@ void SettingsSystem::SavePreferences()
 	}
 }
 
-void SettingsSystem::LoadPreferences()
+void SettingsSystem::LoadUseAppData()
 {
 	g_pState->Settings.SetUseAppData(false);
 

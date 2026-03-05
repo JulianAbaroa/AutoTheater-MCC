@@ -15,6 +15,7 @@
 #include "Core/Systems/Infrastructure/ReplaySystem.h"
 #include "Core/Systems/Infrastructure/GallerySystem.h"
 #include "Core/Systems/Infrastructure/UserPreferencesSystem.h"
+#include "Core/Systems/Infrastructure/ScannerSystem.h"
 
 struct CoreSystem
 {
@@ -38,6 +39,7 @@ struct CoreSystem
 	FFmpegSystem FFmpeg;
 	GallerySystem Gallery;
 	UserPreferencesSystem Preferences;
+	ScannerSystem Scanner;
 };
 
 extern CoreSystem* g_pSystem;

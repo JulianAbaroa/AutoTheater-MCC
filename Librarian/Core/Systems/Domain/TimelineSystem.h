@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Core/Common/Types/BlamTypes.h"
+#include "Core/Common/Types/TimelineTypes.h"
 #include <string>
+#include <vector>
+#include <atomic>
 #include <deque>
 
 class TimelineSystem
