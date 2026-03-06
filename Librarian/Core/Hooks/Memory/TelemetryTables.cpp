@@ -4,7 +4,7 @@
 
 #include "pch.h"
 #include "Core/Systems/CoreSystem.h"
-#include "Core/Hooks/Tables/TelemetryTables.h"
+#include "Core/Hooks/Memory/TelemetryTables.h"
 
 // Returns the pointer to the PlayerTable within the game's memory.
 // This table acts as the primary data structure for session-specific player data,

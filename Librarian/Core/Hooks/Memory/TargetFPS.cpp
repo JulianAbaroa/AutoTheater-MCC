@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/Systems/CoreSystem.h"
-#include "Core/Hooks/Tables/TargetFPS.h"
+#include "Core/Hooks/Memory/TargetFPS.h"
 
 int TargetFPS::GetCurrentFPSValue()
 {

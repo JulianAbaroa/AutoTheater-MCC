@@ -4,10 +4,6 @@
 #include "Core/UI/Tabs/Optional/CaptureTab.h"
 #include <shobjidl.h>
 
-// TODO: Execute refresh gallery from Force Stop or from Resolution Change detected.
-// TODO: Fix the recording time!!!
-// TODO: Unlimited FPS sets the value to zero, so fix capture system to prevent it.
-
 void CaptureTab::Draw()
 {
     bool isRecording = g_pState->FFmpeg.IsRecording();
@@ -259,7 +255,6 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
 }
 
 
-// TODO: It cannot be scaled, it closes!
 void CaptureTab::DrawRecordingSettingsPopup()
 {
     if (m_OpenRecordingSettingsModal.load())
@@ -268,25 +263,19 @@ void CaptureTab::DrawRecordingSettingsPopup()
         m_OpenRecordingSettingsModal.store(false);
     }
 
-    bool keepOpen = true;
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    ImGui::SetNextWindowSize(ImVec2(550, 400), ImGuiCond_Appearing);
+
     ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, ImVec4(0, 0, 0, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(550, 0), ImGuiCond_Appearing);
 
-    if (ImGui::BeginPopupModal("Recording Settings", &keepOpen, ImGuiWindowFlags_NoSavedSettings))
+    bool open = true;
+    if (ImGui::BeginPopupModal("Recording Settings", &open, ImGuiWindowFlags_NoSavedSettings))
     {
-        if (ImGui::IsMouseClicked(0))
-        {
-            bool clickedInside = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
-
-            bool popupActive = ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId);
-
-            if (!clickedInside && !popupActive)
-            {
-                ImGui::CloseCurrentPopup();
-            }
-        }
-
         this->DrawRecordingSettings();
+
+        if (!open) ImGui::CloseCurrentPopup();
 
         ImGui::EndPopup();
     }
@@ -408,6 +397,12 @@ void CaptureTab::DrawRecordingSettings()
     }, true);
 
     DrawSectionCard("Automation", [&]() {
+        bool recordOverlay = g_pState->FFmpeg.ShouldRecordUI();
+        if (ImGui::Checkbox("Record ImGui Overlay", &recordOverlay))
+        {
+            g_pState->FFmpeg.SetRecordUI(recordOverlay);
+        }
+
         bool stopOnLast = g_pState->FFmpeg.StopOnLastEvent();
         if (ImGui::Checkbox("Stop on last event", &stopOnLast))
         {

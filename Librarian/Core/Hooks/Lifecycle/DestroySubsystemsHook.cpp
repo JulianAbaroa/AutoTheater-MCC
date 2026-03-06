@@ -28,6 +28,7 @@ void __fastcall DestroySubsystemsHook::HookedDestroySubsystems(void)
 	g_pState->Theater.SetTimeScalePtr(nullptr);
 
 	if (g_pState->FFmpeg.IsRecording()) g_pSystem->FFmpeg.ForceStop();
+	if (g_pState->Audio.GetMasterInstance() != nullptr) g_pSystem->Audio.Cleanup();
 
 	g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Destroyed });
 

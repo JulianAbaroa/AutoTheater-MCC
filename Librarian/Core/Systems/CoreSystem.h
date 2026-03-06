@@ -14,7 +14,7 @@
 #include "Core/Systems/Infrastructure/LifecycleSystem.h"
 #include "Core/Systems/Infrastructure/ReplaySystem.h"
 #include "Core/Systems/Infrastructure/GallerySystem.h"
-#include "Core/Systems/Infrastructure/UserPreferencesSystem.h"
+#include "Core/Systems/Infrastructure/PreferencesSystem.h"
 #include "Core/Systems/Infrastructure/ScannerSystem.h"
 
 struct CoreSystem
@@ -38,7 +38,7 @@ struct CoreSystem
 	VideoSystem Video;
 	FFmpegSystem FFmpeg;
 	GallerySystem Gallery;
-	UserPreferencesSystem Preferences;
+	PreferencesSystem Preferences;
 	ScannerSystem Scanner;
 };
 

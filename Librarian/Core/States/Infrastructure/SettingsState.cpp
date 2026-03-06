@@ -21,6 +21,8 @@ bool SettingsState::ShouldFreezeMouse() const
 	return m_ShouldFreezeMouse.load();
 }
 
+bool SettingsState::ShouldUseManualInput() const { return m_ShouldUseManualInput.load(); }
+
 
 void SettingsState::SetUseAppData(bool value)
 {
@@ -41,6 +43,8 @@ void SettingsState::SetFreezeMouse(bool value)
 { 
 	m_ShouldFreezeMouse.store(value); 
 }
+
+void SettingsState::SetUseManualInput(bool value) { m_ShouldUseManualInput.store(value); }
 
 
 float SettingsState::GetMenuAlpha() const { return m_MenuAlpha.load(); }

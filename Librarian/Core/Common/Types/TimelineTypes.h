@@ -119,7 +119,8 @@ struct EventTeams
 
 // High-level representation of a player, aggregating raw engine data
 // with processed metadata for UI and Director logic.
-struct PlayerInfo {
+struct PlayerInfo 
+{
 	// Snapshotted spatial and state data directly from the game's PlayerTable.
 	RawPlayer RawPlayer{};
 

@@ -4,14 +4,8 @@
 #include "Core/UI/Tabs/Optional/ReplayManagerTab.h"
 #include "External/imgui/imgui.h" 
 
-// TODO: Test the safety thing of active session when clearing sessions.
-
 void ReplayManagerTab::Draw()
 {
-    this->DrawCurrentSession();
-
-    ImGui::Spacing(); 
-
     if (ImGui::BeginTabBar("ReplayManagerTabs", ImGuiTabBarFlags_None))
     {
         if (ImGui::BeginTabItem("Replay Library"))
@@ -367,123 +361,6 @@ void ReplayManagerTab::DrawInGameReplayRow(int index, const TheaterReplay& repla
     ImGui::PopStyleVar(2);
     ImGui::PopID();
     ImGui::Spacing();
-}
-
-
-void ReplayManagerTab::DrawCurrentSession()
-{
-    ImGui::TextDisabled("ACTIVE SESSION (?)");
-    if (ImGui::IsItemHovered()) this->DrawActiveSessionTooltip();
-
-    ImGui::Separator();
-
-    std::string currentFilmPath = g_pState->Replay.GetCurrentReplayPath();
-
-    if (!currentFilmPath.empty())
-    {
-        static std::string cachedHash = "";
-
-        this->UpdateCurrentSessionState(currentFilmPath, cachedHash);
-
-        this->DrawSessionPath(currentFilmPath);
-
-        ImGui::Spacing();
-
-        this->DrawSessionActions(currentFilmPath, cachedHash);
-    }
-    else
-    {
-        ImGui::TextDisabled("No active theater film detected. Open a replay in Halo MCC.");
-    }
-}
-
-void ReplayManagerTab::DrawActiveSessionTooltip()
-{
-    ImGui::BeginTooltip();
-    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Session Information");
-    ImGui::Separator();
-
-    ImGui::Text("AutoTheater automatically detects the .mov file opened by MCC via Hook.");
-
-    ImGui::Spacing();
-    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "Safety Mismatch System:");
-    ImGui::BulletText("Each film has a unique Hash. The Timeline is tied to this Hash.");
-    ImGui::BulletText("If you open a different film while in 'Director Phase',\n"
-        "the system will abort to prevent crashes.");
-
-    ImGui::EndTooltip();
-}
-
-void ReplayManagerTab::UpdateCurrentSessionState(const std::string& path, std::string& outHash)
-{
-    std::string lastProcessedPath = g_pState->Replay.GetPreviousReplayPath();
-
-    if (path != lastProcessedPath)
-    {
-        outHash = g_pSystem->Replay.CalculateFileHash(path);
-        g_pState->Replay.SetPreviousReplayPath(path);
-    }
-}
-
-void ReplayManagerTab::DrawSessionPath(const std::string& path)
-{
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "File:");
-    ImGui::SameLine();
-
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-
-    ImGui::InputText("##CurrentPath", (char*)path.c_str(), path.size(), ImGuiInputTextFlags_ReadOnly);
-    ImGui::PopStyleColor();
-
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("Right-click to copy path to clipboard.");
-
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-        {
-            ImGui::SetClipboardText(path.c_str());
-        }
-    }
-}
-
-void ReplayManagerTab::DrawSessionActions(const std::string& path, const std::string& hash)
-{
-    if (ImGui::Button("Save Replay to Library"))
-    {
-        g_pSystem->Replay.SaveReplay(path);
-        g_pState->Replay.SetRefreshReplayList(true);
-    }
-
-    ImGui::SameLine();
-
-    std::filesystem::path replayFolder = std::filesystem::path(g_pState->Settings.GetAppDataDirectory()) / "Replays" / hash;
-    bool replayExists = std::filesystem::exists(replayFolder);
-
-    if (!replayExists) ImGui::BeginDisabled();
-    if (ImGui::Button("Backup Timeline")) g_pSystem->Replay.SaveTimeline(hash);
-    if (!replayExists)
-    {
-        ImGui::EndDisabled();
-
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-        {
-            ImGui::SetTooltip("You must save the Replay to the library first.");
-        }
-    }
-
-    ImGui::SameLine();
-
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 0.15f, 0.15f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.1f, 0.1f, 1.0f));
-
-    if (ImGui::Button("Clear Session")) g_pState->Replay.ClearActiveSession();
-
-    ImGui::PopStyleColor(3);
-
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Discards the current session.");
 }
 
 

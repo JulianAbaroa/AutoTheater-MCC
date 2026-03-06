@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Core/Utils/CoreUtil.h"
 #include "Core/States/Infrastructure/AudioState.h"
 
 void* AudioState::GetMasterInstance() const
@@ -55,16 +56,6 @@ void AudioState::ClearActiveInstances()
     m_ActiveInstances.clear();
 }
 
-
-void AudioState::ResetForRecording()
-{
-    {
-        std::lock_guard<std::mutex> lock(m_Mutex);
-        m_MasterInstance.store(nullptr);
-    }
-
-    m_IsRecording.store(false);
-}
 
 void AudioState::Cleanup()
 {

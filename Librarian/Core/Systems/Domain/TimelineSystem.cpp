@@ -18,7 +18,7 @@ void TimelineSystem::ProcessEngineEvent(float timestamp, std::wstring& templateS
 		players 
 	};
 
-	if (IsDuplicate(event)) return;
+	if (this->IsDuplicate(event)) return;
 
 	g_pState->Timeline.AddGameEvent(event);
 
@@ -106,21 +106,6 @@ bool TimelineSystem::IsDuplicate(const GameEvent& newEvent)
 	}
 
 	return false;
-}
-
-std::vector<GameEvent> TimelineSystem::ConsumePendingEvents()
-{
-	std::vector<GameEvent> allEvents = g_pState->Timeline.GetTimelineCopy();
-	size_t lastLogged = g_pSystem->Timeline.GetLoggedEventsCount();
-	size_t totalEvents = allEvents.size();
-
-	if (lastLogged >= totalEvents) return {};
-
-	std::vector<GameEvent> peding(allEvents.begin() + lastLogged, allEvents.end());
-
-	g_pSystem->Timeline.SetLoggedEventsCount(totalEvents);
-
-	return peding;
 }
 
 float TimelineSystem::GetLatestTimestamp() const

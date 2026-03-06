@@ -2,7 +2,7 @@
 
 #include <string>
 
-class UserPreferencesSystem
+class PreferencesSystem
 {
 public:
 	void SavePreferences();

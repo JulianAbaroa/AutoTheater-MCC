@@ -1,17 +1,17 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
-#include "Core/Systems/Infrastructure/UserPreferencesSystem.h"
+#include "Core/Systems/Infrastructure/PreferencesSystem.h"
 #include <fstream>
 
-void UserPreferencesSystem::SavePreferences()
+void PreferencesSystem::SavePreferences()
 {
 	if (!g_pState->Settings.ShouldUseAppData()) return;
 
 	std::ofstream file(this->GetPreferencesFilePath(), std::ios::trunc);
 	if (!file.is_open())
 	{
-		g_pUtil->Log.Append("[UserPreferencesSystem] ERROR: Failed to save user preferences.");
+		g_pUtil->Log.Append("[PreferencesSystem] ERROR: Failed to save user preferences.");
 		return;
 	}
 
@@ -46,17 +46,17 @@ void UserPreferencesSystem::SavePreferences()
 	file << "UI_DirectorAutoScroll=" << (g_pState->Settings.GetDirectorAutoScroll() ? "1" : "0") << "\n";
 	file << "UI_LogsAutoScroll=" << (g_pState->Settings.GetLogsAutoScroll() ? "1" : "0") << "\n";
 
-	g_pUtil->Log.Append("[UserPreferencesSystem] INFO: User preferences saved successfully.");
+	g_pUtil->Log.Append("[PreferencesSystem] INFO: User preferences saved successfully.");
 }
 
-void UserPreferencesSystem::LoadPreferences()
+void PreferencesSystem::LoadPreferences()
 {
 	if (!g_pState->Settings.ShouldUseAppData()) return;
 
 	std::ifstream file(this->GetPreferencesFilePath());
 	if (!file.is_open())
 	{
-		g_pUtil->Log.Append("[UserPreferencesSystem] WARNING: No user preferences file found, using defaults.");
+		g_pUtil->Log.Append("[PreferencesSystem] WARNING: No user preferences file found, using defaults.");
 		return;
 	}
 
@@ -66,10 +66,10 @@ void UserPreferencesSystem::LoadPreferences()
 		this->ParseLine(line);
 	}
 
-	g_pUtil->Log.Append("[UserPreferencesSystem] INFO: User preferences loaded successfully.");
+	g_pUtil->Log.Append("[PreferencesSystem] INFO: User preferences loaded successfully.");
 }
 
-void UserPreferencesSystem::ParseLine(const std::string& line)
+void PreferencesSystem::ParseLine(const std::string& line)
 {
 	if (line.empty() || line[0] == '#' || line[0] == ';') return;
 
@@ -177,7 +177,7 @@ void UserPreferencesSystem::ParseLine(const std::string& line)
 }
 
 
-std::string UserPreferencesSystem::GetPreferencesFilePath() const
+std::string PreferencesSystem::GetPreferencesFilePath() const
 {
 	return g_pState->Settings.GetAppDataDirectory() + "\\user_preferences.cfg";
 }

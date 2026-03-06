@@ -83,8 +83,11 @@ void FFmpegState::Cleanup()
 	m_StartRecording.store(false);
 	m_StopRecording.store(false);
 	m_IsRecording.store(false);
+	m_IsCaptureActive.store(false);
 
 	m_hVideoPipe.store(INVALID_HANDLE_VALUE);
 	m_hAudioPipe.store(INVALID_HANDLE_VALUE);
 	m_hProcess.store(INVALID_HANDLE_VALUE);
+
+	m_StartRecordingTime = {};
 }

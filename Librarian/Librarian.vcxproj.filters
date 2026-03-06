@@ -97,7 +97,7 @@
     <Filter Include="Core\Utils">
       <UniqueIdentifier>{2d3c11a4-bc06-4d75-b289-b954a1021b4d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Core\Hooks\Tables">
+    <Filter Include="Core\Hooks\Memory">
       <UniqueIdentifier>{00e374de-5f5b-43be-986d-73d977963244}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -109,9 +109,6 @@
       <Filter>Core\Threads</Filter>
     </ClInclude>
     <ClInclude Include="Core\Threads\MainThread.h">
-      <Filter>Core\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Threads\LogThread.h">
       <Filter>Core\Threads</Filter>
     </ClInclude>
     <ClInclude Include="Proxy\ProxyExports.h">
@@ -350,9 +347,6 @@
     <ClInclude Include="Core\Utils\ThreadUtil.h">
       <Filter>Core\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Tables\TelemetryTables.h">
-      <Filter>Core\Hooks\Tables</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Hooks\CoreHook.h">
       <Filter>Core\Hooks</Filter>
     </ClInclude>
@@ -377,14 +371,17 @@
     <ClInclude Include="Core\Common\Types\LogTypes.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\UserPreferencesSystem.h">
+    <ClInclude Include="Core\Systems\Infrastructure\PreferencesSystem.h">
       <Filter>Core\Systems\Infrastructure</Filter>
     </ClInclude>
     <ClInclude Include="Core\Systems\Infrastructure\ScannerSystem.h">
       <Filter>Core\Systems\Infrastructure</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Tables\TargetFPS.h">
-      <Filter>Core\Hooks\Tables</Filter>
+    <ClInclude Include="Core\Hooks\Memory\TargetFPS.h">
+      <Filter>Core\Hooks\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Memory\TelemetryTables.h">
+      <Filter>Core\Hooks\Memory</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -398,9 +395,6 @@
       <Filter>Core\Threads</Filter>
     </ClCompile>
     <ClCompile Include="Core\Threads\MainThread.cpp">
-      <Filter>Core\Threads</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Threads\LogThread.cpp">
       <Filter>Core\Threads</Filter>
     </ClCompile>
     <ClCompile Include="Ignore\todos.cpp" />
@@ -621,17 +615,17 @@
     <ClCompile Include="Core\Utils\ThreadUtil.cpp">
       <Filter>Core\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Tables\TelemetryTables.cpp">
-      <Filter>Core\Hooks\Tables</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\UserPreferencesSystem.cpp">
+    <ClCompile Include="Core\Systems\Infrastructure\PreferencesSystem.cpp">
       <Filter>Core\Systems\Infrastructure</Filter>
     </ClCompile>
     <ClCompile Include="Core\Systems\Infrastructure\ScannerSystem.cpp">
       <Filter>Core\Systems\Infrastructure</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Tables\TargetFPS.cpp">
-      <Filter>Core\Hooks\Tables</Filter>
+    <ClCompile Include="Core\Hooks\Memory\TargetFPS.cpp">
+      <Filter>Core\Hooks\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Memory\TelemetryTables.cpp">
+      <Filter>Core\Hooks\Memory</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

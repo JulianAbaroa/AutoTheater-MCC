@@ -73,7 +73,7 @@ void FilmInitializeStateHook::HookedFilmInitializeState(uint64_t sessionContext,
 				if (offset >= (int)sizeof(listBuffer)) break;
 			}
 
-			g_pUtil->Log.Append("[FilmInitializeState] WARNING: Slots [%s] are empty in header.", listBuffer);
+			g_pUtil->Log.Append("[FilmInitializeState] INFO: Slots [%s] are empty in header.", listBuffer);
 		}
 	}
 

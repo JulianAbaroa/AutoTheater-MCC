@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Core/UI/CoreUI.h"
+#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/Threads/CoreThread.h"
 #include "External/imgui/imgui_internal.h"
@@ -191,7 +192,32 @@ void MainInterface::DrawTabs()
 
 	if (!ImGui::BeginTabBar("MainTabs")) return;
 
-	auto AddTab = [](const char* label, auto drawFn, bool forceOpen = false) {
+	auto AddTab = [](const char* label, auto drawFn, bool forceOpen, const ImVec4* alertColor) {
+		bool pushedColor = false;
+
+		if (alertColor != nullptr)
+		{
+			auto now = std::chrono::steady_clock::now();
+			auto elapsed = std::chrono::duration<float>(now - g_pUtil->Log.GetLastAlertTime()).count();
+
+			ImVec4 finalColor = *alertColor;
+
+			if (elapsed < 0.5f) 
+			{
+				float alpha = (sinf(elapsed * 18.84f - 1.57f) + 1.0f) * 0.5f;
+				ImVec4 defaultTab = ImGui::GetStyleColorVec4(ImGuiCol_Tab);
+
+				finalColor.x = ImLerp(defaultTab.x, finalColor.x, alpha);
+				finalColor.y = ImLerp(defaultTab.y, finalColor.y, alpha);
+				finalColor.z = ImLerp(defaultTab.z, finalColor.z, alpha);
+			}
+
+			ImGui::PushStyleColor(ImGuiCol_Tab, finalColor);
+			ImGui::PushStyleColor(ImGuiCol_TabHovered, finalColor);
+			ImGui::PushStyleColor(ImGuiCol_TabActive, finalColor);
+			pushedColor = true;
+		}
+
 		ImGuiTabItemFlags flags = forceOpen ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
 
 		if (ImGui::BeginTabItem(label, nullptr, flags))
@@ -199,24 +225,38 @@ void MainInterface::DrawTabs()
 			drawFn();
 			ImGui::EndTabItem();
 		}
+
+		if (pushedColor) ImGui::PopStyleColor(3);
 	};
 
-	// Primary Tabs
-	AddTab("Timeline", []() { g_pUI->Timeline.Draw(); });
-	AddTab("Theater", []() { g_pUI->Theater.Draw(); });
-	AddTab("Director", []() { g_pUI->Director.Draw(); });
-	AddTab("Settings", []() { g_pUI->Settings.Draw(); }, firstLaunch);
+	// Primary
+	AddTab("Timeline", []() { g_pUI->Timeline.Draw(); }, false, nullptr);
+	AddTab("Theater", []() { g_pUI->Theater.Draw();  }, false, nullptr);
+	AddTab("Director", []() { g_pUI->Director.Draw(); }, false, nullptr);
+	AddTab("Settings", []() { g_pUI->Settings.Draw(); }, firstLaunch, nullptr);
 
-	// Optional Tabs
+	// Optional
 	bool useAppData = g_pState->Settings.ShouldUseAppData();
 	if (!useAppData) ImGui::BeginDisabled();
-	AddTab("Replay Manager", []() { g_pUI->Replay.Draw(); });
-	AddTab("Event Registry", []() { g_pUI->EventRegistry.Draw(); });
-	AddTab("Capture", []() { g_pUI->Capture.Draw(); });
+
+	AddTab("Replay Manager", []() { g_pUI->Replay.Draw();        }, false, nullptr);
+	AddTab("Event Registry", []() { g_pUI->EventRegistry.Draw(); }, false, nullptr);
+	AddTab("Capture", []() { g_pUI->Capture.Draw();       }, false, nullptr);
+
 	if (!useAppData) ImGui::EndDisabled();
 
-	// Log Tab
-	AddTab("Logs", []() { g_pUI->Logs.Draw(); });
+	// Logs
+	const ImVec4* activeAlert = nullptr;
+	static ImVec4 colorError(1.0f, 0.33f, 0.33f, 1.0f);
+	static ImVec4 colorWarning(1.0f, 0.79f, 0.23f, 1.0f);
+
+	if (g_pUtil->Log.HasUnreadError()) activeAlert = &colorError;
+	else if (g_pUtil->Log.HasUnreadWarning()) activeAlert = &colorWarning;
+
+	AddTab("Logs", []() {
+		g_pUtil->Log.ClearUnreadStates();
+		g_pUI->Logs.Draw();
+	}, false, activeAlert);
 
 	firstLaunch = false;
 	ImGui::EndTabBar();

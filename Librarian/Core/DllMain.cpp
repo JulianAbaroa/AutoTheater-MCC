@@ -84,9 +84,6 @@ DWORD WINAPI AppLoader::InitializeLibrarian(LPVOID lpParam)
     // Manages the hooks lifecycle and main application state updates.
     g_DllInstance.m_MainThread = std::thread(&MainThread::Run, &g_pThread->Main);
 
-    // Process and writes the logs for captured GameEvents.
-    g_DllInstance.m_LogThread = std::thread(&LogThread::Run, &g_pThread->Log);
-
     // Handles both manual user input and automated input injection into the game engine.
     g_DllInstance.m_InputThread = std::thread(&InputThread::Run, &g_pThread->Input);
 
@@ -117,7 +114,6 @@ void AppLoader::DeinitializeLibrarian(LPVOID lpReserved)
 
         // 4. If workers are active, release them.
         if (m_MainThread.joinable()) m_MainThread.detach();
-        if (m_LogThread.joinable()) m_LogThread.detach();
         if (m_InputThread.joinable()) m_InputThread.detach();
         if (m_DirectorThread.joinable()) m_DirectorThread.detach();
         if (m_CaptureThread.joinable()) m_CaptureThread.detach();

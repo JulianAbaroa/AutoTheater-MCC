@@ -24,7 +24,7 @@ void MainThread::Run()
 
         if (g_pState->Lifecycle.GetEngineStatus() == EngineStatus::Destroyed)
         {
-            g_pUtil->Log.Append("[MainThread] WARNING: Game engine destruction detected, resetting lifecycle.");
+            g_pUtil->Log.Append("[MainThread] INFO: Game engine destruction detected, resetting lifecycle.");
 
             if (!this->IsStillRunning()) break;
 
@@ -69,14 +69,12 @@ void MainThread::UpdateToPhase(AutoTheaterPhase targetPhase)
     // Reset timeline
     if (targetPhase == AutoTheaterPhase::Timeline)
     {
-        g_pState->Timeline.SetLoggingActive(true);
         g_pSystem->Timeline.SetLastEventReached(false);
 
         g_pState->Timeline.ClearTimeline();
     }
     else if (targetPhase == AutoTheaterPhase::Director)
     {
-        g_pState->Timeline.SetLoggingActive(false);
         g_pSystem->Timeline.SetLastEventReached(true);
     }
     g_pSystem->Timeline.SetLoggedEventsCount(0);
@@ -108,7 +106,6 @@ void MainThread::InitializeAutoTheater()
     }
 
     g_pState->Lifecycle.SetCurrentPhase(g_pState->Settings.GetPreferredPhase());
-    g_pState->Timeline.SetLoggingActive(true);
     g_pSystem->EventRegistry.LoadEventRegistry();
 }
 
@@ -155,7 +152,7 @@ void MainThread::CheckHooksHealth()
 
     if (areHooksIntact && g_pState->Lifecycle.IsRunning())
     {
-        g_pUtil->Log.Append("[MainThread] WARNING: Hooks corrupted or memory restored, rebooting.");
+        g_pUtil->Log.Append("[MainThread] WARNING: Hooks corrupted, rebooting.");
         g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Destroyed });
     }
 }

@@ -21,12 +21,6 @@ private:
 	int GetVisibleInGameCount(const std::string& filter);
 	void DrawInGameReplayRow(int index, const TheaterReplay& replay, const std::string& filter);
 
-	void DrawCurrentSession();
-	void DrawActiveSessionTooltip();
-	void UpdateCurrentSessionState(const std::string& path, std::string& outHash);
-	void DrawSessionPath(const std::string& path);
-	void DrawSessionActions(const std::string& path, const std::string& hash);
-
 	void DrawDeleteLibraryReplay();
 	void DrawDeleteGameReplay();
 

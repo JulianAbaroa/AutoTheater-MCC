@@ -90,14 +90,6 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 	};
 
 	AtomicCheckBox(
-		"Log Events",
-		[&]() { return g_pState->Timeline.IsLoggingActive(); },
-		[&](bool val) { g_pState->Timeline.SetLoggingActive(val); },
-		"Enable/Disable writing events to the log file and Logs Tab.");
-
-	ImGui::SameLine();
-
-	AtomicCheckBox(
 		"Last Event",
 		[&]() { return g_pSystem->Timeline.HasReachedLastEvent(); },
 		[&](bool val) { g_pSystem->Timeline.SetLastEventReached(val); },
@@ -105,9 +97,53 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 
 	ImGui::SameLine();
 
+	std::string replayHash = g_pState->Timeline.GetAssociatedReplayHash();
+	bool isReplaySaved = g_pSystem->Replay.IsReplaySaved(replayHash);
+
+	bool canBackup = !replayHash.empty() && isReplaySaved;
+	if (!canBackup) ImGui::BeginDisabled();
+
+	if (ImGui::Button("Backup Timeline"))
+	{
+		g_pSystem->Replay.SaveTimeline(replayHash);
+	}
+
+	if (!canBackup)
+	{
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Backup unavailable:");
+
+			if (replayHash.empty())
+			{
+				ImGui::BulletText("Timeline hash invalid. Open a replay in Timeline phase to bind it to a hash.");
+			}
+
+			if (!isReplaySaved)
+			{
+				ImGui::BulletText("Timeline doesn't have a binded replay saved in AppData. Save the timeline replay to the Library first.");
+			}
+
+			ImGui::EndTooltip();
+		}
+
+		ImGui::EndDisabled();
+	}
+
+	ImGui::SameLine();
+
+	size_t timelineSize = g_pState->Timeline.GetTimelineSize();
+	if (timelineSize <= 0) ImGui::BeginDisabled();
 	if (ImGui::Button("Clear Timeline"))
 	{
 		g_pState->Timeline.ClearTimeline();
+	}
+	if (timelineSize <= 0) ImGui::EndDisabled();
+
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && timelineSize <= 0)
+	{
+		ImGui::SetTooltip("Cannot clear a timeline that's already empty.");
 	}
 
 	ImGui::SameLine();

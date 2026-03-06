@@ -5,6 +5,8 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Threads/CaptureThread.h"
 
+// TODO: It seems recording at 240 desynchronizes the video & audio.
+
 using namespace std::chrono_literals;
 
 void CaptureThread::Run()
@@ -38,6 +40,14 @@ void CaptureThread::Run()
             if (this->VideoQueueOverflow()) continue;
 
             int currentFPS = g_pHook->TargetFPS.GetCurrentFPSValue();
+            if (currentFPS == 0.0f)
+            {
+                g_pSystem->FFmpeg.ForceStop();
+                g_pState->FFmpeg.SetTargetFramerate(static_cast<float>(currentFPS));
+                g_pUtil->Log.Append("[CaptureThread] ERROR: AutoTheater cannot record with UNLIMITED framerate active, recording stopped.");
+                continue;
+            }
+
             int targetFPS = static_cast<int>(g_pState->FFmpeg.GetTargetFramerate());
 
             bool wasFramerateChanged = (currentFPS != targetFPS);
@@ -45,13 +55,18 @@ void CaptureThread::Run()
             {
                 if (wasFramerateChanged)
                 {
+                    g_pSystem->FFmpeg.ForceStop();
+                    g_pState->FFmpeg.SetTargetFramerate(static_cast<float>(currentFPS));
+
                     g_pUtil->Log.Append("[CaptureThread] WARNING: Recording stopped, the game framerate"
                         " was changed from %d to %d FPS.", targetFPS, currentFPS);
                 }
+                else
+                {
+                    g_pSystem->FFmpeg.Stop();
+                }
 
-                this->StopRecording();
-
-                g_pState->FFmpeg.SetTargetFramerate(static_cast<float>(currentFPS));
+                g_pSystem->Gallery.RefreshList(g_pState->FFmpeg.GetOutputPath());
                 continue;
             }
 
@@ -62,7 +77,7 @@ void CaptureThread::Run()
                     auto audioQueue = g_pSystem->Audio.ExtractQueue();
                     auto videoQueue = g_pSystem->Video.ExtractQueue();
 
-                    if (this->CaptureBaselineEstablished(audioQueue, videoQueue) || !videoQueue.empty())
+                    if (this->CaptureBaselineEstablished(audioQueue, videoQueue))
                     {
                         this->ProcessSynchronizedStreams(audioQueue, videoQueue);
                     }
@@ -122,13 +137,20 @@ void CaptureThread::StartRecording()
     m_LastFrameBuffer.clear();
 
     int currentFPS = g_pHook->TargetFPS.GetCurrentFPSValue();
+    if (currentFPS == 0.0f)
+    {
+        g_pState->FFmpeg.SetTargetFramerate(static_cast<float>(currentFPS));
+        g_pUtil->Log.Append("[CaptureThread] ERROR: AutoTheater cannot record with UNLIMITED framerate active, start recording cancelled.");
+        return;
+    }
+
     int targetFPS = static_cast<int>(g_pState->FFmpeg.GetTargetFramerate());
 
     if (currentFPS != targetFPS)
     {
         g_pState->FFmpeg.SetTargetFramerate(static_cast<float>(currentFPS));
         g_pUtil->Log.Append("[CaptureThread] WARNING: Detected framerate change from %d to %d,"
-            "recording at %d FPS.", targetFPS, currentFPS, currentFPS);
+            " recording at %d FPS.", targetFPS, currentFPS, currentFPS);
     }
 
     bool started = g_pSystem->FFmpeg.Start(

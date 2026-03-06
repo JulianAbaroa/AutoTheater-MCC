@@ -10,12 +10,14 @@ public:
 	void SaveReplay(const std::string& sourceFilmPath);
 	void DeleteReplay(const std::string& hash);
 
+	bool IsReplaySaved(std::string replayHash);
+
 	void SaveMetadata(const std::string& hash, const std::string& defaultName, const FilmMetadata& metadata);
 	void RenameReplay(const std::string& hash, const std::string& newName);
 	void RestoreReplay(const SavedReplay& replay);
 
-	void SaveTimeline(const std::string& replayName);
-	void LoadTimeline(const std::string& replayName);
+	void SaveTimeline(const std::string& replayHash);
+	void LoadTimeline(const std::string& replayHash);
 
 	std::vector<SavedReplay> GetSavedReplays();
 	std::string CalculateFileHash(const std::string& sourceFilmPath);

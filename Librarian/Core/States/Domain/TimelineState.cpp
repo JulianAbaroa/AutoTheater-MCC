@@ -1,15 +1,16 @@
 #include "pch.h"
 #include "Core/States/Domain/TimelineState.h"
 
-bool TimelineState::IsLoggingActive() const 
-{ 
-	return m_IsLoggingActive.load(); 
+std::string TimelineState::GetAssociatedReplayHash() const
+{
+	std::lock_guard<std::mutex> lock(m_Mutex);
+	return m_AssociatedReplayHash;
 }
 
-
-void TimelineState::SetLoggingActive(bool value) 
-{ 
-	m_IsLoggingActive.store(value); 
+void TimelineState::SetAssociatedReplayHash(const std::string& hash)
+{
+	std::lock_guard<std::mutex> lock(m_Mutex);
+	m_AssociatedReplayHash = hash;
 }
 
 
@@ -41,4 +42,5 @@ void TimelineState::ClearTimeline()
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
 	m_Events.clear();
+	m_AssociatedReplayHash.clear();
 }

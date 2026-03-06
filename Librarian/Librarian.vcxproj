@@ -176,11 +176,11 @@
     <ClInclude Include="Core\Hooks\Lifecycle\DestroySubsystemsHook.h" />
     <ClInclude Include="Core\Hooks\Lifecycle\EngineInitializeHook.h" />
     <ClInclude Include="Core\Hooks\Lifecycle\GameEngineStartHook.h" />
+    <ClInclude Include="Core\Hooks\Memory\TargetFPS.h" />
+    <ClInclude Include="Core\Hooks\Memory\TelemetryTables.h" />
     <ClInclude Include="Core\Hooks\Render\PresentHook.h" />
     <ClInclude Include="Core\Hooks\Render\ResizeBuffersHook.h" />
     <ClInclude Include="Core\Hooks\Signatures.h" />
-    <ClInclude Include="Core\Hooks\Tables\TargetFPS.h" />
-    <ClInclude Include="Core\Hooks\Tables\TelemetryTables.h" />
     <ClInclude Include="Core\Hooks\Window\WndProcHook.h" />
     <ClInclude Include="Core\States\CoreState.h" />
     <ClInclude Include="Core\States\Domain\DirectorState.h" />
@@ -210,7 +210,7 @@
     <ClInclude Include="Core\Systems\Infrastructure\ReplaySystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\ScannerSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\SettingsSystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\UserPreferencesSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\PreferencesSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\VideoSystem.h" />
     <ClInclude Include="Core\Systems\Interface\DebugSystem.h" />
     <ClInclude Include="Core\Systems\Interface\InputSystem.h" />
@@ -223,9 +223,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Core\Threads\MainThread.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Core\Threads\LogThread.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Core\UI\CoreUI.h" />
@@ -272,10 +269,10 @@
     <ClCompile Include="Core\Hooks\Lifecycle\DestroySubsystemsHook.cpp" />
     <ClCompile Include="Core\Hooks\Lifecycle\EngineInitializeHook.cpp" />
     <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStartHook.cpp" />
+    <ClCompile Include="Core\Hooks\Memory\TargetFPS.cpp" />
+    <ClCompile Include="Core\Hooks\Memory\TelemetryTables.cpp" />
     <ClCompile Include="Core\Hooks\Render\PresentHook.cpp" />
     <ClCompile Include="Core\Hooks\Render\ResizeBuffersHook.cpp" />
-    <ClCompile Include="Core\Hooks\Tables\TargetFPS.cpp" />
-    <ClCompile Include="Core\Hooks\Tables\TelemetryTables.cpp" />
     <ClCompile Include="Core\Hooks\Window\WndProcHook.cpp" />
     <ClCompile Include="Core\States\Domain\DirectorState.cpp" />
     <ClCompile Include="Core\States\Domain\EventRegistryState.cpp" />
@@ -303,7 +300,7 @@
     <ClCompile Include="Core\Systems\Infrastructure\ReplaySystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\ScannerSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\SettingsSystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\UserPreferencesSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\PreferencesSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\VideoSystem.cpp" />
     <ClCompile Include="Core\Systems\Interface\DebugSystem.cpp" />
     <ClCompile Include="Core\Systems\Interface\InputSystem.cpp" />
@@ -315,9 +312,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Core\Threads\MainThread.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Core\Threads\LogThread.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Core\UI\Tabs\Logs\LogsTab.cpp" />

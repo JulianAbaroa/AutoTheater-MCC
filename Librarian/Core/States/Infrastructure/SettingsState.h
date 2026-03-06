@@ -12,11 +12,13 @@ public:
 	bool IsMenuVisible() const;
 	bool MustResetMenu() const;
 	bool ShouldFreezeMouse() const;
+	bool ShouldUseManualInput() const;
 
 	void SetUseAppData(bool value);
 	void SetMenuVisible(bool value);
 	void SetForceMenuReset(bool value);
 	void SetFreezeMouse(bool value);
+	void SetUseManualInput(bool value);
 
 	// UI
 	float GetMenuAlpha() const;
@@ -52,6 +54,7 @@ private:
 	std::atomic<bool> m_IsMenuVisible{ true };
 	std::atomic<bool> m_MustResetMenu{ false };
 	std::atomic<bool> m_ShouldFreezeMouse{ true };
+	std::atomic<bool> m_ShouldUseManualInput{ false };
 
 	// UI
 	std::atomic<float> m_MenuAlpha{ 1.0f };

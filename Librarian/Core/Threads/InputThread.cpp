@@ -15,7 +15,11 @@ void InputThread::Run()
     {
         if (g_pState->Theater.IsTheaterMode()) 
         {
-            g_pSystem->Input.ManualInput();
+            if (g_pState->Settings.ShouldUseManualInput())
+            {
+                g_pSystem->Input.ManualInput();
+            }
+
             g_pSystem->Input.AutomaticInput();
         }
 

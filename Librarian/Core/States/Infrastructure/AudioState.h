@@ -23,7 +23,6 @@ public:
 	std::map<void*, AudioFormat> GetActiveInstances();
 	void ClearActiveInstances();
 	
-	void ResetForRecording();
 	void Cleanup();
 
 private:

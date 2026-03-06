@@ -26,15 +26,17 @@ void BlamOpenFileHook::HookedBlamOpenFile(
 		std::string pathStr(filePath);
 		if (pathStr.find(".mov") != std::string::npos) 
 		{
-			g_pState->Replay.SetPreviousReplayPath(g_pState->Replay.GetCurrentReplayPath());
-			g_pState->Replay.SetCurrentReplayPath(filePath);
-
 			TheaterReplay replay = g_pSystem->Replay.ScanReplay(filePath);
+
+			std::string currentFileHash = g_pSystem->Replay.CalculateFileHash(filePath);
 
 			if (g_pState->Lifecycle.GetCurrentPhase() == AutoTheaterPhase::Timeline)
 			{
 				g_pUtil->Log.Append("[BlamOpenFile] INFO: Film path: %s", filePath);
-				g_pUtil->Log.Append("[BlamOpenFile] INFO: Analyzing CHDR from Disk.");
+
+				g_pState->Timeline.SetAssociatedReplayHash(currentFileHash);
+				g_pUtil->Log.Append("[BlamOpenFile] INFO: Timeline bound to Replay Hash: %s", currentFileHash.substr(0, 8).c_str());
+
 				g_pUtil->Log.Append("[BlamOpenFile] INFO: Recorded by: %s", replay.FilmMetadata.Author);
 
 				if (!replay.FilmMetadata.Info.empty())
@@ -42,16 +44,25 @@ void BlamOpenFileHook::HookedBlamOpenFile(
 					g_pUtil->Log.Append("[BlamOpenFile] INFO: %s", replay.FilmMetadata.Info.c_str());
 				}
 			}
-			else if (g_pState->Lifecycle.GetCurrentPhase() == AutoTheaterPhase::Director &&
-				filePath != g_pState->Replay.GetPreviousReplayPath())
+			else if (g_pState->Lifecycle.GetCurrentPhase() == AutoTheaterPhase::Director)
 			{
-				std::string currentHash = g_pSystem->Replay.CalculateFileHash(filePath);
-				std::string requiredHash = g_pSystem->Replay.CalculateFileHash(g_pState->Replay.GetPreviousReplayPath());
-				
-				if (!requiredHash.empty() && currentHash == requiredHash)
+				std::string requiredHash = g_pState->Timeline.GetAssociatedReplayHash();
+
+				if (requiredHash.empty())
 				{
-					g_pUtil->Log.Append("[BlamOpenFile] WARNING: Replay mismatch! This timeline is not compatible with the opened replay.");
+					g_pUtil->Log.Append("[BlamOpenFile] WARNING: Director launched but no Timeline is loaded in memory.");
+				}
+				else if (currentFileHash != requiredHash)
+				{
+					g_pUtil->Log.Append("[BlamOpenFile] ERROR: Replay mismatch! Opened hash %s does not match Timeline hash %s."
+						" Director phase cancelled to prevent crashes.",
+						currentFileHash.substr(0, 8).c_str(), requiredHash.substr(0, 8).c_str());
+
 					g_pThread->Main.UpdateToPhase(AutoTheaterPhase::Default);
+				}
+				else
+				{
+					g_pUtil->Log.Append("[BlamOpenFile] INFO: Replay Hash matches Timeline, proceding.");
 				}
 			}
 		}

@@ -518,7 +518,7 @@ void FFmpegSystem::ReadLogsThread(HANDLE hPipe)
 		g_pUtil->Log.Append("[FFmpeg] %s", lineAccumulator.c_str());
 	}
 
-	g_pUtil->Log.Append("[FFmpegSystem] INFO: Log thread closed.");
+	g_pUtil->Log.Append("[FFmpegSystem] INFO: FFmpeg log thread closed.");
 }
 
 bool FFmpegSystem::IsAudioConnected() { return m_AudioConnected.load(); }

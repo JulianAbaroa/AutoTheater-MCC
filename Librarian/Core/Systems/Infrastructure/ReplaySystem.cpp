@@ -32,7 +32,6 @@ void ReplaySystem::SaveReplay(const std::string& sourceFilmPath)
 
 		this->SaveMetadata(fileHash, src.stem().string(), scannedData.FilmMetadata);
 
-		g_pState->Replay.SetPreviousReplayHash(fileHash);
 		g_pState->Replay.SetRefreshReplayList(true);
 
 		g_pUtil->Log.Append("[ReplaySystem] INFO: Replay saved & indexed: %s", fileHash.substr(0, 8).c_str());
@@ -54,13 +53,31 @@ void ReplaySystem::DeleteReplay(const std::string& hash)
 		{
 			std::filesystem::remove_all(dir);
 			g_pState->Replay.SetRefreshReplayList(true);
-			g_pUtil->Log.Append("[ReplaySystem] INFO: Replay deleted: %s", hash);
+			g_pUtil->Log.Append("[ReplaySystem] INFO: Replay deleted: %s", hash.c_str());
 		}
 	}
 	catch (const std::exception& e)
 	{
 		g_pUtil->Log.Append("[ReplaySystem] ERROR: On deleting replay: %s", e.what());
 	}
+}
+
+
+bool ReplaySystem::IsReplaySaved(std::string replayHash)
+{
+	if (replayHash.empty()) return false;
+
+	std::filesystem::path replayDir =
+		std::filesystem::path(g_pState->Settings.GetAppDataDirectory()) / "Replays" / replayHash;
+
+	if (!std::filesystem::exists(replayDir) || !std::filesystem::is_directory(replayDir))
+	{
+		return false;
+	}
+
+	std::filesystem::path metadataFile = replayDir / "metadata.txt";
+
+	return std::filesystem::exists(metadataFile);
 }
 
 
@@ -229,12 +246,27 @@ void ReplaySystem::SaveTimeline(const std::string& replayHash)
 	g_pUtil->Log.Append("[ReplaySystem] INFO: Timeline synchronized successfully.");
 }
 
-void ReplaySystem::LoadTimeline(const std::string& hash)
+void ReplaySystem::LoadTimeline(const std::string& replayHash)
 {
-	std::filesystem::path path =
-		std::filesystem::path(g_pState->Settings.GetAppDataDirectory()) / "Replays" / hash / "events.timeline";
+	std::filesystem::path folderPath = std::filesystem::path(g_pState->Settings.GetAppDataDirectory()) / "Replays" / replayHash;
+	std::filesystem::path timelinePath = folderPath / "events.timeline";
 
-	std::ifstream file(path, std::ios::binary);
+	std::filesystem::path replayPath = "";
+	if (std::filesystem::exists(folderPath))
+	{
+		for (const auto& entry : std::filesystem::directory_iterator(folderPath))
+		{
+			if (entry.path().extension() == ".mov")
+			{
+				replayPath = entry.path();
+				break;
+			}
+		}
+	}
+
+	if (!std::filesystem::exists(timelinePath)) return;
+
+	std::ifstream file(timelinePath, std::ios::binary);
 	if (!file.is_open()) return;
 
 	try
@@ -298,13 +330,23 @@ void ReplaySystem::LoadTimeline(const std::string& hash)
 		}
 
 		g_pState->Timeline.SetTimeline(tempTimeline);
-		g_pState->Replay.SetPreviousReplayHash(hash);
 
-		g_pUtil->Log.Append("[ReplaySystem] INFO: Timeline loaded, active hash set to: %s", hash.c_str());
+		std::string actualHash = replayHash;
+		if (!replayPath.empty()) actualHash = this->CalculateFileHash(replayPath.string());
+		
+		g_pState->Timeline.SetAssociatedReplayHash(actualHash);
+
+		g_pUtil->Log.Append("[ReplaySystem] INFO: Timeline loaded. Bound to Replay Hash: %s", actualHash.substr(0, 8).c_str());
+
+		if (actualHash != replayHash)
+		{
+			g_pUtil->Log.Append("[ReplaySystem] WARNING: Folder name (%s) differs from file hash (%s)!",
+				replayHash.substr(0, 8).c_str(), actualHash.substr(0, 8).c_str());
+		}
 	}
 	catch (const std::exception& e) 
 	{
-		g_pUtil->Log.Append("[ReplaySystem] WARNING: Crash prevented in LoadTimeline: %s", e.what());
+		g_pUtil->Log.Append("[ReplaySystem] ERROR: Crash prevented in LoadTimeline: %s", e.what());
 	}
 
 	file.close();

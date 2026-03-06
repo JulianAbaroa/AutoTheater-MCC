@@ -143,6 +143,18 @@ void SettingsTab::DrawUserPreferences()
 	}
 
 	ImGui::Spacing();
+
+	bool useManualInput = g_pState->Settings.ShouldUseManualInput();
+	if (ImGui::Checkbox("Replay speed modifier keys", &useManualInput))
+	{
+		g_pState->Settings.SetUseManualInput(useManualInput);
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Allows to use number keys (3-0) to change the replay speed.");
+	}
+
+	ImGui::Spacing();
 	ImGui::Unindent(10.0f);
 	ImGui::Spacing();
 
@@ -235,6 +247,7 @@ void SettingsTab::DrawDataPersistence()
 			g_pState->Settings.SetUseAppData(true);
 			g_pSystem->Settings.CreateAppData();
 			g_pSystem->Settings.SaveUseAppData();
+			g_pSystem->Preferences.LoadPreferences();
 		}
 	}
 	ImGui::EndGroup();

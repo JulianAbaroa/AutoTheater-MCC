@@ -12,13 +12,13 @@
 #include "Core/Hooks/Lifecycle/DestroySubsystemsHook.h"
 #include "Core/Hooks/Lifecycle/EngineInitializeHook.h"
 #include "Core/Hooks/Lifecycle/GameEngineStartHook.h"
-#include "Core/Hooks/Tables/TelemetryTables.h"
+#include "Core/Hooks/Memory/TelemetryTables.h"
 #include "Core/Hooks/Input/GetButtonStateHook.h"
 #include "Core/Hooks/Input/GetRawInputDataHook.h"
 #include "Core/Hooks/Render/ResizeBuffersHook.h"
 #include "Core/Hooks/Render/PresentHook.h"
 #include "Core/Hooks/Window/WndProcHook.h"
-#include "Core/Hooks/Tables/TargetFPS.h"
+#include "Core/Hooks/Memory/TargetFPS.h"
 
 struct CoreHook
 {

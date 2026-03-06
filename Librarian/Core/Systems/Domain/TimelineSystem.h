@@ -12,9 +12,6 @@ class TimelineSystem
 public:
 	void ProcessEngineEvent(float timestamp, std::wstring& templateStr, EventData* rawData);
 
-	// Extracts and returns events that have not yet been sent to the log.
-	std::vector<GameEvent> ConsumePendingEvents();
-
 	// Returns the highest Timestamp among all the events captured.
 	float GetLatestTimestamp() const;
 

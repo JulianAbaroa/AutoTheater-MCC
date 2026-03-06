@@ -111,7 +111,6 @@ void* AudioSystem::GetAudioClientVTableAddress(int index)
 void AudioSystem::StartRecording() 
 {
     this->ClearQueue();
-    g_pState->Audio.ResetForRecording();
     
     m_IsFirstCheck.store(true);
     g_pState->Audio.SetRecording(true);
@@ -121,13 +120,11 @@ void AudioSystem::StartRecording()
 void AudioSystem::StopRecording() 
 {
     this->ClearQueue();
-    g_pState->Audio.ResetForRecording();
 
     g_pState->Audio.SetRecording(false);
     g_pUtil->Log.Append("[AudioSystem] INFO: Samples recording stopped.");
 }
 
-// TODO: Find where to call this one, probably when IsTheaterMode() is disabled.
 void AudioSystem::Cleanup()
 {
     this->ClearQueue();

@@ -15,34 +15,7 @@ void DirectorSystem::Initialize()
 
 	g_pState->Director.ClearScript();
 
-	if (!timelineCopy.empty())
-	{
-		GenerateScript(timelineCopy);
-
-		g_pUtil->Log.Append("[DirectorSystem] INFO: Generated script.");
-	
-		std::vector<DirectorCommand> tempScript = g_pState->Director.GetScriptCopy();
-		
-		for (const auto& cmd : tempScript) 
-		{
-			int totalSeconds = static_cast<int>(cmd.Timestamp);
-			int minutes = totalSeconds / 60;
-			int seconds = totalSeconds % 60;
-		
-			if (cmd.Type == CommandType::Cut) 
-			{
-				g_pUtil->Log.Append("[DirectorSystem] INFO: [%02d:%02d] Cut to: Player %s (%s)",
-					minutes, seconds, cmd.TargetPlayerName.c_str(), cmd.Reason.c_str());
-			}
-			else 
-			{
-				g_pUtil->Log.Append("[DirectorSystem] INFO: [%02d:%02d] Speed: %.1fx",
-					minutes, seconds, cmd.SpeedValue);
-			}
-		}
-
-		g_pUtil->Log.Append("[DirectorSystem] INFO: Script end.");
-	}
+	if (!timelineCopy.empty()) this->GenerateScript(timelineCopy);
 	
 	g_pSystem->Director.SetCurrentCommandIndex(0);
 	g_pSystem->Director.SetLastReplayTime(0.0f);
@@ -287,6 +260,8 @@ void DirectorSystem::GenerateScript(std::vector<GameEvent> timeline)
 	});
 
 	g_pState->Director.SetScript(tempScript);
+
+	g_pUtil->Log.Append("[DirectorSystem] INFO: Script generated.");
 }
 
 void DirectorSystem::OptimizeSegments(std::vector<ActionSegment>& segments)
