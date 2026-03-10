@@ -1,7 +1,10 @@
 #include "pch.h"
 #include "Core/Utils/LogUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Common/Types/LogTypes.h"
 #include <fstream>
 
@@ -27,7 +30,7 @@ void LogUtil::Append(const char* format, ...)
     std::string tagPart = entry.Tag.empty() ? "" : entry.Tag + " ";
     entry.FullText = entry.Timestamp + tagPart + entry.MessagePrefix + entry.Message;
 
-    g_pSystem->Debug.AddLog(entry);
+    g_pSystem->Debug->AddLog(entry);
     this->WriteToLogFile(entry.Timestamp.c_str(), messageBuffer);
 }
 
@@ -101,7 +104,7 @@ void LogUtil::UpdateAlertState(LogLevel level)
 
 void LogUtil::WriteToLogFile(const char* header, const char* message)
 {
-    std::ofstream ofs(g_pState->Settings.GetLoggerPath(), std::ios::app);
+    std::ofstream ofs(g_pState->Infrastructure->Settings->GetLoggerPath(), std::ios::app);
     if (ofs.is_open())
     {
         ofs << header << message << "\n";

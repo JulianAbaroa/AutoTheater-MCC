@@ -1,8 +1,27 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
+#include "Core/Hooks/Data/CoreDataHook.h"
+#include "Core/Hooks/Data/BlamOpenFileHook.h"
+#include "Core/Hooks/Data/BuildGameEventHook.h"
+#include "Core/Hooks/Data/ReplayInitializeStateHook.h"
+#include "Core/Hooks/Data/SpectatorHandleInputHook.h"
+#include "Core/Hooks/Data/UpdateTelemetryTimerHook.h"
+#include "Core/Hooks/Input/CoreInputHook.h"
+#include "Core/Hooks/Input/GetButtonStateHook.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Capture/AudioState.h"
+#include "Core/States/Infrastructure/Capture/FFmpegState.h"
+#include "Core/States/Infrastructure/Engine/LifecycleState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
+#include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
+#include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Hooks/Lifecycle/DestroySubsystemsHook.h"
 #include "External/minhook/include/MinHook.h"
 
 // This function is triggered when the game engine shuts down the Halo: Reach simulation, 
@@ -17,20 +36,20 @@
 //    systems (Director/Timeline) to stop processing immediately.
 void __fastcall DestroySubsystemsHook::HookedDestroySubsystems(void)
 {
-	g_pHook->BuildGameEvent.Uninstall();	
-	g_pHook->UpdateTelemetryTimer.Uninstall();
-	g_pHook->SpectatorHandleInput.Uninstall();
-	g_pHook->FilmInitializeState.Uninstall();
-	g_pHook->GetButtonState.Uninstall();
-	g_pHook->BlamOpenFile.Uninstall();
+	g_pHook->Data->BuildGameEvent->Uninstall();	
+	g_pHook->Data->UpdateTelemetryTimer->Uninstall();
+	g_pHook->Data->SpectatorHandleInput->Uninstall();
+	g_pHook->Data->ReplayInitializeState->Uninstall();
+	g_pHook->Input->GetButtonState->Uninstall();
+	g_pHook->Data->BlamOpenFile->Uninstall();
 
-	g_pState->Theater.SetTimePtr(nullptr);
-	g_pState->Theater.SetTimeScalePtr(nullptr);
+	g_pState->Domain->Theater->SetTimePtr(nullptr);
+	g_pState->Domain->Theater->SetTimeScalePtr(nullptr);
 
-	if (g_pState->FFmpeg.IsRecording()) g_pSystem->FFmpeg.ForceStop();
-	if (g_pState->Audio.GetMasterInstance() != nullptr) g_pSystem->Audio.Cleanup();
+	if (g_pState->Infrastructure->FFmpeg->IsRecording()) g_pSystem->Infrastructure->FFmpeg->ForceStop();
+	if (g_pState->Infrastructure->Audio->GetMasterInstance() != nullptr) g_pSystem->Infrastructure->Audio->Cleanup();
 
-	g_pState->Lifecycle.SetEngineStatus({ EngineStatus::Destroyed });
+	g_pState->Infrastructure->Lifecycle->SetEngineStatus({ EngineStatus::Destroyed });
 
 	m_OriginalFunction();
 
@@ -41,7 +60,7 @@ bool DestroySubsystemsHook::Install(bool silent)
 {
 	if (m_IsHookInstalled.load()) return true;
 
-	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::DestroySubsystems);
+	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::DestroySubsystems);
 	if (!functionAddress)
 	{
 		if (!silent) g_pUtil->Log.Append("[DestroySubsystems] ERROR: Failed to obtain the function address.");

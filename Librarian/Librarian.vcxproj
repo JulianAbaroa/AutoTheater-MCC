@@ -128,103 +128,108 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;LIBRARIAN_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);SAFETYHOOK_USE_ZYDIS;SAFETYHOOK_FETCH_ZYDIS;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;LIBRARIAN_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)External\imgui;$(ProjectDir)External\imgui\backends;$(ProjectDir)External\minhook\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp23</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Core\Common\AppCore.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Core\Common\Signatures.h" />
+    <ClInclude Include="Core\Common\Types\AppTypes.h" />
     <ClInclude Include="Core\Common\Types\AudioTypes.h" />
-    <ClInclude Include="Core\Common\Types\AutoTheaterTypes.h" />
     <ClInclude Include="Core\Common\Types\BlamTypes.h" />
     <ClInclude Include="Core\Common\Types\DirectorTypes.h" />
+    <ClInclude Include="Core\Common\Types\DX11Types.h" />
     <ClInclude Include="Core\Common\Types\FFmpegTypes.h" />
     <ClInclude Include="Core\Common\Types\GalleryTypes.h" />
     <ClInclude Include="Core\Common\Types\InputTypes.h" />
     <ClInclude Include="Core\Common\Types\LogTypes.h" />
+    <ClInclude Include="Core\Common\Types\SignatureTypes.h" />
     <ClInclude Include="Core\Common\Types\TimelineTypes.h" />
     <ClInclude Include="Core\Common\Types\UITypes.h" />
     <ClInclude Include="Core\Common\Types\VideoTypes.h" />
     <ClInclude Include="Core\DllMain.h" />
     <ClInclude Include="Core\Hooks\Audio\AudioClientInitializeHook.h" />
+    <ClInclude Include="Core\Hooks\Audio\CoreAudioHook.h" />
     <ClInclude Include="Core\Hooks\Audio\GetBufferHook.h" />
     <ClInclude Include="Core\Hooks\Audio\GetServiceHook.h" />
     <ClInclude Include="Core\Hooks\Audio\ReleaseBufferHook.h" />
     <ClInclude Include="Core\Hooks\CoreHook.h" />
     <ClInclude Include="Core\Hooks\Data\BlamOpenFileHook.h" />
-    <ClInclude Include="Core\Hooks\Data\FilmInitializeStateHook.h" />
+    <ClInclude Include="Core\Hooks\Data\CoreDataHook.h" />
+    <ClInclude Include="Core\Hooks\Data\ReplayInitializeStateHook.h" />
     <ClInclude Include="Core\Hooks\Data\SpectatorHandleInputHook.h" />
     <ClInclude Include="Core\Hooks\Data\BuildGameEventHook.h" />
     <ClInclude Include="Core\Hooks\Data\UpdateTelemetryTimerHook.h" />
+    <ClInclude Include="Core\Hooks\Input\CoreInputHook.h" />
     <ClInclude Include="Core\Hooks\Input\GetButtonStateHook.h" />
     <ClInclude Include="Core\Hooks\Input\GetRawInputDataHook.h" />
+    <ClInclude Include="Core\Hooks\Lifecycle\CoreLifecycleHook.h" />
     <ClInclude Include="Core\Hooks\Lifecycle\DestroySubsystemsHook.h" />
     <ClInclude Include="Core\Hooks\Lifecycle\EngineInitializeHook.h" />
     <ClInclude Include="Core\Hooks\Lifecycle\GameEngineStartHook.h" />
-    <ClInclude Include="Core\Hooks\Memory\TargetFPS.h" />
-    <ClInclude Include="Core\Hooks\Memory\TelemetryTables.h" />
+    <ClInclude Include="Core\Hooks\Memory\CoreMemoryHook.h" />
+    <ClInclude Include="Core\Hooks\Memory\ObjectsTableHook.h" />
+    <ClInclude Include="Core\Hooks\Memory\PlayersTableHook.h" />
+    <ClInclude Include="Core\Hooks\Memory\TargetFramerateHook.h" />
+    <ClInclude Include="Core\Hooks\Render\CoreRenderHook.h" />
     <ClInclude Include="Core\Hooks\Render\PresentHook.h" />
     <ClInclude Include="Core\Hooks\Render\ResizeBuffersHook.h" />
-    <ClInclude Include="Core\Hooks\Signatures.h" />
+    <ClInclude Include="Core\Hooks\Window\CoreWindowHook.h" />
     <ClInclude Include="Core\Hooks\Window\WndProcHook.h" />
     <ClInclude Include="Core\States\CoreState.h" />
-    <ClInclude Include="Core\States\Domain\DirectorState.h" />
-    <ClInclude Include="Core\States\Domain\EventRegistryState.h" />
-    <ClInclude Include="Core\States\Domain\TheaterState.h" />
-    <ClInclude Include="Core\States\Domain\TimelineState.h" />
-    <ClInclude Include="Core\States\Infrastructure\AudioState.h" />
-    <ClInclude Include="Core\States\Infrastructure\FFmpegState.h" />
-    <ClInclude Include="Core\States\Infrastructure\GalleryState.h" />
-    <ClInclude Include="Core\States\Infrastructure\LifecycleState.h" />
-    <ClInclude Include="Core\States\Infrastructure\RenderState.h" />
-    <ClInclude Include="Core\States\Infrastructure\ReplayState.h" />
-    <ClInclude Include="Core\States\Infrastructure\SettingsState.h" />
-    <ClInclude Include="Core\States\Infrastructure\VideoState.h" />
+    <ClInclude Include="Core\States\Domain\CoreDomainState.h" />
+    <ClInclude Include="Core\States\Domain\Director\DirectorState.h" />
+    <ClInclude Include="Core\States\Domain\Director\EventRegistryState.h" />
+    <ClInclude Include="Core\States\Domain\Theater\TheaterState.h" />
+    <ClInclude Include="Core\States\Domain\Timeline\TimelineState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Capture\AudioState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Capture\FFmpegState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Capture\VideoState.h" />
+    <ClInclude Include="Core\States\Infrastructure\CoreInfrastructureState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Engine\InputState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Engine\LifecycleState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Engine\RenderState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Persistence\GalleryState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Persistence\ReplayState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Persistence\SettingsState.h" />
     <ClInclude Include="Core\States\Interface\DebugState.h" />
-    <ClInclude Include="Core\States\Interface\InputState.h" />
     <ClInclude Include="Core\Systems\CoreSystem.h" />
-    <ClInclude Include="Core\Systems\Domain\DirectorSystem.h" />
-    <ClInclude Include="Core\Systems\Domain\EventRegistrySystem.h" />
-    <ClInclude Include="Core\Systems\Domain\TheaterSystem.h" />
-    <ClInclude Include="Core\Systems\Domain\TimelineSystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\AudioSystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\FFmpegSystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\GallerySystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\LifecycleSystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\RenderSystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\ReplaySystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\ScannerSystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\SettingsSystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\PreferencesSystem.h" />
-    <ClInclude Include="Core\Systems\Infrastructure\VideoSystem.h" />
+    <ClInclude Include="Core\Systems\Domain\CoreDomainSystem.h" />
+    <ClInclude Include="Core\Systems\Domain\Director\DirectorSystem.h" />
+    <ClInclude Include="Core\Systems\Domain\Director\EventRegistrySystem.h" />
+    <ClInclude Include="Core\Systems\Domain\Theater\TheaterSystem.h" />
+    <ClInclude Include="Core\Systems\Domain\Timeline\TimelineSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Capture\AudioSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Capture\FFmpegSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Capture\VideoSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\CoreInfrastructureSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\InputSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\LifecycleSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\RenderSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\ScannerSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Persistence\GallerySystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Persistence\PreferencesSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Persistence\ReplaySystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Persistence\SettingsSystem.h" />
     <ClInclude Include="Core\Systems\Interface\DebugSystem.h" />
-    <ClInclude Include="Core\Systems\Interface\InputSystem.h" />
-    <ClInclude Include="Core\Threads\CaptureThread.h" />
     <ClInclude Include="Core\Threads\CoreThread.h" />
-    <ClInclude Include="Core\Threads\DirectorThread.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Core\Threads\InputThread.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Core\Threads\MainThread.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="Core\Threads\Domain\DirectorThread.h" />
+    <ClInclude Include="Core\Threads\Domain\MainThread.h" />
+    <ClInclude Include="Core\Threads\Infrastructure\CaptureThread.h" />
+    <ClInclude Include="Core\Threads\Infrastructure\InputThread.h" />
     <ClInclude Include="Core\UI\CoreUI.h" />
     <ClInclude Include="Core\UI\Tabs\Logs\LogsTab.h" />
     <ClInclude Include="Core\UI\Tabs\Optional\CaptureTab.h" />
@@ -256,64 +261,74 @@
     </ClCompile>
     <ClCompile Include="Core\DllMain.cpp" />
     <ClCompile Include="Core\Hooks\Audio\AudioClientInitializeHook.cpp" />
+    <ClCompile Include="Core\Hooks\Audio\CoreAudioHook.cpp" />
     <ClCompile Include="Core\Hooks\Audio\GetBufferHook.cpp" />
     <ClCompile Include="Core\Hooks\Audio\GetServiceHook.cpp" />
     <ClCompile Include="Core\Hooks\Audio\ReleaseBufferHook.cpp" />
+    <ClCompile Include="Core\Hooks\CoreHook.cpp" />
     <ClCompile Include="Core\Hooks\Data\BlamOpenFileHook.cpp" />
-    <ClCompile Include="Core\Hooks\Data\FilmInitializeStateHook.cpp" />
+    <ClCompile Include="Core\Hooks\Data\CoreDataHook.cpp" />
+    <ClCompile Include="Core\Hooks\Data\ReplayInitializeStateHook.cpp" />
     <ClCompile Include="Core\Hooks\Data\SpectatorHandleInputHook.cpp" />
     <ClCompile Include="Core\Hooks\Data\BuildGameEventHook.cpp" />
     <ClCompile Include="Core\Hooks\Data\UpdateTelemetryTimerHook.cpp" />
+    <ClCompile Include="Core\Hooks\Input\CoreInputHook.cpp" />
     <ClCompile Include="Core\Hooks\Input\GetButtonStateHook.cpp" />
     <ClCompile Include="Core\Hooks\Input\GetRawInputDataHook.cpp" />
+    <ClCompile Include="Core\Hooks\Lifecycle\CoreLifecycleHook.cpp" />
     <ClCompile Include="Core\Hooks\Lifecycle\DestroySubsystemsHook.cpp" />
     <ClCompile Include="Core\Hooks\Lifecycle\EngineInitializeHook.cpp" />
     <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStartHook.cpp" />
-    <ClCompile Include="Core\Hooks\Memory\TargetFPS.cpp" />
-    <ClCompile Include="Core\Hooks\Memory\TelemetryTables.cpp" />
+    <ClCompile Include="Core\Hooks\Memory\CoreMemoryHook.cpp" />
+    <ClCompile Include="Core\Hooks\Memory\ObjectsTableHook.cpp" />
+    <ClCompile Include="Core\Hooks\Memory\PlayersTableHook.cpp" />
+    <ClCompile Include="Core\Hooks\Memory\TargetFramerateHook.cpp" />
+    <ClCompile Include="Core\Hooks\Render\CoreRenderHook.cpp" />
     <ClCompile Include="Core\Hooks\Render\PresentHook.cpp" />
     <ClCompile Include="Core\Hooks\Render\ResizeBuffersHook.cpp" />
+    <ClCompile Include="Core\Hooks\Window\CoreWindowHook.cpp" />
     <ClCompile Include="Core\Hooks\Window\WndProcHook.cpp" />
-    <ClCompile Include="Core\States\Domain\DirectorState.cpp" />
-    <ClCompile Include="Core\States\Domain\EventRegistryState.cpp" />
-    <ClCompile Include="Core\States\Domain\TheaterState.cpp" />
-    <ClCompile Include="Core\States\Domain\TimelineState.cpp" />
-    <ClCompile Include="Core\States\Infrastructure\AudioState.cpp" />
-    <ClCompile Include="Core\States\Infrastructure\FFmpegState.cpp" />
-    <ClCompile Include="Core\States\Infrastructure\GalleryState.cpp" />
-    <ClCompile Include="Core\States\Infrastructure\LifecycleState.cpp" />
-    <ClCompile Include="Core\States\Infrastructure\RenderState.cpp" />
-    <ClCompile Include="Core\States\Infrastructure\ReplayState.cpp" />
-    <ClCompile Include="Core\States\Infrastructure\SettingsState.cpp" />
-    <ClCompile Include="Core\States\Infrastructure\VideoState.cpp" />
+    <ClCompile Include="Core\States\CoreState.cpp" />
+    <ClCompile Include="Core\States\Domain\CoreDomainState.cpp" />
+    <ClCompile Include="Core\States\Domain\Director\DirectorState.cpp" />
+    <ClCompile Include="Core\States\Domain\Director\EventRegistryState.cpp" />
+    <ClCompile Include="Core\States\Domain\Theater\TheaterState.cpp" />
+    <ClCompile Include="Core\States\Domain\Timeline\TimelineState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Capture\AudioState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Capture\FFmpegState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Capture\VideoState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\CoreInfrastructureState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Engine\InputState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Engine\LifecycleState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Engine\RenderState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Persistence\GalleryState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Persistence\ReplayState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Persistence\SettingsState.cpp" />
     <ClCompile Include="Core\States\Interface\DebugState.cpp" />
-    <ClCompile Include="Core\States\Interface\InputState.cpp" />
-    <ClCompile Include="Core\Systems\Domain\DirectorSystem.cpp" />
-    <ClCompile Include="Core\Systems\Domain\EventRegistrySystem.cpp" />
-    <ClCompile Include="Core\Systems\Domain\TheaterSystem.cpp" />
-    <ClCompile Include="Core\Systems\Domain\TimelineSystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\AudioSystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\FFmpegSystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\GallerySystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\LifecycleSystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\RenderSystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\ReplaySystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\ScannerSystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\SettingsSystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\PreferencesSystem.cpp" />
-    <ClCompile Include="Core\Systems\Infrastructure\VideoSystem.cpp" />
+    <ClCompile Include="Core\Systems\CoreSystem.cpp" />
+    <ClCompile Include="Core\Systems\Domain\CoreDomainSystem.cpp" />
+    <ClCompile Include="Core\Systems\Domain\Director\DirectorSystem.cpp" />
+    <ClCompile Include="Core\Systems\Domain\Director\EventRegistrySystem.cpp" />
+    <ClCompile Include="Core\Systems\Domain\Theater\TheaterSystem.cpp" />
+    <ClCompile Include="Core\Systems\Domain\Timeline\TimelineSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Capture\AudioSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Capture\FFmpegSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Capture\VideoSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\CoreInfrastructureSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\InputSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\LifecycleSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\RenderSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\ScannerSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Persistence\GallerySystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Persistence\PreferencesSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Persistence\ReplaySystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Persistence\SettingsSystem.cpp" />
     <ClCompile Include="Core\Systems\Interface\DebugSystem.cpp" />
-    <ClCompile Include="Core\Systems\Interface\InputSystem.cpp" />
-    <ClCompile Include="Core\Threads\CaptureThread.cpp" />
-    <ClCompile Include="Core\Threads\DirectorThread.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Core\Threads\InputThread.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Core\Threads\MainThread.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="Core\Threads\CoreThread.cpp" />
+    <ClCompile Include="Core\Threads\Domain\DirectorThread.cpp" />
+    <ClCompile Include="Core\Threads\Domain\MainThread.cpp" />
+    <ClCompile Include="Core\Threads\Infrastructure\CaptureThread.cpp" />
+    <ClCompile Include="Core\Threads\Infrastructure\InputThread.cpp" />
     <ClCompile Include="Core\UI\Tabs\Logs\LogsTab.cpp" />
     <ClCompile Include="Core\UI\Tabs\Optional\CaptureTab.cpp" />
     <ClCompile Include="Core\UI\Tabs\Optional\EventRegistryTab.cpp" />

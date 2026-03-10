@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Common/Types/AutoTheaterTypes.h"
+#include "Core/Common/Types/AppTypes.h"
 #include "Core/Common/Types/UITypes.h"
 
 class MainInterface
@@ -13,5 +13,5 @@ private:
 	void DrawStatusBar();
 	void DrawTabs();
 
-	PhaseUI GetPhaseUI(AutoTheaterPhase phase);
+	PhaseUI GetPhaseUI(Phase phase);
 };

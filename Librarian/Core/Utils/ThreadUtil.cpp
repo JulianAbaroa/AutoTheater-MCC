@@ -1,13 +1,15 @@
 #include "pch.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Engine/LifecycleState.h"
 #include "Core/Utils/ThreadUtil.h"
 
 bool ThreadUtil::WaitOrExit(std::chrono::milliseconds ms)
 {
-	std::unique_lock<std::mutex> lock(g_pState->Lifecycle.GetMutex());
+	std::unique_lock<std::mutex> lock(g_pState->Infrastructure->Lifecycle->GetMutex());
 
-	bool shutdownTriggered = g_pState->Lifecycle.GetCV().wait_for(lock, ms, [] {
-		return !g_pState->Lifecycle.IsRunning();
+	bool shutdownTriggered = g_pState->Infrastructure->Lifecycle->GetCV().wait_for(lock, ms, [] {
+		return !g_pState->Infrastructure->Lifecycle->IsRunning();
 	});
 
 	return !shutdownTriggered;

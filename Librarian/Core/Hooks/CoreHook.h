@@ -1,59 +1,27 @@
 #pragma once
 
-#include "Core/Hooks/Audio/AudioClientInitializeHook.h"
-#include "Core/Hooks/Audio/ReleaseBufferHook.h"
-#include "Core/Hooks/Audio/GetServiceHook.h"
-#include "Core/Hooks/Audio/GetBufferHook.h"
-#include "Core/Hooks/Data/UpdateTelemetryTimerHook.h"
-#include "Core/Hooks/Data/SpectatorHandleInputHook.h"
-#include "Core/Hooks/Data/FilmInitializeStateHook.h"
-#include "Core/Hooks/Data/BuildGameEventHook.h"
-#include "Core/Hooks/Data/BlamOpenFileHook.h"
-#include "Core/Hooks/Lifecycle/DestroySubsystemsHook.h"
-#include "Core/Hooks/Lifecycle/EngineInitializeHook.h"
-#include "Core/Hooks/Lifecycle/GameEngineStartHook.h"
-#include "Core/Hooks/Memory/TelemetryTables.h"
-#include "Core/Hooks/Input/GetButtonStateHook.h"
-#include "Core/Hooks/Input/GetRawInputDataHook.h"
-#include "Core/Hooks/Render/ResizeBuffersHook.h"
-#include "Core/Hooks/Render/PresentHook.h"
-#include "Core/Hooks/Window/WndProcHook.h"
-#include "Core/Hooks/Memory/TargetFPS.h"
+#include <memory>
+
+struct CoreAudioHook;
+struct CoreDataHook;
+struct CoreLifecycleHook;
+struct CoreMemoryHook;
+struct CoreInputHook;
+struct CoreRenderHook;
+struct CoreWindowHook;
 
 struct CoreHook
 {
-	// Audio
-	AudioClientInitializeHook AudioClientInitialize;
-	ReleaseBufferHook ReleaseBuffer;
-	GetServiceHook GetService;
-	GetBufferHook GetBuffer;
+	CoreHook();
+	~CoreHook();
 
-	// Data
-	UpdateTelemetryTimerHook UpdateTelemetryTimer;
-	SpectatorHandleInputHook SpectatorHandleInput;
-	FilmInitializeStateHook FilmInitializeState;
-	BuildGameEventHook BuildGameEvent;
-	BlamOpenFileHook BlamOpenFile;
-
-	// Lifecycle
-	DestroySubsystemsHook DestroySubsystems;
-	EngineInitializeHook EngineInitialize;
-	GameEngineStartHook GameEngineStart;
-
-	// Memory
-	TelemetryTables Tables;
-	TargetFPS TargetFPS;
-
-	// Input
-	GetButtonStateHook GetButtonState;
-	GetRawInputDataHook GetRawInputData;
-
-	// Render
-	ResizeBuffersHook ResizeBuffers;
-	PresentHook Present;
-
-	// Window
-	WndProcHook WndProc;
+	std::unique_ptr<CoreAudioHook> Audio;
+	std::unique_ptr<CoreDataHook> Data;
+	std::unique_ptr<CoreInputHook> Input;
+	std::unique_ptr<CoreLifecycleHook> Lifecycle;
+	std::unique_ptr<CoreMemoryHook> Memory;
+	std::unique_ptr<CoreRenderHook> Render;
+	std::unique_ptr<CoreWindowHook> Window;
 };
 
 extern CoreHook* g_pHook;

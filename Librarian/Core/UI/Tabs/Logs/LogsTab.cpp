@@ -1,6 +1,10 @@
 #include "pch.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Persistence/SettingsState.h"
+#include "Core/States/Interface/DebugState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/UI/Tabs/Logs/LogsTab.h"
 #include "External/imgui/imgui.h"
 
@@ -32,8 +36,8 @@ LogFilterState LogsTab::DrawTopBar()
 
     ImGui::SameLine();
 
-    bool autoScroll = g_pState->Settings.GetLogsAutoScroll();
-    if (ImGui::Checkbox("Auto-Scroll", &autoScroll)) g_pState->Settings.SetLogsAutoScroll(autoScroll);
+    bool autoScroll = g_pState->Infrastructure->Settings->GetLogsAutoScroll();
+    if (ImGui::Checkbox("Auto-Scroll", &autoScroll)) g_pState->Infrastructure->Settings->SetLogsAutoScroll(autoScroll);
 
     ImGui::SameLine();
 
@@ -51,15 +55,15 @@ void LogsTab::DrawClearButton(bool isFiltering, std::string& searchStr)
         if (isFiltering)
         {
             std::string lowerFilter = searchStr;
-            g_pSystem->Debug.RemoveLogsIf([&](const LogEntry& entry) {
+            g_pSystem->Debug->RemoveLogsIf([&](const LogEntry& entry) {
                 std::string textLower = entry.FullText;
                 std::transform(textLower.begin(), textLower.end(), textLower.begin(), ::tolower);
                 return textLower.find(lowerFilter) != std::string::npos;
-                });
+            });
         }
         else
         {
-            g_pState->Debug.ClearLogs();
+            g_pState->Debug->ClearLogs();
         }
 
         // Reset selections.
@@ -76,7 +80,7 @@ void LogsTab::DrawCopyButton(bool isFiltering, std::string& searchStr)
     {
         std::string output;
 
-        g_pState->Debug.ForEachLog([&](const LogEntry& entry) {
+        g_pState->Debug->ForEachLog([&](const LogEntry& entry) {
             if (isFiltering)
             {
                 std::string textLower = entry.FullText;
@@ -126,12 +130,12 @@ std::vector<int> LogsTab::GetFilteredIndices(const LogFilterState& filter)
     std::vector<int> filtered;
     if (!filter.IsFiltering) return filtered;
 
-    int totalLogs = static_cast<int>(g_pState->Debug.GetTotalLogs());
+    int totalLogs = static_cast<int>(g_pState->Debug->GetTotalLogs());
     filtered.reserve(totalLogs / 2);
 
     for (int i = 0; i < totalLogs; i++)
     {
-        LogEntry entry = g_pState->Debug.GetLogAt(i);
+        LogEntry entry = g_pState->Debug->GetLogAt(i);
         std::string textLower = entry.FullText;
         
         std::transform(textLower.begin(), textLower.end(), textLower.begin(),
@@ -155,7 +159,7 @@ void LogsTab::DrawScrollingRegion(const LogFilterState& filter)
     }
 
     auto filteredIndices = this->GetFilteredIndices(filter);
-    int totalLogs = static_cast<int>(g_pState->Debug.GetTotalLogs());
+    int totalLogs = static_cast<int>(g_pState->Debug->GetTotalLogs());
     int displayCount = filter.IsFiltering ? (int)filteredIndices.size() : totalLogs;
 
     ImGuiListClipper clipper;
@@ -168,7 +172,7 @@ void LogsTab::DrawScrollingRegion(const LogFilterState& filter)
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
             int realIndex = filter.IsFiltering ? filteredIndices[i] : i;
-            LogEntry entry = g_pState->Debug.GetLogAt(realIndex);
+            LogEntry entry = g_pState->Debug->GetLogAt(realIndex);
 
             this->DrawLogLine(realIndex, entry, logClickedThisFrame);
         }
@@ -180,7 +184,7 @@ void LogsTab::DrawScrollingRegion(const LogFilterState& filter)
         m_SelectionEnd.store(-1);
     }
 
-    if (g_pState->Settings.GetLogsAutoScroll() && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+    if (g_pState->Infrastructure->Settings->GetLogsAutoScroll() && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
     {
         ImGui::SetScrollHereY(1.0f);
     }
@@ -289,7 +293,7 @@ void LogsTab::HandleLogInteraction(int realIndex, const LogEntry& entry, bool& l
 
             for (int j = start; j <= end; j++)
             {
-                selectedText += g_pState->Debug.GetLogAt(j).FullText + "\n";
+                selectedText += g_pState->Debug->GetLogAt(j).FullText + "\n";
             }
 
             ImGui::SetClipboardText(selectedText.c_str());

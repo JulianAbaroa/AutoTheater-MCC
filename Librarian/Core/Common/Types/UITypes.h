@@ -17,7 +17,7 @@ struct EventMetadata
 };
 
 // Metadata for replay files.
-struct FilmMetadata
+struct ReplayMetadata
 {
 	std::string Author;
 	std::string Info;
@@ -26,7 +26,7 @@ struct FilmMetadata
 // Core replay data and file system references.
 struct TheaterReplay
 {
-	FilmMetadata FilmMetadata{};
+	ReplayMetadata ReplayMetadata{};
 	std::filesystem::path FullPath{};
 	std::string MovFileName{};
 };

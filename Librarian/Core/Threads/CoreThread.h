@@ -1,16 +1,21 @@
 #pragma once
 
-#include "Core/Threads/MainThread.h"
-#include "Core/Threads/DirectorThread.h"
-#include "Core/Threads/InputThread.h"
-#include "Core/Threads/CaptureThread.h"
+#include <memory>
+
+class MainThread;
+class DirectorThread;
+class InputThread;
+class CaptureThread;
 
 struct CoreThread
 {
-	MainThread Main;
-	DirectorThread Director;
-	InputThread Input;
-	CaptureThread Capture;
+	CoreThread();
+	~CoreThread();
+
+	std::unique_ptr<MainThread> Main;
+	std::unique_ptr<DirectorThread> Director;
+	std::unique_ptr<InputThread> Input;
+	std::unique_ptr<CaptureThread> Capture;
 };
 
 extern CoreThread* g_pThread;

@@ -1,6 +1,11 @@
 #include "pch.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Persistence/ReplayState.h"
+#include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Persistence/ReplaySystem.h"
 #include "Core/UI/Tabs/Optional/ReplayManagerTab.h"
 #include "External/imgui/imgui.h" 
 
@@ -34,7 +39,7 @@ void ReplayManagerTab::DrawLibrary()
     ImGui::Spacing();
 
     this->RefreshLibraryCache();
-    std::vector<SavedReplay> savedReplaysCopy = g_pState->Replay.GetSavedReplaysCacheCopy();
+    std::vector<SavedReplay> savedReplaysCopy = g_pState->Infrastructure->Replay->GetSavedReplaysCacheCopy();
 
     std::string searchStr = m_LibrarySearchBuffer;
     std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
@@ -50,7 +55,7 @@ void ReplayManagerTab::DrawLibrary()
 
     if (ImGui::Button("Refresh List"))
     {
-        g_pState->Replay.SetRefreshReplayList(true);
+        g_pState->Infrastructure->Replay->SetRefreshReplayList(true);
         m_SelectedLibIndex = -1;
     }
 
@@ -76,11 +81,11 @@ void ReplayManagerTab::DrawLibrary()
 
 void ReplayManagerTab::RefreshLibraryCache()
 {
-    if (g_pState->Replay.ShouldRefreshReplayList())
+    if (g_pState->Infrastructure->Replay->ShouldRefreshReplayList())
     {
-        auto data = g_pSystem->Replay.GetSavedReplays();
-        g_pState->Replay.SetSavedReplaysCache(data);
-        g_pState->Replay.SetRefreshReplayList(false);
+        auto data = g_pSystem->Infrastructure->Replay->GetSavedReplays();
+        g_pState->Infrastructure->Replay->SetSavedReplaysCache(data);
+        g_pState->Infrastructure->Replay->SetRefreshReplayList(false);
     }
 }
 
@@ -95,8 +100,8 @@ bool ReplayManagerTab::MatchesLibraryFilter(const SavedReplay& replay, const std
 
     return
         ToLower(replay.DisplayName).find(filter) != std::string::npos ||
-        ToLower(replay.TheaterReplay.FilmMetadata.Author).find(filter) != std::string::npos ||
-        ToLower(replay.TheaterReplay.FilmMetadata.Info).find(filter) != std::string::npos;
+        ToLower(replay.TheaterReplay.ReplayMetadata.Author).find(filter) != std::string::npos ||
+        ToLower(replay.TheaterReplay.ReplayMetadata.Info).find(filter) != std::string::npos;
 }
 
 int ReplayManagerTab::GetVisibleLibraryCount(const std::vector<SavedReplay>& replays, const std::string& filter)
@@ -154,19 +159,19 @@ void ReplayManagerTab::DrawLibraryReplayRow(int index, SavedReplay& replay, cons
             if (m_EditingIndex == index) this->DrawRenameInput(index, replay);
             else ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "%s", replay.DisplayName.c_str());
 
-            ImGui::TextDisabled("Author: %s", replay.TheaterReplay.FilmMetadata.Author.c_str());
-            ImGui::TextWrapped("%s", replay.TheaterReplay.FilmMetadata.Info.empty() ? "No info" : replay.TheaterReplay.FilmMetadata.Info.c_str());
+            ImGui::TextDisabled("Author: %s", replay.TheaterReplay.ReplayMetadata.Author.c_str());
+            ImGui::TextWrapped("%s", replay.TheaterReplay.ReplayMetadata.Info.empty() ? "No info" : replay.TheaterReplay.ReplayMetadata.Info.c_str());
 
             ImGui::TableSetColumnIndex(1);
             if (ImGui::Button("Restore to Game", ImVec2(-FLT_MIN, 0)))
             {
-                g_pSystem->Replay.RestoreReplay(replay);
+                g_pSystem->Infrastructure->Replay->RestoreReplay(replay);
             }
 
             if (!replay.HasTimeline) ImGui::BeginDisabled();
             if (ImGui::Button("Load Timeline", ImVec2(-FLT_MIN, 0)))
             {
-                g_pSystem->Replay.LoadTimeline(replay.Hash);
+                g_pSystem->Infrastructure->Replay->LoadTimeline(replay.Hash);
             }
             if (!replay.HasTimeline) ImGui::EndDisabled();
 
@@ -196,8 +201,8 @@ void ReplayManagerTab::DrawRenameInput(int index, SavedReplay& replay)
 
     if (ImGui::InputText("##rename_input", m_RenameBuffer, IM_ARRAYSIZE(m_RenameBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        g_pSystem->Replay.RenameReplay(replay.Hash, m_RenameBuffer);
-        g_pState->Replay.SetRefreshReplayList(true);
+        g_pSystem->Infrastructure->Replay->RenameReplay(replay.Hash, m_RenameBuffer);
+        g_pState->Infrastructure->Replay->SetRefreshReplayList(true);
         m_EditingIndex = -1;
     }
 
@@ -255,8 +260,8 @@ void ReplayManagerTab::RefreshInGameCache()
 {
     if (!m_NeedsInGameRefresh) return;
 
-    std::filesystem::path tempDir = g_pState->Settings.GetMovieTempDirectory();
-    m_CachedInGameReplays = g_pSystem->Replay.GetTheaterReplays(tempDir);
+    std::filesystem::path tempDir = g_pState->Infrastructure->Settings->GetMovieTempDirectory();
+    m_CachedInGameReplays = g_pSystem->Infrastructure->Replay->GetTheaterReplays(tempDir);
 
     std::erase_if(m_CachedInGameReplays, [](const TheaterReplay& r) {
         return r.MovFileName == ".hotreload_trigger.mov";
@@ -280,8 +285,8 @@ bool ReplayManagerTab::MatchesInGameFilter(const TheaterReplay& replay, const st
 
     return 
         ToLower(replay.MovFileName).find(filter) != std::string::npos ||
-        ToLower(replay.FilmMetadata.Author).find(filter) != std::string::npos ||
-        ToLower(replay.FilmMetadata.Info).find(filter) != std::string::npos;
+        ToLower(replay.ReplayMetadata.Author).find(filter) != std::string::npos ||
+        ToLower(replay.ReplayMetadata.Info).find(filter) != std::string::npos;
 }
 
 int ReplayManagerTab::GetVisibleInGameCount(const std::string& filter)
@@ -331,17 +336,17 @@ void ReplayManagerTab::DrawInGameReplayRow(int index, const TheaterReplay& repla
 
             ImGui::TableSetColumnIndex(0);
             ImGui::TextColored(isSelected ? ImVec4(1, 0.8f, 0.2f, 1) : ImVec4(0.4f, 0.8f, 1, 1), "%s", replay.MovFileName.c_str());
-            ImGui::TextDisabled("By: %s", replay.FilmMetadata.Author.empty() ? "Unknown" : replay.FilmMetadata.Author.c_str());
+            ImGui::TextDisabled("By: %s", replay.ReplayMetadata.Author.empty() ? "Unknown" : replay.ReplayMetadata.Author.c_str());
 
-            if (!replay.FilmMetadata.Info.empty())
+            if (!replay.ReplayMetadata.Info.empty())
             {
-                ImGui::TextWrapped("%s", replay.FilmMetadata.Info.c_str());
+                ImGui::TextWrapped("%s", replay.ReplayMetadata.Info.c_str());
             }
 
             ImGui::TableSetColumnIndex(1);
             if (ImGui::Button("Save to Replay Library", ImVec2(-FLT_MIN, 0))) 
             {
-                g_pSystem->Replay.SaveReplay(replay.FullPath.string());
+                g_pSystem->Infrastructure->Replay->SaveReplay(replay.FullPath.string());
             }
 
             ImGui::Spacing();
@@ -384,8 +389,8 @@ void ReplayManagerTab::DrawDeleteLibraryReplay()
 
         if (ImGui::Button("Yes", ImVec2(120, 0)))
         {
-            g_pSystem->Replay.DeleteReplay(m_HashToDelete);
-            g_pState->Replay.SetRefreshReplayList(true);
+            g_pSystem->Infrastructure->Replay->DeleteReplay(m_HashToDelete);
+            g_pState->Infrastructure->Replay->SetRefreshReplayList(true);
             m_SelectedLibIndex = -1;
             ImGui::CloseCurrentPopup();
         }
@@ -416,7 +421,7 @@ void ReplayManagerTab::DrawDeleteGameReplay()
 
         if (ImGui::Button("Yes", ImVec2(120, 0)))
         {
-            g_pSystem->Replay.DeleteInGameReplay(m_PathToDelete);
+            g_pSystem->Infrastructure->Replay->DeleteInGameReplay(m_PathToDelete);
             m_NeedsInGameRefresh = true;
             if (m_SelectedGameIndex >= 0) m_SelectedGameIndex = -1;
             ImGui::CloseCurrentPopup();

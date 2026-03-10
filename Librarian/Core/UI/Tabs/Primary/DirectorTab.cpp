@@ -1,7 +1,13 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Director/DirectorState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Domain/CoreDomainSystem.h"
+#include "Core/Systems/Domain/Director/DirectorSystem.h"
 #include "Core/UI/Tabs/Primary/DirectorTab.h"
 #include "External/imgui/imgui.h"
 
@@ -11,7 +17,7 @@ void DirectorTab::Draw()
 
 	ImGui::Separator();
 
-	bool autoScroll = g_pState->Settings.GetDirectorAutoScroll();
+	bool autoScroll = g_pState->Infrastructure->Settings->GetDirectorAutoScroll();
 	this->DrawDirectorProgress(autoScroll);
 
 	if (ImGui::BeginChild("DirectorScriptRegion", ImVec2(0.0f, 0.0f), true))
@@ -34,8 +40,8 @@ void DirectorTab::Draw()
 			ImGui::TableSetupColumn("Reason", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort);
 			ImGui::TableHeadersRow();
 
-			const auto& script = g_pState->Director.GetScriptCopy();
-			size_t currentIndex = g_pSystem->Director.GetCurrentCommandIndex();
+			const auto& script = g_pState->Domain->Director->GetScriptCopy();
+			size_t currentIndex = g_pSystem->Domain->Director->GetCurrentCommandIndex();
 
 			for (size_t i = 0; i < script.size(); i++)
 			{
@@ -46,7 +52,7 @@ void DirectorTab::Draw()
 				if (isCurrent)
 				{
 					ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImVec4(0.2f, 0.4f, 0.6f, 0.5f)));
-					if (g_pState->Settings.GetDirectorAutoScroll()) ImGui::SetScrollHereY(0.5f);
+					if (g_pState->Infrastructure->Settings->GetDirectorAutoScroll()) ImGui::SetScrollHereY(0.5f);
 				}
 
 				// Column: Timestamp
@@ -89,8 +95,8 @@ void DirectorTab::Draw()
 
 void DirectorTab::DrawDirectorSystemStatus()
 {
-	bool init = g_pState->Director.IsInitialized();
-	bool hooks = g_pState->Director.AreHooksReady();
+	bool init = g_pState->Domain->Director->IsInitialized();
+	bool hooks = g_pState->Domain->Director->AreHooksReady();
 
 	ImGui::AlignTextToFramePadding();
 	ImGui::TextDisabled("SYSTEM STATUS");
@@ -120,9 +126,9 @@ void DirectorTab::DrawDirectorSystemStatus()
 
 void DirectorTab::DrawDirectorProgress(bool& autoScroll)
 {
-	float lastTime = g_pSystem->Director.GetLastReplayTime();
-	size_t currentIndex = g_pSystem->Director.GetCurrentCommandIndex();
-	size_t totalCommands = g_pState->Director.GetScriptSize();
+	float lastTime = g_pSystem->Domain->Director->GetLastReplayTime();
+	size_t currentIndex = g_pSystem->Domain->Director->GetCurrentCommandIndex();
+	size_t totalCommands = g_pState->Domain->Director->GetScriptSize();
 
 	ImGui::AlignTextToFramePadding();
 	ImGui::Text("Playback Time: %s", g_pUtil->Format.ToTimestamp(lastTime).c_str());
@@ -143,6 +149,6 @@ void DirectorTab::DrawDirectorProgress(bool& autoScroll)
 
 	if (ImGui::Checkbox("Auto-Scroll to Current Command", &autoScroll))
 	{
-		g_pState->Settings.SetDirectorAutoScroll(autoScroll);
+		g_pState->Infrastructure->Settings->SetDirectorAutoScroll(autoScroll);
 	}
 }

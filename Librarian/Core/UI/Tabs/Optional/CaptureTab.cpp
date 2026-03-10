@@ -1,18 +1,29 @@
 #include "pch.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
+#include "Core/States/Domain/Director/DirectorState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Capture/FFmpegState.h"
+#include "Core/States/Infrastructure/Capture/AudioState.h"
+#include "Core/States/Infrastructure/Persistence/GalleryState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
+#include "Core/Systems/Infrastructure/Persistence/GallerySystem.h"
 #include "Core/UI/Tabs/Optional/CaptureTab.h"
+#include "External/imgui/imgui.h"
 #include <shobjidl.h>
 
 void CaptureTab::Draw()
 {
-    bool isRecording = g_pState->FFmpeg.IsRecording();
+    bool isRecording = g_pState->Infrastructure->FFmpeg->IsRecording();
 
 	this->DrawTopBar(isRecording);
 
 	ImGui::Separator();
 
-	if (g_pState->FFmpeg.IsFFmpegInstalled())
+	if (g_pState->Infrastructure->FFmpeg->IsFFmpegInstalled())
 	{
         this->DrawGallery(isRecording);
 	}
@@ -23,11 +34,11 @@ void CaptureTab::Draw()
 
 void CaptureTab::DrawTopBar(bool isRecording)
 {
-    bool isCaptureActive = g_pState->FFmpeg.IsCaptureActive();
+    bool isCaptureActive = g_pState->Infrastructure->FFmpeg->IsCaptureActive();
     float totalWidth = ImGui::GetContentRegionAvail().x;
     float midPoint = totalWidth / 2.0f;
 
-    if (g_pState->FFmpeg.IsFFmpegInstalled())
+    if (g_pState->Infrastructure->FFmpeg->IsFFmpegInstalled())
     {
         // Left side of the TopBar.
         this->DrawRecordingControls(isRecording, isCaptureActive);
@@ -56,7 +67,7 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
     const char* statusText = "WAITING";
     ImVec4 statusColor = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
 
-    if (g_pState->FFmpeg.RecordingStarted() || (isRecording && !isCaptureActive))
+    if (g_pState->Infrastructure->FFmpeg->RecordingStarted() || (isRecording && !isCaptureActive))
     {
         statusText = "STARTING";
         statusColor = ImVec4(0.0f, 1.0f, 1.0f, 1.0f);
@@ -66,7 +77,7 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
         statusText = "RECORDING";
         statusColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
     }
-    else if (g_pState->FFmpeg.RecordingStopped())
+    else if (g_pState->Infrastructure->FFmpeg->RecordingStopped())
     {
         statusText = "STOPPING";
         statusColor = ImVec4(1.0f, 0.6f, 0.0f, 1.0f);
@@ -82,16 +93,16 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
     ImGui::SameLine(0, 10.0f);
     if (!isRecording)
     {
-        bool canRecord = g_pState->Theater.IsTheaterMode() &&
-            g_pState->Theater.GetTimePtr() != nullptr &&
-            g_pState->Director.IsInitialized() &&
-            g_pState->Audio.GetMasterInstance() != nullptr;
+        bool canRecord = g_pState->Domain->Theater->IsTheaterMode() &&
+            g_pState->Domain->Theater->GetTimePtr() != nullptr &&
+            g_pState->Domain->Director->IsInitialized() &&
+            g_pState->Infrastructure->Audio->GetMasterInstance() != nullptr;
 
         if (!canRecord) ImGui::BeginDisabled();
 
         if (ImGui::Button("Start Recording"))
         {
-            g_pState->FFmpeg.SetStartRecording(true);
+            g_pState->Infrastructure->FFmpeg->SetStartRecording(true);
         }
 
         if (!canRecord)
@@ -101,10 +112,10 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
                 ImGui::BeginTooltip();
                 ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Recording unavailable:");
 
-                if (!g_pState->Theater.IsTheaterMode())             ImGui::BulletText("Theater Mode is not active");
-                if (g_pState->Theater.GetTimePtr() == nullptr)      ImGui::BulletText("Theater Time not found");
-                if (!g_pState->Director.IsInitialized())            ImGui::BulletText("Director is not initialized");
-                if (g_pState->Audio.GetMasterInstance() == nullptr) ImGui::BulletText("Audio Master Instance missing");
+                if (!g_pState->Domain->Theater->IsTheaterMode())             ImGui::BulletText("Theater Mode is not active");
+                if (g_pState->Domain->Theater->GetTimePtr() == nullptr)      ImGui::BulletText("Theater Time not found");
+                if (!g_pState->Domain->Director->IsInitialized())            ImGui::BulletText("Director is not initialized");
+                if (g_pState->Infrastructure->Audio->GetMasterInstance() == nullptr) ImGui::BulletText("Audio Master Instance missing");
 
                 ImGui::EndTooltip();
             }
@@ -120,8 +131,8 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
 
         if (ImGui::Button(btnLabel))
         {
-            g_pState->FFmpeg.SetStopRecording(true);
-            g_pSystem->Gallery.RefreshList(g_pState->FFmpeg.GetOutputPath());
+            g_pState->Infrastructure->FFmpeg->SetStopRecording(true);
+            g_pSystem->Infrastructure->Gallery->RefreshList(g_pState->Infrastructure->FFmpeg->GetOutputPath());
         }
 
         if (!isCaptureActive)
@@ -137,10 +148,10 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
 
     ImGui::SameLine(0, 10.0f);
 
-    if (g_pState->FFmpeg.IsCaptureActive())
+    if (g_pState->Infrastructure->FFmpeg->IsCaptureActive())
     {
         // Draw recording time.
-        float recordingDuration = g_pSystem->FFmpeg.GetRecordingDuration();
+        float recordingDuration = g_pSystem->Infrastructure->FFmpeg->GetRecordingDuration();
 
         int hours = (int)(recordingDuration / 3600);
         int minutes = (int)(recordingDuration - hours * 3600) / 60;
@@ -166,7 +177,7 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
 
     float padding = ImGui::GetStyle().ItemSpacing.x;
 
-    if (g_pState->FFmpeg.IsDownloadInProgress())
+    if (g_pState->Infrastructure->FFmpeg->IsDownloadInProgress())
     {
         float barW = 180.0f;
         float btnW = ImGui::CalcTextSize("Cancel").x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -174,7 +185,7 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
 
         ImGui::SetCursorPosX(totalWidth - groupW - padding);
 
-        float progress = g_pState->FFmpeg.GetDownloadProgress() / 100.0f;
+        float progress = g_pState->Infrastructure->FFmpeg->GetDownloadProgress() / 100.0f;
 
         char buf[32]{};
         sprintf_s(buf, "%.0f%%", progress * 100.0f);
@@ -192,12 +203,12 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
 
         if (ImGui::Button("Cancel"))
         {
-            g_pSystem->FFmpeg.CancelDownload();
+            g_pSystem->Infrastructure->FFmpeg->CancelDownload();
         }
 
         if (isFinished) ImGui::EndDisabled();
     }
-    else if (g_pState->FFmpeg.IsFFmpegInstalled())
+    else if (g_pState->Infrastructure->FFmpeg->IsFFmpegInstalled())
     {
         float textW = ImGui::CalcTextSize("FFmpeg Installed").x;
         float btnW = ImGui::CalcTextSize("Uninstall").x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -243,7 +254,7 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
 
         if (ImGui::Button("Download FFmpeg"))
         {
-            g_pSystem->FFmpeg.DownloadFFmpeg();
+            g_pSystem->Infrastructure->FFmpeg->DownloadFFmpeg();
         }
 
         if (ImGui::IsItemHovered())
@@ -289,8 +300,8 @@ void CaptureTab::DrawRecordingSettings()
         std::lock_guard<std::mutex> lock(m_Mutex);
         if (!m_PendingNewPath.empty())
         {
-            g_pState->FFmpeg.SetOutputPath(m_PendingNewPath);
-            g_pSystem->Gallery.RefreshList(m_PendingNewPath);
+            g_pState->Infrastructure->FFmpeg->SetOutputPath(m_PendingNewPath);
+            g_pSystem->Infrastructure->Gallery->RefreshList(m_PendingNewPath);
             m_PendingNewPath = "";
         }
     }
@@ -327,18 +338,23 @@ void CaptureTab::DrawRecordingSettings()
         }
     };
 
-    DrawSectionCard("Encoder Configuration", [&]() {
+    auto encoderConfig = g_pState->Infrastructure->FFmpeg->GetEncoderConfig();
+    bool configChanged = false;
+
+    DrawSectionCard("Video Encoding", [&]() {
+        ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Output Quality");
+
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Resolution Scale:");
         ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
         ImGui::SetNextItemWidth(205.0f);
 
         const char* resolutions[] = { "1080p", "1440p", "2160p" };
-        int currentRes = (int)g_pState->FFmpeg.GetResolutionType();
+        int currentRes = (int)g_pState->Infrastructure->FFmpeg->GetResolutionType();
 
         if (ImGui::Combo("##ResCombo", &currentRes, resolutions, IM_ARRAYSIZE(resolutions)))
         {
-            g_pState->FFmpeg.SetResolutionType((ResolutionType)currentRes);
+            g_pState->Infrastructure->FFmpeg->SetResolutionType((ResolutionType)currentRes);
         }
 
         if (ImGui::IsItemHovered())
@@ -370,9 +386,8 @@ void CaptureTab::DrawRecordingSettings()
         ImGui::SetNextItemWidth(205.0f);
 
         ImGui::BeginDisabled();
-
         const char* fpsOptions[] = { "60 FPS", "120 FPS", "180 FPS", "240 FPS" };
-        float currentFPS = g_pState->FFmpeg.GetTargetFramerate();
+        float currentFPS = g_pState->Infrastructure->FFmpeg->GetTargetFramerate();
         int fpsIdx = (currentFPS >= 240) ? 3 : (currentFPS >= 180) ? 2 : (currentFPS >= 120) ? 1 : 0;
 
         if (ImGui::BeginCombo("##FPSCombo", fpsOptions[fpsIdx])) 
@@ -382,31 +397,249 @@ void CaptureTab::DrawRecordingSettings()
                 if (ImGui::Selectable(fpsOptions[n], fpsIdx == n)) 
                 {
                     float val = (n == 0) ? 60.0f : (n == 1) ? 120.0f : (n == 2) ? 180.0f : 240.0f;
-                    g_pState->FFmpeg.SetTargetFramerate(val);
+                    g_pState->Infrastructure->FFmpeg->SetTargetFramerate(val);
                 }
             }
             ImGui::EndCombo();
         }
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Framerate Synchronization");
+            ImGui::Spacing();
+            ImGui::Text("Currently managed by in-game settings.");
 
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::Text("The recording system requires a stable framerate to maintain\n"
+                "audio/video sync through the FFmpeg pipes.");
+
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Important:");
+            ImGui::Text("Recording is disabled if 'Unlimited FPS' is selected on the game settings.\n"
+                "Variable framerates can cause the recording to fail or desync.");
+
+            ImGui::EndTooltip();
+        }
         ImGui::EndDisabled();
 
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) 
-        {
-            ImGui::SetTooltip("Target Framerate is automatically synchronized with your in-game settings.");
-        }
-    }, true);
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
 
-    DrawSectionCard("Automation", [&]() {
-        bool recordOverlay = g_pState->FFmpeg.ShouldRecordUI();
+        ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Encoder Settings");
+
+        const char* encoders[] = { "NVIDIA NVENC", "AMD AMF", "Intel QuickSync", "Software (CPU)" };
+        int currentEncoder = (int)encoderConfig.EncoderType;
+        if (ImGui::Combo("Hardware Encoder", &currentEncoder, encoders, IM_ARRAYSIZE(encoders)))
+        {
+            encoderConfig.EncoderType = (EncoderType)currentEncoder;
+            configChanged = true;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 25.0f);
+
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Video Encoding Engine");
+            ImGui::Separator();
+
+            ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "Hardware (Recommended):");
+            ImGui::BulletText("NVENC (NVIDIA): Top tier quality/speed.");
+            ImGui::BulletText("AMF (AMD): Optimized for Radeon.");
+            ImGui::BulletText("QuickSync (Intel): Great iGPU fallback.");
+
+            ImGui::Spacing();
+
+            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Software (CPU):");
+            ImGui::Text("Uses x264. Very taxing. High resolutions may cause stutters or crashes.");
+
+            ImGui::Separator();
+            ImGui::TextDisabled("Note: Selection must match your hardware.");
+
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
+
+        const char* containers[] = { "Matroska (.mkv)", "MPEG-4 (.mp4)" };
+        int currentContainer = (int)encoderConfig.OutputContainer;
+        if (ImGui::Combo("File Format", &currentContainer, containers, IM_ARRAYSIZE(containers))) {
+            encoderConfig.OutputContainer = (OutputContainer)currentContainer;
+            configChanged = true;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Output Container Format");
+            ImGui::Spacing();
+            ImGui::Text("Choose the file wrapper for your video tracks.");
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::BulletText("MKV (Recommended): Crash-resistant. If the game or PC crashes,"
+                " the video remains playable up to the last second recorded.");
+            ImGui::BulletText("MP4: Industry standard, widely compatible with all players."
+                " However, it is NOT crash-safe.");
+
+            ImGui::EndTooltip();
+        }
+
+        int bitrateMbps = encoderConfig.BitrateKbps / 1000;
+        if (ImGui::SliderInt("Bitrate (Mbps)", &bitrateMbps, 20, 150))
+        {
+            if (bitrateMbps < 20) bitrateMbps = 20;
+            else if (bitrateMbps > 150) bitrateMbps = 150;
+
+            encoderConfig.BitrateKbps = bitrateMbps * 1000;
+            configChanged = true;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Video Bitrate Control");
+            ImGui::Spacing();
+            ImGui::Text("Controls the amount of data processed per second.");
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::BulletText("20 - 50 Mbps: Good for 1080p and general sharing.");
+            ImGui::BulletText("50 - 100 Mbps: High fidelity, recommended for 1440p.");
+            ImGui::BulletText("100 - 150 Mbps: Near-lossless. Best for 4K or further editing.");
+
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Warning: Higher bitrates significantly increase file size.");
+            ImGui::EndTooltip();
+        }
+
+        const char* presets[] = { "P1 (Fastest)", "P2", "P3", "P4 (Balanced)", "P5", "P6", "P7 (Slowest/High Quality)" };
+        int currentPreset = (int)encoderConfig.VideoPreset;
+        if (ImGui::Combo("Encoder Preset", &currentPreset, presets, IM_ARRAYSIZE(presets)))
+        {
+            encoderConfig.VideoPreset = (VideoPreset)currentPreset;
+            configChanged = true;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Encoder Efficiency Preset");
+            ImGui::Spacing();
+            ImGui::Text("Determines the trade-off between encoding speed and visual quality.");
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::BulletText("P1 - P3: Optimized for performance. Use if you experience lag.");
+            ImGui::BulletText("P4: Balanced setting. Recommended for most systems.");
+            ImGui::BulletText("P5 - P7: Maximum quality. Better detail retention at the same bitrate,"
+                " but requires more GPU resources.");
+            
+            ImGui::EndTooltip();
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Performance & Buffering");
+
+        if (ImGui::SliderInt("Buffer Queue Size", &encoderConfig.ThreadQueueSize, 64, 256))
+        {
+            if (encoderConfig.ThreadQueueSize < 64) encoderConfig.ThreadQueueSize = 64;
+            else if (encoderConfig.ThreadQueueSize > 256) encoderConfig.ThreadQueueSize = 256;
+            configChanged = true;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Sets the FFmpeg '-thread_queue_size' parameter.");
+            ImGui::Spacing();
+            ImGui::BulletText("This defines how many incoming packets (video frames/audio blocks)"
+                " can be buffered from the pipes before they start dropping.");
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Note: Higher values help with stuttering during CPU spikes"
+                " but will increase memory usage.");
+            ImGui::EndTooltip();
+        }
+
+        if (ImGui::SliderInt("Video Pipe Buffer (MB)", &encoderConfig.VideoBufferPipeSize, 64, 1024, "%d MB"))
+        {
+            configChanged = true;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Video Pipe Memory Allocation");
+            ImGui::Separator();
+
+            ImGui::Text("Sets the RAM buffer size for the raw video data stream.");
+
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "Recommendations:");
+            ImGui::BulletText("1080p: 128 MB - 256 MB is sufficient.");
+            ImGui::BulletText("4K / High FPS: 512 MB - 1024 MB recommended.");
+
+            ImGui::Spacing();
+            ImGui::Text("A larger buffer prevents 'Broken Pipe' errors by providing a "
+                "larger memory cushion for raw frames before they reach the encoder.");
+
+            ImGui::Separator();
+            ImGui::TextDisabled("Note: This memory is only allocated during active recording.");
+
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
+
+        const char* filters[] = { "Bicubic (Fast)", "Lanczos (Sharp)", "Bilinear (Light)", "Spline" };
+        int currentFilter = (int)encoderConfig.ScalingFilter;
+        if (ImGui::Combo("Scaling Filter", &currentFilter, filters, IM_ARRAYSIZE(filters)))
+        {
+            encoderConfig.ScalingFilter = (ScalingFilter)currentFilter;
+            configChanged = true;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Resampling Algorithm");
+            ImGui::Spacing();
+            ImGui::Text("Determines how frames are resized if the output resolution"
+                " differs from your current game window.");
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::BulletText("Bicubic: Balanced speed and quality (Recommended).");
+            ImGui::BulletText("Lanczos: High quality, sharper results, more CPU intensive.");
+            ImGui::BulletText("Bilinear: Fastest, but can look a bit blurry.");
+            ImGui::BulletText("Spline: Excellent for high-ratio upscaling.");
+
+            ImGui::Spacing();
+            ImGui::TextDisabled("Note: If your in-game resolution is the same as the selected"
+                " output resolution scale, this filter is bypassed entirely.");
+            ImGui::EndTooltip();
+        }
+    }, false);
+
+    DrawSectionCard("Recording Behaviour", [&]() {
+        bool recordOverlay = g_pState->Infrastructure->FFmpeg->ShouldRecordUI();
         if (ImGui::Checkbox("Record ImGui Overlay", &recordOverlay))
         {
-            g_pState->FFmpeg.SetRecordUI(recordOverlay);
+            g_pState->Infrastructure->FFmpeg->SetRecordUI(recordOverlay);
         }
 
-        bool stopOnLast = g_pState->FFmpeg.StopOnLastEvent();
+        bool stopOnLast = g_pState->Infrastructure->FFmpeg->StopOnLastEvent();
         if (ImGui::Checkbox("Stop on last event", &stopOnLast))
         {
-            g_pState->FFmpeg.SetStopOnLastEvent(stopOnLast);
+            g_pState->Infrastructure->FFmpeg->SetStopOnLastEvent(stopOnLast);
         }
 
         if (!stopOnLast) ImGui::BeginDisabled();
@@ -416,20 +649,20 @@ void CaptureTab::DrawRecordingSettings()
         ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
         ImGui::SetNextItemWidth(205.0f);
 
-        float stopDelay = g_pState->FFmpeg.GetStopDelayDuration();
+        float stopDelay = g_pState->Infrastructure->FFmpeg->GetStopDelayDuration();
 
         if (ImGui::SliderFloat("##DelaySlider", &stopDelay, 0.0f, 20.0f, "%.1fs"))
         {
-            g_pState->FFmpeg.SetStopDelayDuration(stopDelay);
+            g_pState->Infrastructure->FFmpeg->SetStopDelayDuration(stopDelay);
         }
 
         if (!stopOnLast) ImGui::EndDisabled();
     });
 
-    DrawSectionCard("Storage & Paths", [&]() {
+    DrawSectionCard("Output & Storage", [&]() {
         ImGui::Text("Output Directory:");
 
-        std::string outputPath = g_pState->FFmpeg.GetOutputPath();
+        std::string outputPath = g_pState->Infrastructure->FFmpeg->GetOutputPath();
 
         ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 110.0f);
@@ -453,17 +686,19 @@ void CaptureTab::DrawRecordingSettings()
             }).detach();
         }
     });
+
+    if (configChanged) g_pState->Infrastructure->FFmpeg->UpdateEncoderConfig(encoderConfig);
 }   
 
 void CaptureTab::DrawGallery(bool isRecording)
 {
-    const std::vector<VideoData> videos = g_pState->Gallery.GetVideos();
+    const std::vector<VideoData> videos = g_pState->Infrastructure->Gallery->GetVideos();
     int videoCount = (int)videos.size();
 
     ImGui::AlignTextToFramePadding();
     ImGui::TextDisabled("Recorded Videos (%d)", videoCount);
 
-    size_t pending = g_pSystem->Gallery.GetPendingCount();
+    size_t pending = g_pSystem->Infrastructure->Gallery->GetPendingCount();
     if (pending > 0) 
     {
         ImGui::SameLine();
@@ -474,7 +709,7 @@ void CaptureTab::DrawGallery(bool isRecording)
     if (isRecording) ImGui::BeginDisabled();
     if (ImGui::Button("Refresh Gallery", ImVec2(130, 0))) 
     {
-        g_pSystem->Gallery.RefreshList(g_pState->FFmpeg.GetOutputPath());
+        g_pSystem->Infrastructure->Gallery->RefreshList(g_pState->Infrastructure->FFmpeg->GetOutputPath());
     }
     if (isRecording) ImGui::EndDisabled();
 
@@ -513,15 +748,15 @@ void CaptureTab::DrawGallery(bool isRecording)
 
                     if (!video.IsMetadataLoaded && !video.IsLoading)
                     {
-                        g_pState->Gallery.SetLoading(i, true);
-                        g_pSystem->Gallery.LoadMetadataAsync(i);
+                        g_pState->Infrastructure->Gallery->SetLoading(i, true);
+                        g_pSystem->Infrastructure->Gallery->LoadMetadataAsync(i);
                     }
 
                     ImGui::TableNextColumn();
                     ImGui::PushID(i);
 
                     float cellWidth = ImGui::GetContentRegionAvail().x;
-                    bool isSelected = (g_pState->Gallery.GetSelectedIndex() == i);
+                    bool isSelected = (g_pState->Infrastructure->Gallery->GetSelectedIndex() == i);
 
                     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 8.0f);
                     ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
@@ -531,7 +766,7 @@ void CaptureTab::DrawGallery(bool isRecording)
                     if (ImGui::BeginChild("VideoCard", ImVec2(cellWidth, 320), ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
                     {
                         if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0))
-                            g_pState->Gallery.SetSelectedIndex(i);
+                            g_pState->Infrastructure->Gallery->SetSelectedIndex(i);
 
                         const float pad = 12.0f;
                         const float contentWidth = cellWidth - (pad * 2.0f);
@@ -574,7 +809,7 @@ void CaptureTab::DrawGallery(bool isRecording)
                                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 2));
                                 if (ImGui::InputText("##edit_video_name", RenameVideoBuf, IM_ARRAYSIZE(RenameVideoBuf), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                                 {
-                                    g_pSystem->Gallery.RenameVideo(i, RenameVideoBuf);
+                                    g_pSystem->Infrastructure->Gallery->RenameVideo(i, RenameVideoBuf);
                                     m_EditingVideoIndex = -1;
                                 }
                                 ImGui::PopStyleVar();
@@ -610,7 +845,7 @@ void CaptureTab::DrawGallery(bool isRecording)
                         {
                             if (video.Duration > 0.0f) 
                             {
-                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Duration: %s", g_pSystem->Gallery.FormatDuration(video.Duration).c_str());
+                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Duration: %s", g_pSystem->Infrastructure->Gallery->FormatDuration(video.Duration).c_str());
                             }
                             else 
                             {
@@ -622,7 +857,7 @@ void CaptureTab::DrawGallery(bool isRecording)
                             ImGui::TextDisabled("Duration: Loading...");
                         }
 
-                        ImGui::TextDisabled("Size: %s", g_pSystem->Gallery.FormatBytes(video.FileSize).c_str());
+                        ImGui::TextDisabled("Size: %s", g_pSystem->Infrastructure->Gallery->FormatBytes(video.FileSize).c_str());
 
                         ImGui::Unindent(pad);
                         ImGui::EndGroup();
@@ -692,7 +927,7 @@ void CaptureTab::DrawUninstallPopup()
     
     if (ImGui::Button("Yes", ImVec2(buttonWidth, 0)))
     {
-        g_pSystem->FFmpeg.UninstallFFmpeg();
+        g_pSystem->Infrastructure->FFmpeg->UninstallFFmpeg();
         ImGui::CloseCurrentPopup();
     }
     
@@ -717,7 +952,7 @@ void CaptureTab::DrawDeleteVideoPopup()
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
     if (ImGui::Button("Yes", ImVec2(buttonWidth, 0)))
     {
-        g_pSystem->Gallery.DeleteVideo(m_VideoIndexToDelete);
+        g_pSystem->Infrastructure->Gallery->DeleteVideo(m_VideoIndexToDelete);
         ImGui::CloseCurrentPopup();
     }
     ImGui::PopStyleColor();

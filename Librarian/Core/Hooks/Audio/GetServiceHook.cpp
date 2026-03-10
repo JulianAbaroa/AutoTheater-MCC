@@ -1,7 +1,13 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Capture/AudioState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
 #include "Core/Hooks/Audio/GetServiceHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -10,16 +16,16 @@
 HRESULT __stdcall GetServiceHook::HookedGetService(IAudioClient* pThis, REFIID riid, void** ppv)
 {
 	HRESULT hr = m_OriginalFunction(pThis, riid, ppv);
-	if (!g_pState->Theater.IsTheaterMode()) return hr;
+	if (!g_pState->Domain->Theater->IsTheaterMode()) return hr;
 
 	if (SUCCEEDED(hr) && riid == __uuidof(IAudioRenderClient) && ppv != nullptr)
 	{
 		IAudioRenderClient* pRenderClient = (IAudioRenderClient*)*ppv;
-		AudioFormat format = g_pState->Audio.GetActiveInstance(pThis);
+		AudioFormat format = g_pState->Infrastructure->Audio->GetAudioInstance(pThis);
 
 		if (format.Channels == 8)
 		{
-			g_pState->Audio.RegisterActiveInstance(
+			g_pState->Infrastructure->Audio->RegisterAudioInstance(
 				pRenderClient,
 				format.Channels,
 				format.SamplesPerSec,
@@ -36,7 +42,7 @@ void GetServiceHook::Install()
 {
 	if (m_IsHookInstalled.load()) return;
 
-	void* functionAddress = g_pSystem->Audio.GetAudioClientVTableAddress(14);
+	void* functionAddress = g_pSystem->Infrastructure->Audio->GetAudioClientVTableAddress(14);
 	if (!functionAddress)
 	{
 		g_pUtil->Log.Append("[GetService] ERROR: Failed to obtain the function address.");

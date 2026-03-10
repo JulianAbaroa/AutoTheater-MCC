@@ -100,17 +100,50 @@
     <Filter Include="Core\Hooks\Memory">
       <UniqueIdentifier>{00e374de-5f5b-43be-986d-73d977963244}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\States\Domain\Director">
+      <UniqueIdentifier>{cd5329bb-d0a0-4a45-9ad1-68d81cd7965a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\States\Domain\Theater">
+      <UniqueIdentifier>{9a35a398-03d3-45b0-bdaa-3cdd983e5ce7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\States\Domain\Timeline">
+      <UniqueIdentifier>{cee151da-e20a-4d68-a004-0859411ef695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\States\Infrastructure\Capture">
+      <UniqueIdentifier>{74382cb2-72d7-43c3-8622-1e9b883d48c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\States\Infrastructure\Engine">
+      <UniqueIdentifier>{0c459414-b6cc-42c4-8741-3c0cd5a6040d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\States\Infrastructure\Persistence">
+      <UniqueIdentifier>{efde284a-ab37-46ba-8686-4d4c14740f64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Systems\Domain\Director">
+      <UniqueIdentifier>{0bd32805-e617-4087-8051-2e561602fc3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Systems\Domain\Theater">
+      <UniqueIdentifier>{6ee140ba-014f-4563-9d59-4f9aa547bbfa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Systems\Domain\Timeline">
+      <UniqueIdentifier>{43de4e23-3b01-4f51-8947-293ca31fcca7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Systems\Infrastructure\Capture">
+      <UniqueIdentifier>{f55a5e24-a5a3-44cf-a7db-364d5fbca244}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Systems\Infrastructure\Engine">
+      <UniqueIdentifier>{a5040635-5199-475d-afe5-99b3e6d4db9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Systems\Infrastructure\Persistence">
+      <UniqueIdentifier>{add3505e-6aa3-40c3-87d6-105182bc44f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Threads\Domain">
+      <UniqueIdentifier>{f15e10ab-ca37-4c85-9bab-0f9c436df9b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Threads\Infrastructure">
+      <UniqueIdentifier>{71655b37-5fe3-4835-924b-664180fe5e04}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\Threads\DirectorThread.h">
-      <Filter>Core\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Threads\InputThread.h">
-      <Filter>Core\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Threads\MainThread.h">
-      <Filter>Core\Threads</Filter>
-    </ClInclude>
     <ClInclude Include="Proxy\ProxyExports.h">
       <Filter>Proxy</Filter>
     </ClInclude>
@@ -147,50 +180,8 @@
     <ClInclude Include="Core\Common\Types\InputTypes.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Common\Types\AutoTheaterTypes.h">
-      <Filter>Core\Common\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Domain\DirectorState.h">
-      <Filter>Core\States\Domain</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Domain\EventRegistryState.h">
-      <Filter>Core\States\Domain</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Domain\TheaterState.h">
-      <Filter>Core\States\Domain</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Domain\TimelineState.h">
-      <Filter>Core\States\Domain</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Infrastructure\LifecycleState.h">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Infrastructure\RenderState.h">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Infrastructure\ReplayState.h">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Infrastructure\SettingsState.h">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClInclude>
     <ClInclude Include="Core\States\Interface\DebugState.h">
       <Filter>Core\States\Interface</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Interface\InputState.h">
-      <Filter>Core\States\Interface</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Domain\DirectorSystem.h">
-      <Filter>Core\Systems\Domain</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Domain\EventRegistrySystem.h">
-      <Filter>Core\Systems\Domain</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Domain\TheaterSystem.h">
-      <Filter>Core\Systems\Domain</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Domain\TimelineSystem.h">
-      <Filter>Core\Systems\Domain</Filter>
     </ClInclude>
     <ClInclude Include="Core\Hooks\Data\SpectatorHandleInputHook.h">
       <Filter>Core\Hooks\Data</Filter>
@@ -210,22 +201,7 @@
     <ClInclude Include="Core\Hooks\Lifecycle\GameEngineStartHook.h">
       <Filter>Core\Hooks\Lifecycle</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\LifecycleSystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\RenderSystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\ReplaySystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\SettingsSystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Systems\Interface\DebugSystem.h">
-      <Filter>Core\Systems\Interface</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Interface\InputSystem.h">
       <Filter>Core\Systems\Interface</Filter>
     </ClInclude>
     <ClInclude Include="Core\Hooks\Audio\AudioClientInitializeHook.h">
@@ -240,27 +216,6 @@
     <ClInclude Include="Core\Hooks\Audio\ReleaseBufferHook.h">
       <Filter>Core\Hooks\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Core\States\Infrastructure\AudioState.h">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Infrastructure\FFmpegState.h">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Infrastructure\VideoState.h">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\AudioSystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\FFmpegSystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\VideoSystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Threads\CaptureThread.h">
-      <Filter>Core\Threads</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Common\Types\AudioTypes.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
@@ -269,12 +224,6 @@
     </ClInclude>
     <ClInclude Include="Core\Common\Types\FFmpegTypes.h">
       <Filter>Core\Common\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\States\Infrastructure\GalleryState.h">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\GallerySystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
     </ClInclude>
     <ClInclude Include="Core\Common\Types\GalleryTypes.h">
       <Filter>Core\Common\Types</Filter>
@@ -285,14 +234,8 @@
     <ClInclude Include="Core\Hooks\Data\BlamOpenFileHook.h">
       <Filter>Core\Hooks\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Data\FilmInitializeStateHook.h">
-      <Filter>Core\Hooks\Data</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Hooks\Input\GetButtonStateHook.h">
       <Filter>Core\Hooks\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Hooks\Signatures.h">
-      <Filter>Core\Hooks</Filter>
     </ClInclude>
     <ClInclude Include="Core\Hooks\Render\ResizeBuffersHook.h">
       <Filter>Core\Hooks\Render</Filter>
@@ -371,31 +314,163 @@
     <ClInclude Include="Core\Common\Types\LogTypes.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\PreferencesSystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
+    <ClInclude Include="Core\States\Domain\Director\DirectorState.h">
+      <Filter>Core\States\Domain\Director</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Systems\Infrastructure\ScannerSystem.h">
-      <Filter>Core\Systems\Infrastructure</Filter>
+    <ClInclude Include="Core\States\Domain\Director\EventRegistryState.h">
+      <Filter>Core\States\Domain\Director</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Memory\TargetFPS.h">
+    <ClInclude Include="Core\States\Domain\Timeline\TimelineState.h">
+      <Filter>Core\States\Domain\Timeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Domain\Theater\TheaterState.h">
+      <Filter>Core\States\Domain\Theater</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Capture\AudioState.h">
+      <Filter>Core\States\Infrastructure\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Capture\FFmpegState.h">
+      <Filter>Core\States\Infrastructure\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Capture\VideoState.h">
+      <Filter>Core\States\Infrastructure\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Engine\InputState.h">
+      <Filter>Core\States\Infrastructure\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Engine\LifecycleState.h">
+      <Filter>Core\States\Infrastructure\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Engine\RenderState.h">
+      <Filter>Core\States\Infrastructure\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Persistence\GalleryState.h">
+      <Filter>Core\States\Infrastructure\Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Persistence\ReplayState.h">
+      <Filter>Core\States\Infrastructure\Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Persistence\SettingsState.h">
+      <Filter>Core\States\Infrastructure\Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Domain\Director\DirectorSystem.h">
+      <Filter>Core\Systems\Domain\Director</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Domain\Director\EventRegistrySystem.h">
+      <Filter>Core\Systems\Domain\Director</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Domain\Timeline\TimelineSystem.h">
+      <Filter>Core\Systems\Domain\Timeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Domain\Theater\TheaterSystem.h">
+      <Filter>Core\Systems\Domain\Theater</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Capture\AudioSystem.h">
+      <Filter>Core\Systems\Infrastructure\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Capture\FFmpegSystem.h">
+      <Filter>Core\Systems\Infrastructure\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Capture\VideoSystem.h">
+      <Filter>Core\Systems\Infrastructure\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\InputSystem.h">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\LifecycleSystem.h">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\RenderSystem.h">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\ScannerSystem.h">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Persistence\GallerySystem.h">
+      <Filter>Core\Systems\Infrastructure\Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Persistence\PreferencesSystem.h">
+      <Filter>Core\Systems\Infrastructure\Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Persistence\ReplaySystem.h">
+      <Filter>Core\Systems\Infrastructure\Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Persistence\SettingsSystem.h">
+      <Filter>Core\Systems\Infrastructure\Persistence</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Audio\CoreAudioHook.h">
+      <Filter>Core\Hooks\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\CoreDataHook.h">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Input\CoreInputHook.h">
+      <Filter>Core\Hooks\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Lifecycle\CoreLifecycleHook.h">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Memory\CoreMemoryHook.h">
       <Filter>Core\Hooks\Memory</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Hooks\Memory\TelemetryTables.h">
+    <ClInclude Include="Core\Hooks\Memory\ObjectsTableHook.h">
       <Filter>Core\Hooks\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Memory\PlayersTableHook.h">
+      <Filter>Core\Hooks\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Memory\TargetFramerateHook.h">
+      <Filter>Core\Hooks\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Render\CoreRenderHook.h">
+      <Filter>Core\Hooks\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Window\CoreWindowHook.h">
+      <Filter>Core\Hooks\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Domain\CoreDomainState.h">
+      <Filter>Core\States\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\CoreInfrastructureState.h">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Domain\CoreDomainSystem.h">
+      <Filter>Core\Systems\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\CoreInfrastructureSystem.h">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Hooks\Data\ReplayInitializeStateHook.h">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\AppTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\Domain\DirectorThread.h">
+      <Filter>Core\Threads\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\Domain\MainThread.h">
+      <Filter>Core\Threads\Domain</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\Infrastructure\CaptureThread.h">
+      <Filter>Core\Threads\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threads\Infrastructure\InputThread.h">
+      <Filter>Core\Threads\Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\SignatureTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Signatures.h">
+      <Filter>Core\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\DX11Types.h">
+      <Filter>Core\Common\Types</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\DllMain.cpp">
       <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Threads\DirectorThread.cpp">
-      <Filter>Core\Threads</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Threads\InputThread.cpp">
-      <Filter>Core\Threads</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Threads\MainThread.cpp">
-      <Filter>Core\Threads</Filter>
     </ClCompile>
     <ClCompile Include="Ignore\todos.cpp" />
     <ClCompile Include="Core\Common\AppCore.cpp">
@@ -437,47 +512,8 @@
     <ClCompile Include="External\minhook\src\hde\hde64.c">
       <Filter>External\minhook\hde</Filter>
     </ClCompile>
-    <ClCompile Include="Core\States\Domain\DirectorState.cpp">
-      <Filter>Core\States\Domain</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Domain\EventRegistryState.cpp">
-      <Filter>Core\States\Domain</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Domain\TheaterState.cpp">
-      <Filter>Core\States\Domain</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Domain\TimelineState.cpp">
-      <Filter>Core\States\Domain</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Infrastructure\LifecycleState.cpp">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Infrastructure\RenderState.cpp">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Infrastructure\ReplayState.cpp">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Infrastructure\SettingsState.cpp">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClCompile>
     <ClCompile Include="Core\States\Interface\DebugState.cpp">
       <Filter>Core\States\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Interface\InputState.cpp">
-      <Filter>Core\States\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Domain\DirectorSystem.cpp">
-      <Filter>Core\Systems\Domain</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Domain\EventRegistrySystem.cpp">
-      <Filter>Core\Systems\Domain</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Domain\TheaterSystem.cpp">
-      <Filter>Core\Systems\Domain</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Domain\TimelineSystem.cpp">
-      <Filter>Core\Systems\Domain</Filter>
     </ClCompile>
     <ClCompile Include="Core\Hooks\Data\SpectatorHandleInputHook.cpp">
       <Filter>Core\Hooks\Data</Filter>
@@ -497,22 +533,7 @@
     <ClCompile Include="Core\Hooks\Lifecycle\GameEngineStartHook.cpp">
       <Filter>Core\Hooks\Lifecycle</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\LifecycleSystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\RenderSystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\ReplaySystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\SettingsSystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Systems\Interface\DebugSystem.cpp">
-      <Filter>Core\Systems\Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Interface\InputSystem.cpp">
       <Filter>Core\Systems\Interface</Filter>
     </ClCompile>
     <ClCompile Include="Core\Hooks\Audio\AudioClientInitializeHook.cpp">
@@ -527,37 +548,7 @@
     <ClCompile Include="Core\Hooks\Audio\ReleaseBufferHook.cpp">
       <Filter>Core\Hooks\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="Core\States\Infrastructure\AudioState.cpp">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Infrastructure\FFmpegState.cpp">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Infrastructure\VideoState.cpp">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\AudioSystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\FFmpegSystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\VideoSystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Threads\CaptureThread.cpp">
-      <Filter>Core\Threads</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\States\Infrastructure\GalleryState.cpp">
-      <Filter>Core\States\Infrastructure</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\GallerySystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Hooks\Data\BlamOpenFileHook.cpp">
-      <Filter>Core\Hooks\Data</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Hooks\Data\FilmInitializeStateHook.cpp">
       <Filter>Core\Hooks\Data</Filter>
     </ClCompile>
     <ClCompile Include="Core\Hooks\Input\GetButtonStateHook.cpp">
@@ -615,17 +606,158 @@
     <ClCompile Include="Core\Utils\ThreadUtil.cpp">
       <Filter>Core\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\PreferencesSystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
+    <ClCompile Include="Core\States\CoreState.cpp">
+      <Filter>Core\States</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Systems\Infrastructure\ScannerSystem.cpp">
-      <Filter>Core\Systems\Infrastructure</Filter>
+    <ClCompile Include="Core\States\Domain\Director\DirectorState.cpp">
+      <Filter>Core\States\Domain\Director</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Memory\TargetFPS.cpp">
+    <ClCompile Include="Core\States\Domain\Director\EventRegistryState.cpp">
+      <Filter>Core\States\Domain\Director</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Domain\Timeline\TimelineState.cpp">
+      <Filter>Core\States\Domain\Timeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Domain\Theater\TheaterState.cpp">
+      <Filter>Core\States\Domain\Theater</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Capture\AudioState.cpp">
+      <Filter>Core\States\Infrastructure\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Capture\FFmpegState.cpp">
+      <Filter>Core\States\Infrastructure\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Capture\VideoState.cpp">
+      <Filter>Core\States\Infrastructure\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Engine\InputState.cpp">
+      <Filter>Core\States\Infrastructure\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Engine\LifecycleState.cpp">
+      <Filter>Core\States\Infrastructure\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Engine\RenderState.cpp">
+      <Filter>Core\States\Infrastructure\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Persistence\GalleryState.cpp">
+      <Filter>Core\States\Infrastructure\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Persistence\ReplayState.cpp">
+      <Filter>Core\States\Infrastructure\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Persistence\SettingsState.cpp">
+      <Filter>Core\States\Infrastructure\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Domain\Director\DirectorSystem.cpp">
+      <Filter>Core\Systems\Domain\Director</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Domain\Director\EventRegistrySystem.cpp">
+      <Filter>Core\Systems\Domain\Director</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Domain\Timeline\TimelineSystem.cpp">
+      <Filter>Core\Systems\Domain\Timeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Domain\Theater\TheaterSystem.cpp">
+      <Filter>Core\Systems\Domain\Theater</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Capture\AudioSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Capture\FFmpegSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Capture\VideoSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\InputSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\LifecycleSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\RenderSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\ScannerSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Persistence\GallerySystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Persistence\PreferencesSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Persistence\ReplaySystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Persistence\SettingsSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\CoreHook.cpp">
+      <Filter>Core\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Audio\CoreAudioHook.cpp">
+      <Filter>Core\Hooks\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\CoreDataHook.cpp">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Input\CoreInputHook.cpp">
+      <Filter>Core\Hooks\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Lifecycle\CoreLifecycleHook.cpp">
+      <Filter>Core\Hooks\Lifecycle</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Memory\CoreMemoryHook.cpp">
       <Filter>Core\Hooks\Memory</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Hooks\Memory\TelemetryTables.cpp">
+    <ClCompile Include="Core\Hooks\Memory\ObjectsTableHook.cpp">
       <Filter>Core\Hooks\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Memory\PlayersTableHook.cpp">
+      <Filter>Core\Hooks\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Memory\TargetFramerateHook.cpp">
+      <Filter>Core\Hooks\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Render\CoreRenderHook.cpp">
+      <Filter>Core\Hooks\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Window\CoreWindowHook.cpp">
+      <Filter>Core\Hooks\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\CoreSystem.cpp">
+      <Filter>Core\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Domain\CoreDomainState.cpp">
+      <Filter>Core\States\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\CoreInfrastructureState.cpp">
+      <Filter>Core\States\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Domain\CoreDomainSystem.cpp">
+      <Filter>Core\Systems\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\CoreInfrastructureSystem.cpp">
+      <Filter>Core\Systems\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Data\ReplayInitializeStateHook.cpp">
+      <Filter>Core\Hooks\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\Domain\DirectorThread.cpp">
+      <Filter>Core\Threads\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\Domain\MainThread.cpp">
+      <Filter>Core\Threads\Domain</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\Infrastructure\CaptureThread.cpp">
+      <Filter>Core\Threads\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\Infrastructure\InputThread.cpp">
+      <Filter>Core\Threads\Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\CoreThread.cpp">
+      <Filter>Core\Threads</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

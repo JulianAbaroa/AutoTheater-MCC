@@ -1,7 +1,13 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Domain/CoreDomainSystem.h"
+#include "Core/Systems/Domain/Theater/TheaterSystem.h"
 #include "Core/UI/Tabs/Primary/TheaterTab.h"
 #include "External/imgui/imgui_internal.h"
 #include "External/imgui/imgui.h"
@@ -12,7 +18,7 @@ void TheaterTab::Draw()
 
 	ImGui::Separator();
 
-	bool autoScroll = g_pState->Settings.GetTheaterAutoScroll();
+	bool autoScroll = g_pState->Infrastructure->Settings->GetTheaterAutoScroll();
 	this->DrawPlaybackControls(autoScroll);
 
 	// Section: Player List
@@ -34,9 +40,9 @@ void TheaterTab::Draw()
 			ImGui::TableSetupColumn("Last Known World Position (X, Y, Z)", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort);
 			ImGui::TableHeadersRow();
 
-			uint8_t followedIdx = g_pState->Theater.GetSpectatedPlayerIndex();
+			uint8_t followedIdx = g_pState->Domain->Theater->GetSpectatedPlayerIndex();
 
-			g_pState->Theater.ForEachPlayer([&](const PlayerInfo& player)
+			g_pState->Domain->Theater->ForEachPlayer([&](const PlayerInfo& player)
 			{
 				if (player.Name.empty()) return;
 			
@@ -78,7 +84,7 @@ void TheaterTab::Draw()
 
 void TheaterTab::DrawTheaterStatus()
 {
-	bool active = g_pState->Theater.IsTheaterMode();
+	bool active = g_pState->Domain->Theater->IsTheaterMode();
 	ImGui::AlignTextToFramePadding();
 	if (active) ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "THEATER ACTIVE");
 	else		ImGui::TextDisabled("THEATER INACTIVE");
@@ -87,10 +93,10 @@ void TheaterTab::DrawTheaterStatus()
 	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 	ImGui::SameLine();
 
-	bool attachToPOV = g_pState->Theater.IsThirdPersonForced();
+	bool attachToPOV = g_pState->Domain->Theater->IsThirdPersonForced();
 	if (ImGui::Checkbox("Lock Third-Person POV (Director Phase)", &attachToPOV))
 	{
-		g_pState->Theater.SetThirdPersonForced(attachToPOV);
+		g_pState->Domain->Theater->SetThirdPersonForced(attachToPOV);
 	}
 
 	if (ImGui::IsItemHovered())
@@ -101,7 +107,7 @@ void TheaterTab::DrawTheaterStatus()
 
 void TheaterTab::DrawPlaybackControls(bool& autoScroll)
 {
-	float* pTime = g_pState->Theater.GetTimePtr();
+	float* pTime = g_pState->Domain->Theater->GetTimePtr();
 
 	ImGui::AlignTextToFramePadding();
 	if (pTime) ImGui::Text("Time: %s", g_pUtil->Format.ToTimestamp(*pTime).c_str());
@@ -109,8 +115,8 @@ void TheaterTab::DrawPlaybackControls(bool& autoScroll)
 
 	ImGui::SameLine(0, 30.0f);
 
-	float* pScale = g_pState->Theater.GetTimeScalePtr();
-	float realScale = g_pSystem->Theater.GetRealTimeScale();
+	float* pScale = g_pState->Domain->Theater->GetTimeScalePtr();
+	float realScale = g_pSystem->Domain->Theater->GetRealTimeScale();
 
 	if (pScale)
 	{
@@ -124,7 +130,7 @@ void TheaterTab::DrawPlaybackControls(bool& autoScroll)
 		float tempSpeed = *pScale;
 		if (ImGui::SliderFloat("##Speed", &tempSpeed, 0.0f, 16.0f, "Target: %.2fx"))
 		{
-			g_pSystem->Theater.SetReplaySpeed(std::clamp(tempSpeed, 0.0f, 24.0f));
+			g_pSystem->Domain->Theater->SetReplaySpeed(std::clamp(tempSpeed, 0.0f, 24.0f));
 		}
 		ImGui::PopItemWidth();
 
@@ -149,7 +155,7 @@ void TheaterTab::DrawPlaybackControls(bool& autoScroll)
 
 	if (ImGui::Checkbox("Auto-Scroll to Target", &autoScroll))
 	{
-		g_pState->Settings.SetTheaterAutoScroll(autoScroll);
+		g_pState->Infrastructure->Settings->SetTheaterAutoScroll(autoScroll);
 	}
 
 	if (ImGui::IsItemHovered())

@@ -1,7 +1,13 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Capture/AudioState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
 #include "Core/Hooks/Audio/AudioClientInitializeHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -16,9 +22,9 @@ HRESULT __stdcall AudioClientInitializeHook::HookedAudioClientInitialize(
 	const WAVEFORMATEX* pFormat,
 	LPCGUID AudioSessionGuid)
 {
-	if (pFormat != nullptr && pFormat->nChannels == 8 && g_pState->Theater.IsTheaterMode())
+	if (pFormat != nullptr && pFormat->nChannels == 8 && g_pState->Domain->Theater->IsTheaterMode())
 	{
-		g_pState->Audio.RegisterActiveInstance(
+		g_pState->Infrastructure->Audio->RegisterAudioInstance(
 			pThis, 
 			pFormat->nChannels, 
 			pFormat->nSamplesPerSec,
@@ -34,7 +40,7 @@ void AudioClientInitializeHook::Install()
 {
 	if (m_IsHookInstalled.load()) return;
 
-	void* functionAddress = g_pSystem->Audio.GetAudioClientVTableAddress(3);
+	void* functionAddress = g_pSystem->Infrastructure->Audio->GetAudioClientVTableAddress(3);
 	if (!functionAddress)
 	{
 		g_pUtil->Log.Append("[AudioClientInitialize] ERROR: Failed to obtain the function address.");

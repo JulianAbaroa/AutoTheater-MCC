@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Common/Types/LogTypes.h"
+#include <functional>
 #include <string>
 #include <mutex>
 

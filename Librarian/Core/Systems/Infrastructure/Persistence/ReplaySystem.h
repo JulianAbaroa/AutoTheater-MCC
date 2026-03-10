@@ -1,0 +1,32 @@
+#pragma once
+
+#include "Core/Common/Types/UITypes.h"
+#include <string>
+#include <vector>
+
+class ReplaySystem
+{
+public:
+	void SaveReplay(const std::string& sourceReplayPath);
+	void DeleteReplay(const std::string& hash);
+
+	bool IsReplaySaved(std::string replayHash);
+
+	void SaveMetadata(const std::string& hash, const std::string& defaultName, const ReplayMetadata& metadata);
+	void RenameReplay(const std::string& hash, const std::string& newName);
+	void RestoreReplay(const SavedReplay& replay);
+
+	void SaveTimeline(const std::string& replayHash);
+	void LoadTimeline(const std::string& replayHash);
+
+	std::vector<SavedReplay> GetSavedReplays();
+	std::string CalculateFileHash(const std::string& sourceReplayPath);
+
+	std::vector<TheaterReplay> GetTheaterReplays(const std::filesystem::path& directoryPath);
+	TheaterReplay ScanReplay(const std::filesystem::path& filePath);
+	void DeleteInGameReplay(const std::filesystem::path& replayPath);
+
+private:
+	float GetLastTimestampFromFile(const std::string& timelinePath);
+	void HotreloadReplays();
+};

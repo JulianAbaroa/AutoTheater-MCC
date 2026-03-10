@@ -29,3 +29,34 @@ struct TargetResolution
 		}
 	}
 };
+
+enum class VideoPreset
+{
+	P1, P2, P3, P4, P5, P6, P7
+};
+
+enum class ScalingFilter
+{
+	Bicubic, Lanczos, Bilinear, Spline
+};
+
+enum class OutputContainer 
+{
+	MKV, MP4
+};
+
+enum class EncoderType
+{
+	NVENC, AMF, QSV, CPU
+};
+
+struct FFmpegEncoderConfig
+{
+	int ThreadQueueSize = 128;
+	int BitrateKbps = 80000;
+	int VideoBufferPipeSize = 256;
+	VideoPreset VideoPreset = VideoPreset::P1;
+	ScalingFilter ScalingFilter = ScalingFilter::Bicubic;
+	OutputContainer OutputContainer = OutputContainer::MKV;
+	EncoderType EncoderType = EncoderType::CPU;
+};

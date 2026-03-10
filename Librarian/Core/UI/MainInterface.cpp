@@ -2,13 +2,20 @@
 #include "Core/UI/CoreUI.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Engine/LifecycleState.h"
+#include "Core/States/Infrastructure/Engine/RenderState.h"
+#include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Threads/CoreThread.h"
+#include "Core/Threads/Domain/MainThread.h"
 #include "External/imgui/imgui_internal.h"
 
 void MainInterface::Draw()
 {
 	// Pre-render: Visibility and Input Management
-	if (!g_pState->Settings.IsMenuVisible())
+	if (!g_pState->Infrastructure->Settings->IsMenuVisible())
 	{
 		ImGui::GetIO().ClearInputMouse();
 		ImGui::GetIO().ClearInputKeys();
@@ -26,7 +33,7 @@ void MainInterface::Draw()
 
 	if (!open)
 	{
-		g_pState->Settings.SetMenuVisible(false);
+		g_pState->Infrastructure->Settings->SetMenuVisible(false);
 	}
 
 	if (isVisible)
@@ -40,7 +47,7 @@ void MainInterface::Draw()
 
 void MainInterface::HandleWindowReset()
 {
-	if (!g_pState->Settings.MustResetMenu()) return;
+	if (!g_pState->Infrastructure->Settings->MustResetMenu()) return;
 
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImVec2 screenSize = viewport->Size;
@@ -53,16 +60,16 @@ void MainInterface::HandleWindowReset()
 	);
 
 	ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-	g_pState->Settings.SetForceMenuReset(false);
+	g_pState->Infrastructure->Settings->SetForceMenuReset(false);
 }
 
 void MainInterface::DrawStatusBar()
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(15, 0));
 
-	AutoTheaterPhase currentPhase = g_pState->Lifecycle.GetCurrentPhase();
+	Phase currentPhase = g_pState->Infrastructure->Lifecycle->GetCurrentPhase();
 	PhaseUI ui = GetPhaseUI(currentPhase);
-	bool isTheater = g_pState->Theater.IsTheaterMode();
+	bool isTheater = g_pState->Domain->Theater->IsTheaterMode();
 
 	// Section: Phase Selector
 	ImGui::AlignTextToFramePadding();
@@ -88,16 +95,16 @@ void MainInterface::DrawStatusBar()
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 10));
 
-		auto AddPhaseItem = [&](const char* label, AutoTheaterPhase phase) {
+		auto AddPhaseItem = [&](const char* label, Phase phase) {
 			if (ImGui::MenuItem(label, nullptr, currentPhase == phase))
 			{
-				g_pThread->Main.UpdateToPhase(phase);
+				g_pThread->Main->UpdateToPhase(phase);
 			}
 		};
 
-		AddPhaseItem("Default", AutoTheaterPhase::Default);
-		AddPhaseItem("Timeline", AutoTheaterPhase::Timeline);
-		AddPhaseItem("Director", AutoTheaterPhase::Director);
+		AddPhaseItem("Default", Phase::Default);
+		AddPhaseItem("Timeline", Phase::Timeline);
+		AddPhaseItem("Director", Phase::Director);
 
 		ImGui::PopStyleVar();
 		ImGui::EndPopup();
@@ -107,13 +114,13 @@ void MainInterface::DrawStatusBar()
 	if (isTheater) ImGui::EndDisabled();
 
 	// Section: Toggles
-	if (currentPhase != AutoTheaterPhase::Default)
+	if (currentPhase != Phase::Default)
 	{
 		ImGui::SameLine();
-		bool autoUpdatePhase = g_pState->Lifecycle.ShouldAutoUpdatePhase();
+		bool autoUpdatePhase = g_pState->Infrastructure->Lifecycle->ShouldAutoUpdatePhase();
 		if (ImGui::Checkbox("Auto-Update Phase", &autoUpdatePhase))
 		{
-			g_pState->Lifecycle.SetAutoUpdatePhase(autoUpdatePhase);
+			g_pState->Infrastructure->Lifecycle->SetAutoUpdatePhase(autoUpdatePhase);
 		}
 		if (ImGui::IsItemHovered())
 		{
@@ -130,7 +137,7 @@ void MainInterface::DrawStatusBar()
 	ImGui::Text("Game Engine:");
 	ImGui::SameLine();
 
-	auto status = g_pState->Lifecycle.GetEngineStatus();
+	auto status = g_pState->Infrastructure->Lifecycle->GetEngineStatus();
 	ImVec4 statusColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
 	const char* statusText = "UNKNOWN";
 
@@ -154,7 +161,7 @@ void MainInterface::DrawStatusBar()
 
 	ImGui::TextColored(statusColor, statusText);
 
-	int fps = g_pState->Render.GetFramerate();
+	int fps = g_pState->Infrastructure->Render->GetFramerate();
 	char fpsText[32];
 	sprintf_s(fpsText, sizeof(fpsText), "%d FPS", fps);
 
@@ -236,7 +243,7 @@ void MainInterface::DrawTabs()
 	AddTab("Settings", []() { g_pUI->Settings.Draw(); }, firstLaunch, nullptr);
 
 	// Optional
-	bool useAppData = g_pState->Settings.ShouldUseAppData();
+	bool useAppData = g_pState->Infrastructure->Settings->ShouldUseAppData();
 	if (!useAppData) ImGui::BeginDisabled();
 
 	AddTab("Replay Manager", []() { g_pUI->Replay.Draw();        }, false, nullptr);
@@ -263,17 +270,17 @@ void MainInterface::DrawTabs()
 }
 
 
-PhaseUI MainInterface::GetPhaseUI(AutoTheaterPhase phase)
+PhaseUI MainInterface::GetPhaseUI(Phase phase)
 {
 	switch (phase)
 	{
-	case AutoTheaterPhase::Timeline:
+	case Phase::Timeline:
 		return { "Timeline", ImVec4(0.4f, 0.7f, 1.0f, 1.0f) };
 
-	case AutoTheaterPhase::Director:
+	case Phase::Director:
 		return { "Director", ImVec4(0.4f, 1.0f, 0.4f, 1.0f) };
 
-	case AutoTheaterPhase::Default:
+	case Phase::Default:
 	default:
 		return { "Default", ImVec4(0.7f, 0.7f, 0.7f, 1.0f) };
 	}

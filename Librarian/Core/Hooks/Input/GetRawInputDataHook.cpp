@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Hooks/Input/GetRawInputDataHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -12,8 +14,8 @@ UINT WINAPI GetRawInputDataHook::HookedGetRawInputData(HRAWINPUT hRawInput, UINT
 	UINT dwSize = m_OriginalFunction(hRawInput, uiCommand, pData, pcbSize, cbSizeHeader);
 
 	if (dwSize != (UINT)-1 && pData != NULL && 
-		g_pState->Settings.IsMenuVisible() && 
-		g_pState->Settings.ShouldFreezeMouse()) 
+		g_pState->Infrastructure->Settings->IsMenuVisible() && 
+		g_pState->Infrastructure->Settings->ShouldFreezeMouse()) 
 	{
 		RAWINPUT* raw = (RAWINPUT*)pData;
 		if (raw->header.dwType == RIM_TYPEMOUSE)

@@ -1,7 +1,14 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
+#include "Core/States/Domain/Director/DirectorState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Capture/AudioState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
 #include "Core/Hooks/Audio/GetBufferHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -10,11 +17,11 @@
 HRESULT __stdcall GetBufferHook::HookedGetBuffer(IAudioRenderClient* pThis, UINT32 NumFramesRequested, BYTE** ppData) 
 {
     HRESULT hr = m_OriginalFunction(pThis, NumFramesRequested, ppData);
-    if (!g_pState->Theater.IsTheaterMode() || !g_pState->Director.IsInitialized()) return hr;
+    if (!g_pState->Domain->Theater->IsTheaterMode() || !g_pState->Domain->Director->IsInitialized()) return hr;
 
     if (hr == S_OK && ppData != nullptr)
     {
-        g_pState->Audio.SetLastBuffer(*ppData);
+        g_pState->Infrastructure->Audio->SetLastBuffer(*ppData);
         // g_pUtil->Log.LogAppend("[GetBuffer] Last buffer setted.");
     }
 
@@ -25,7 +32,7 @@ void GetBufferHook::Install()
 {
     if (m_IsHookInstalled.load()) return;
 
-    void* functionAddress = g_pSystem->Audio.GetRenderClientVTableAddress(3);
+    void* functionAddress = g_pSystem->Infrastructure->Audio->GetRenderClientVTableAddress(3);
     if (!functionAddress)
     {
         g_pUtil->Log.Append("[GetBuffer] ERROR: Failed to obtain the function address.");

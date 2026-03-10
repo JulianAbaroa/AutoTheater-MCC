@@ -1,7 +1,13 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Domain/CoreDomainSystem.h"
+#include "Core/Systems/Domain/Theater/TheaterSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
 #include "Core/Hooks/Data/SpectatorHandleInputHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -24,11 +30,11 @@ void __fastcall SpectatorHandleInputHook::HookedSpectatorHandleInput(
 
 	if (pReplayModule != nullptr)
 	{		
-		g_pState->Theater.SetReplayModule(reinterpret_cast<uintptr_t>(pReplayModule));
-		g_pState->Theater.SetCameraMode(*reinterpret_cast<uint8_t*>(g_pState->Theater.GetReplayModule() + 0x190));
-		g_pSystem->Theater.TryGetSpectatedPlayerIndex(g_pState->Theater.GetReplayModule());
+		g_pState->Domain->Theater->SetReplayModule(reinterpret_cast<uintptr_t>(pReplayModule));
+		g_pState->Domain->Theater->SetCameraMode(*reinterpret_cast<uint8_t*>(g_pState->Domain->Theater->GetReplayModule() + 0x190));
+		g_pSystem->Domain->Theater->TryGetSpectatedPlayerIndex(g_pState->Domain->Theater->GetReplayModule());
 
-		uint8_t followedPlayerIdx = g_pState->Theater.GetSpectatedPlayerIndex();
+		uint8_t followedPlayerIdx = g_pState->Domain->Theater->GetSpectatedPlayerIndex();
 		if (followedPlayerIdx < 16)
 		{
 			static uint8_t lastID = 255;
@@ -38,7 +44,7 @@ void __fastcall SpectatorHandleInputHook::HookedSpectatorHandleInput(
 				lastID = followedPlayerIdx;
 				wchar_t nameBuffer[32] = { 0 };
 
-				if (g_pSystem->Theater.TryGetPlayerName(followedPlayerIdx, nameBuffer, 32)) 
+				if (g_pSystem->Domain->Theater->TryGetPlayerName(followedPlayerIdx, nameBuffer, 32))
 				{
 					std::string sName = g_pUtil->Format.WStringToString(nameBuffer);
 					g_pUtil->Log.Append("[SpectatorHandleInput] INFO: Changed to: [%d] %s", followedPlayerIdx, sName);
@@ -52,7 +58,7 @@ void SpectatorHandleInputHook::Install()
 {
 	if (m_IsHookInstalled.load()) return;
 
-	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::SpectatorHandleInput);
+	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::SpectatorHandleInput);
 	if (!functionAddress)
 	{
 		g_pUtil->Log.Append("[SpectatorHandleInput] ERROR: Failed to obtain the function address.");

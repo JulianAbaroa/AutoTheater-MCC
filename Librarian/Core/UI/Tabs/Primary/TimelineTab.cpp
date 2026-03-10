@@ -1,13 +1,21 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Timeline/TimelineState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Domain/CoreDomainSystem.h"
+#include "Core/Systems/Domain/Timeline/TimelineSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Persistence/ReplaySystem.h"
 #include "Core/UI/Tabs/Primary/TimelineTab.h"
 #include "External/imgui/imgui.h"
 
 void TimelineTab::Draw()
 {
-	bool autoScroll = g_pState->Settings.GetTimelineAutoScroll();
+	bool autoScroll = g_pState->Infrastructure->Settings->GetTimelineAutoScroll();
 	this->DrawTimelineControls(autoScroll);
 
 	ImGui::Separator();
@@ -30,7 +38,7 @@ void TimelineTab::Draw()
 			ImGui::TableSetupColumn("Involved Players", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort);
 			ImGui::TableHeadersRow();
 
-			const auto& timelineCopy = g_pState->Timeline.GetTimelineCopy();
+			const auto& timelineCopy = g_pState->Domain->Timeline->GetTimelineCopy();
 			
 			ImGuiListClipper clipper;
 			clipper.Begin(static_cast<int>(timelineCopy.size()));
@@ -56,7 +64,7 @@ void TimelineTab::Draw()
 				}
 			}
 
-			if (g_pState->Settings.GetTimelineAutoScroll() && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+			if (g_pState->Infrastructure->Settings->GetTimelineAutoScroll() && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
 			{
 				ImGui::SetScrollHereY(1.0f);
 			}
@@ -76,7 +84,7 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 
 	if (ImGui::Checkbox("Auto-Scroll", &autoScroll))
 	{
-		g_pState->Settings.SetTimelineAutoScroll(autoScroll);
+		g_pState->Infrastructure->Settings->SetTimelineAutoScroll(autoScroll);
 	}
 
 	if (ImGui::IsItemHovered()) ImGui::SetTooltip("Keep the list scrolled to the most recent event.");
@@ -91,21 +99,21 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 
 	AtomicCheckBox(
 		"Last Event",
-		[&]() { return g_pSystem->Timeline.HasReachedLastEvent(); },
-		[&](bool val) { g_pSystem->Timeline.SetLastEventReached(val); },
+		[&]() { return g_pSystem->Domain->Timeline->HasReachedLastEvent(); },
+		[&](bool val) { g_pSystem->Domain->Timeline->SetLastEventReached(val); },
 		"Stop capturing any new GameEvents from the engine.");
 
 	ImGui::SameLine();
 
-	std::string replayHash = g_pState->Timeline.GetAssociatedReplayHash();
-	bool isReplaySaved = g_pSystem->Replay.IsReplaySaved(replayHash);
+	std::string replayHash = g_pState->Domain->Timeline->GetAssociatedReplayHash();
+	bool isReplaySaved = g_pSystem->Infrastructure->Replay->IsReplaySaved(replayHash);
 
 	bool canBackup = !replayHash.empty() && isReplaySaved;
 	if (!canBackup) ImGui::BeginDisabled();
 
 	if (ImGui::Button("Backup Timeline"))
 	{
-		g_pSystem->Replay.SaveTimeline(replayHash);
+		g_pSystem->Infrastructure->Replay->SaveTimeline(replayHash);
 	}
 
 	if (!canBackup)
@@ -133,11 +141,11 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 
 	ImGui::SameLine();
 
-	size_t timelineSize = g_pState->Timeline.GetTimelineSize();
+	size_t timelineSize = g_pState->Domain->Timeline->GetTimelineSize();
 	if (timelineSize <= 0) ImGui::BeginDisabled();
 	if (ImGui::Button("Clear Timeline"))
 	{
-		g_pState->Timeline.ClearTimeline();
+		g_pState->Domain->Timeline->ClearTimeline();
 	}
 	if (timelineSize <= 0) ImGui::EndDisabled();
 
@@ -148,14 +156,14 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 
 	ImGui::SameLine();
 
-	ImGui::TextDisabled("| Events: %zu", g_pState->Timeline.GetTimelineSize());
+	ImGui::TextDisabled("| Events: %zu", g_pState->Domain->Timeline->GetTimelineSize());
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Total number of events currently stored in memory.");
 	}
 
 	ImGui::SameLine();
-	ImGui::TextDisabled("| Processed: %zu", g_pSystem->Timeline.GetLoggedEventsCount());
+	ImGui::TextDisabled("| Processed: %zu", g_pSystem->Domain->Timeline->GetLoggedEventsCount());
 
 	if (ImGui::IsItemHovered())
 	{

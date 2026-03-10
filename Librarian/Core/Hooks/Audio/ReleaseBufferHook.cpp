@@ -1,7 +1,13 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Capture/AudioState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
 #include "Core/Hooks/Audio/ReleaseBufferHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -9,17 +15,17 @@
 // writing audio data, allowing AutoTheater to commit these samples to the recording stream.
 HRESULT __stdcall ReleaseBufferHook::HookedReleaseBuffer(IAudioRenderClient* pThis, UINT32 NumFramesWritten, DWORD Flags)
 {
-    if (!g_pState->Theater.IsTheaterMode()) return m_OriginalFunction(pThis, NumFramesWritten, Flags);
+    if (!g_pState->Domain->Theater->IsTheaterMode()) return m_OriginalFunction(pThis, NumFramesWritten, Flags);
 
-    BYTE* pBuffer = g_pState->Audio.GetLastBuffer();
-    g_pState->Audio.SetLastBuffer(nullptr);
+    BYTE* pBuffer = g_pState->Infrastructure->Audio->GetLastBuffer();
+    g_pState->Infrastructure->Audio->SetLastBuffer(nullptr);
 
     if (NumFramesWritten > 0 && pBuffer != nullptr)
     {
         bool isSilent = (Flags & AUDCLNT_BUFFERFLAGS_SILENT);
-        AudioFormat format = g_pState->Audio.GetActiveInstance(pThis);
+        AudioFormat format = g_pState->Infrastructure->Audio->GetAudioInstance(pThis);
         size_t dataSize = (size_t)NumFramesWritten * format.BytesPerFrame;
-        g_pSystem->Audio.WriteAudio(pThis, pBuffer, dataSize, isSilent);
+        g_pSystem->Infrastructure->Audio->WriteAudio(pThis, pBuffer, dataSize, isSilent);
         // g_pUtil->Log.LogAppend("[ReleaseBuffer] Audio writed.");
     }
 
@@ -30,7 +36,7 @@ void ReleaseBufferHook::Install()
 {
     if (m_IsHookInstalled.load()) return;
 
-    void* functionAddress = g_pSystem->Audio.GetRenderClientVTableAddress(4);
+    void* functionAddress = g_pSystem->Infrastructure->Audio->GetRenderClientVTableAddress(4);
     if (!functionAddress)
     {
         g_pUtil->Log.Append("[ReleaseBuffer] ERROR: Failed to obtain the function address.");

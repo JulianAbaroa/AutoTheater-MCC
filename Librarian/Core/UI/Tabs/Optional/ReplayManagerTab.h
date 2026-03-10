@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/States/Infrastructure/ReplayState.h"
+#include "Core/States/Infrastructure/Persistence/ReplayState.h"
 
 class ReplayManagerTab
 {

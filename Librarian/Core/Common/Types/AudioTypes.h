@@ -6,17 +6,17 @@
 // Instances with 'NaN' or 'inf' values are marked as invalid.
 struct CandidateInfo
 {
-    void* instance;
-    bool isInvalid;
+    void* Instance;
+    bool IsInvalid;
 };
 
 // Buffers audio data with its corresponding engine timestamp 
 // and silence detection state.
 struct AudioChunk
 {
-    std::vector<BYTE> data{};
-    float engineTime = 0.0f;
-    bool isSilent = false;
+    std::vector<BYTE> Data{};
+    float EngineTime = 0.0f;
+    bool IsSilent = false;
 };
 
 // Defines the specific audio configuration for an instance.

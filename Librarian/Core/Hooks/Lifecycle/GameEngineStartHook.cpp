@@ -1,7 +1,11 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
 #include "Core/Hooks/Lifecycle/GameEngineStartHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -21,12 +25,12 @@ void __fastcall GameEngineStartHook::HookedGameEngineStart(
 	if (memcmp(param_3, m_TheaterSignature, 16) == 0)
 	{
 		g_pUtil->Log.Append("[GameEngineStart] INFO: Theater detected, proceding.");
-		g_pState->Theater.SetTheaterMode(true);
+		g_pState->Domain->Theater->SetTheaterMode(true);
 	}
 	else
 	{
 		g_pUtil->Log.Append("[GameEngineStart] WARNING: Theater wasn't detected, aborting.");
-		g_pState->Theater.SetTheaterMode(false);
+		g_pState->Domain->Theater->SetTheaterMode(false);
 	}
 }
 
@@ -34,7 +38,7 @@ bool GameEngineStartHook::Install(bool silent)
 {
 	if (m_IsHookInstalled.load()) return true;
 
-	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::GameEngineStart);
+	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::GameEngineStart);
 	if (!functionAddress)
 	{
 		if (!silent) g_pUtil->Log.Append("[GameEngineStart] ERROR: Failed to obtain the function address.");

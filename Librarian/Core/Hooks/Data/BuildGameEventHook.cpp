@@ -1,7 +1,15 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
+#include "Core/States/Domain/Director/EventRegistryState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Domain/CoreDomainSystem.h"
+#include "Core/Systems/Domain/Timeline/TimelineSystem.h"
+#include "Core/Systems/Domain/Theater/TheaterSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
 #include "Core/Hooks/Data/BuildGameEventHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -20,17 +28,17 @@ unsigned char BuildGameEventHook::HookedBuildGameEvent(
 {
 	unsigned char result = m_OriginalFunction(playerMask, pTemplateStr, pEventData, flags, pOutBuffer);
 	if (!result || !pOutBuffer || pOutBuffer[0] == L'\0') return result;
-	if (g_pSystem->Timeline.HasReachedLastEvent() || !g_pState->Theater.GetTimePtr() || !pEventData) return result;
+	if (g_pSystem->Domain->Timeline->HasReachedLastEvent() || !g_pState->Domain->Theater->GetTimePtr() || !pEventData) return result;
 
 	EventData* eventData = (EventData*)pEventData;
 	std::wstring currentTemplate(pTemplateStr);
-	float currentTime = (g_pState->Theater.GetTimePtr() != nullptr) ? (float)*g_pState->Theater.GetTimePtr() : 0.0f;
+	float currentTime = (g_pState->Domain->Theater->GetTimePtr() != nullptr) ? (float)*g_pState->Domain->Theater->GetTimePtr() : 0.0f;
 
 	PrintNewEvent(pTemplateStr, pEventData, pOutBuffer, currentTemplate, currentTime);
 	//PrintRawEvent(pOutBuffer);
 
-	g_pSystem->Theater.RefreshPlayerList();
-	g_pSystem->Timeline.ProcessEngineEvent(currentTime, currentTemplate, eventData);
+	g_pSystem->Domain->Theater->RefreshPlayerList();
+	g_pSystem->Domain->Timeline->ProcessEngineEvent(currentTime, currentTemplate, eventData);
 
 	return result;
 }
@@ -39,7 +47,7 @@ void BuildGameEventHook::Install()
 {
 	if (m_IsHookInstalled.load()) return;
 
-	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::BuildGameEvent);
+	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::BuildGameEvent);
 	if (!functionAddress)
 	{
 		g_pUtil->Log.Append("[BuildGameEvent] ERROR: Failed to obtain the function address.");
@@ -77,7 +85,7 @@ void BuildGameEventHook::Uninstall()
 void BuildGameEventHook::PrintNewEvent(wchar_t* pTemplateStr, void* pEventData,
 	wchar_t* pOutBuffer, std::wstring currentTemplate, float currentTime)
 {
-	bool alreadyMapped = g_pState->EventRegistry.IsEventRegistered(currentTemplate);
+	bool alreadyMapped = g_pState->Domain->EventRegistry->IsEventRegistered(currentTemplate);
 	if (!alreadyMapped) 
 	{
 		EventData* data = (EventData*)pEventData;

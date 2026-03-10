@@ -1,7 +1,11 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
 #include "Core/Hooks/DAta/UpdateTelemetryTimerHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -17,18 +21,18 @@ void UpdateTelemetryTimerHook::HookedUpdateTelemetryTimer(uint64_t timerContext,
 {
 	m_OriginalFunction(timerContext, deltaTime);
 
-	float* currentPtr = g_pState->Theater.GetTimePtr();
+	float* currentPtr = g_pState->Domain->Theater->GetTimePtr();
 
 	if (currentPtr == nullptr)
 	{
-		uintptr_t match = g_pSystem->Scanner.FindPattern(Signatures::TimeModifier);
+		uintptr_t match = g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::TimeModifier);
 		if (match)
 		{
 			int32_t relativeOffset = *(int32_t*)(match + 4);
 			uintptr_t replayTimeAddr = (match + 8) + relativeOffset;
 			uintptr_t finalAddr = (replayTimeAddr - 0xC);
 
-			g_pState->Theater.SetTimePtr(reinterpret_cast<float*>(finalAddr));
+			g_pState->Domain->Theater->SetTimePtr(reinterpret_cast<float*>(finalAddr));
 			g_pUtil->Log.Append("[UpdateTelemetryTimer] INFO: ReplayTime pointer found and stored.");
 		}
 		else
@@ -47,7 +51,7 @@ void UpdateTelemetryTimerHook::Install()
 {
 	if (m_IsHookInstalled.load()) return;
 
-	void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::UpdateTelemetryTimer);
+	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::UpdateTelemetryTimer);
 	if (!functionAddress)
 	{
 		g_pUtil->Log.Append("[UpdateTelemetryTimer] ERROR: Failed to obtain the function address.");

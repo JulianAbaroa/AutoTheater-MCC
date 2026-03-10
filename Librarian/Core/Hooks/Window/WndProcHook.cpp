@@ -1,7 +1,14 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Engine/LifecycleState.h"
+#include "Core/States/Infrastructure/Persistence/GalleryState.h"
+#include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/LifecycleSystem.h"
+#include "Core/Systems/Infrastructure/Persistence/PreferencesSystem.h"
 #include "Core/Hooks/Window/WndProcHook.h"
 #include "External/imgui/imgui.h"
 #include <chrono>
@@ -17,14 +24,14 @@ LRESULT __stdcall WndProcHook::HookedWndProc(
 	bool windowDestroyed = (uMsg == WM_CLOSE || uMsg == WM_DESTROY || uMsg == WM_QUIT);
 	if (windowDestroyed)
 	{
-		if (g_pState->Lifecycle.IsRunning())
+		if (g_pState->Infrastructure->Lifecycle->IsRunning())
 		{
 			g_pUtil->Log.Append("[WndProc] WARNING: MCC shutdown detected.");
 
-			g_pSystem->Preferences.SavePreferences();
-			g_pState->Gallery.Cleanup();
+			g_pSystem->Infrastructure->Preferences->SavePreferences();
+			g_pState->Infrastructure->Gallery->Cleanup();
 
-			g_pSystem->Lifecycle.SignalShutdown();
+			g_pSystem->Infrastructure->Lifecycle->SignalShutdown();
 		}
 		
 		return CallWindowProc(m_OriginalWndProc, hWnd, uMsg, wParam, lParam);
@@ -39,7 +46,7 @@ LRESULT __stdcall WndProcHook::HookedWndProc(
 	if (isKeyDown) if (HandleHotKeys(wParam)) return 0;
 
 	// If the menu is visible, ImGui has input priority.
-	if (g_pState->Settings.IsMenuVisible())
+	if (g_pState->Infrastructure->Settings->IsMenuVisible())
 	{
 		if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) return 1;
 
@@ -73,14 +80,14 @@ bool WndProcHook::HandleHotKeys(WPARAM wParam)
 
 	if (ctrlPressed && wParam == '1')
 	{
-		g_pState->Settings.SetMenuVisible(!g_pState->Settings.IsMenuVisible());
+		g_pState->Infrastructure->Settings->SetMenuVisible(!g_pState->Infrastructure->Settings->IsMenuVisible());
 		return true;
 	}
 
 	if (ctrlPressed && wParam == '2')
 	{
-		g_pState->Settings.SetMenuVisible(true);
-		g_pState->Settings.SetForceMenuReset(true);
+		g_pState->Infrastructure->Settings->SetMenuVisible(true);
+		g_pState->Infrastructure->Settings->SetForceMenuReset(true);
 		return true;
 	}
 

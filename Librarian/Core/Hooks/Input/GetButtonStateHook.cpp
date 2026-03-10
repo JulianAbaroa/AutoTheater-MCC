@@ -1,7 +1,11 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Engine/InputState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
 #include "Core/Hooks/Input/GetButtonStateHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -15,7 +19,7 @@
 // Reference: See "Core/Common/Types/InputTypes.h" for the Theater-specific key-mapped struct. 
 char __fastcall GetButtonStateHook::HookedGetButtonState(short buttonID)
 {
-    auto nextInput = g_pState->Input.GetNextRequest();
+    auto nextInput = g_pState->Infrastructure->Input->GetNextRequest();
     if (nextInput.Context == InputContext::Theater && nextInput.Action != InputAction::Unknown)
     {
         if (static_cast<short>(nextInput.Action) == buttonID)
@@ -31,7 +35,7 @@ void GetButtonStateHook::Install()
 {
     if (m_IsHookInstalled.load()) return;
 
-    void* functionAddress = (void*)g_pSystem->Scanner.FindPattern(Signatures::GetButtonState);
+    void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::GetButtonState);
     if (!functionAddress)
     {
         g_pUtil->Log.Append("[GetButtonState] ERROR: Failed to obtain the function address.");

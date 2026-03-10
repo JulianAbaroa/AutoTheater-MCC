@@ -2,56 +2,68 @@
 #include "Core/UI/CoreUI.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
+#include "Core/Hooks/Input/CoreInputHook.h"
+#include "Core/Hooks/Input/GetRawInputDataHook.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Infrastructure/CoreInfrastructureState.h"
+#include "Core/States/Infrastructure/Engine/RenderState.h"
+#include "Core/States/Infrastructure/Capture/FFmpegState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/RenderSystem.h"
+#include "Core/Systems/Domain/CoreDomainSystem.h"
+#include "Core/Systems/Domain/Theater/TheaterSystem.h"
+#include "Core/Hooks/Render/PresentHook.h"
 #include "External/minhook/include/MinHook.h"
 
 // Intercepts the DXGI Present call to handle frame updates, UI rendering, 
 // and frame capture logic before the buffer is displayed on screen.
 HRESULT __stdcall PresentHook::HookedPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
 {
-    if (g_pState->Render.IsResizing())
+    if (g_pState->Infrastructure->Render->IsResizing())
     {
         return m_OriginalPresent(pSwapChain, SyncInterval, Flags);
     }
 
-    if (!g_pSystem->Render.IsInitialized())
+    if (!g_pSystem->Infrastructure->Render->IsInitialized())
     {
-        g_pSystem->Render.Initialize(pSwapChain);
+        g_pSystem->Infrastructure->Render->Initialize(pSwapChain);
     }
 
     // Rebuild ImGui UI
-    if (g_pState->Render.ShouldRebuildFonts())
+    if (g_pState->Infrastructure->Render->ShouldRebuildFonts())
     {
-        g_pSystem->Render.UpdateUIScale();
+        g_pSystem->Infrastructure->Render->UpdateUIScale();
     }
 
     // Calculate Framerate 
-    g_pSystem->Render.UpdateFramerate();
+    g_pSystem->Infrastructure->Render->UpdateFramerate();
 
     // Record UI disabled.
-    if (!g_pState->FFmpeg.ShouldRecordUI())
+    if (!g_pState->Infrastructure->FFmpeg->ShouldRecordUI())
     {
-        g_pSystem->Render.TickCapture(pSwapChain);
+        g_pSystem->Infrastructure->Render->TickCapture(pSwapChain);
     }
 
     // Draw ImGui
-    if (g_pState->Render.GetRTV()) 
+    if (g_pState->Infrastructure->Render->GetRTV())
     {
-        g_pSystem->Render.BeginFrame(pSwapChain);
+        g_pSystem->Infrastructure->Render->BeginFrame(pSwapChain);
         g_pUI->Main.Draw();
-        g_pSystem->Render.EndFrame();
+        g_pSystem->Infrastructure->Render->EndFrame();
     }
 
     // Record UI enabled.
-    if (g_pState->FFmpeg.ShouldRecordUI())
+    if (g_pState->Infrastructure->FFmpeg->ShouldRecordUI())
     {
-        g_pSystem->Render.TickCapture(pSwapChain);
+        g_pSystem->Infrastructure->Render->TickCapture(pSwapChain);
     }
 
-    if (g_pState->Theater.IsTheaterMode()) 
+    if (g_pState->Domain->Theater->IsTheaterMode())
     {
-        g_pSystem->Theater.UpdateRealTimeScale();
+        g_pSystem->Domain->Theater->UpdateRealTimeScale();
     }
 
     return m_OriginalPresent(pSwapChain, SyncInterval, Flags);
@@ -80,7 +92,7 @@ void PresentHook::Install()
         return;
     }
 
-	g_pHook->GetRawInputData.Install();
+	g_pHook->Input->GetRawInputData->Install();
 
     m_PresentHookInstalled.store(true);
     g_pUtil->Log.Append("[Present] INFO: Hook installed.");
@@ -90,7 +102,7 @@ void PresentHook::Uninstall()
 {
     if (!m_PresentHookInstalled.load()) return;
 
-    g_pSystem->Render.Shutdown();
+    g_pSystem->Infrastructure->Render->Shutdown();
 
     if (m_PresentAddress)
     {
@@ -98,7 +110,7 @@ void PresentHook::Uninstall()
         MH_RemoveHook(m_PresentAddress);
     }
 
-    g_pHook->GetRawInputData.Uninstall();
+    g_pHook->Input->GetRawInputData->Uninstall();
 
     m_PresentHookInstalled.store(false);
     g_pUtil->Log.Append("[Present] INFO: Hook uninstalled.");

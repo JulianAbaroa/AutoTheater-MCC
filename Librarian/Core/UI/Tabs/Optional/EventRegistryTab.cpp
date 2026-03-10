@@ -1,7 +1,11 @@
 #include "pch.h"
 #include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
+#include "Core/States/Domain/CoreDomainState.h"
+#include "Core/States/Domain/Director/EventRegistryState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Domain/CoreDomainSystem.h"
+#include "Core/Systems/Domain/Director/EventRegistrySystem.h"
 #include "Core/UI/Tabs/Optional/EventRegistryTab.h"
 #include <set>
 
@@ -32,7 +36,7 @@ void EventRegistryTab::RefreshEventCache()
 	m_UniqueTypes.clear();
 	std::set<EventType> seen;
 
-	g_pState->EventRegistry.ForEachEvent([&](const std::wstring& name, const EventInfo& info) {
+	g_pState->Domain->EventRegistry->ForEachEvent([&](const std::wstring& name, const EventInfo& info) {
 		if (seen.find(info.Type) == seen.end())
 		{
 			m_UniqueTypes.push_back(info);
@@ -68,12 +72,12 @@ void EventRegistryTab::DrawEventRow(EventInfo& item, const std::string& filter)
 
 	if (ImGui::SliderInt("##slider", &item.Weight, 0, 100, "Weight: %d"))
 	{
-		g_pState->EventRegistry.UpdateWeightsByType(item.Type, item.Weight);
+		g_pState->Domain->EventRegistry->UpdateWeightsByType(item.Type, item.Weight);
 	}
 
 	if (ImGui::IsItemDeactivatedAfterEdit())
 	{
-		g_pSystem->EventRegistry.SaveEventRegistry();
+		g_pSystem->Domain->EventRegistry->SaveEventRegistry();
 		m_NeedsRefresh.store(true);
 	}
 
