@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "Core/Utils/FormatUtil.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
 #include <unordered_map>
 
-std::string FormatUtil::ToTimestamp(float totalSeconds) 
+std::string FormatSystem::ToTimestamp(float totalSeconds) 
 {
     if (totalSeconds < 0) totalSeconds = 0;
 
@@ -23,21 +23,8 @@ std::string FormatUtil::ToTimestamp(float totalSeconds)
     return std::string(buffer);
 }
 
-std::string FormatUtil::ToCompactAlpha(const std::wstring& ws) 
-{
-    std::string s;
-    s.reserve(ws.length());
-    for (wchar_t wc : ws) 
-    {
-        if (wc > 0 && wc < 127 && iswprint(wc) && wc != L' ') 
-        {
-            s += static_cast<char>(std::tolower(static_cast<unsigned char>(wc)));
-        }
-    }
-    return s;
-}
 
-std::string FormatUtil::WStringToString(const std::wstring& wstr) 
+std::string FormatSystem::WStringToString(const std::wstring& wstr) 
 {
     if (wstr.empty()) return std::string();
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
@@ -46,7 +33,7 @@ std::string FormatUtil::WStringToString(const std::wstring& wstr)
     return strTo;
 }
 
-std::wstring FormatUtil::StringToWString(const std::string& str) 
+std::wstring FormatSystem::StringToWString(const std::string& str) 
 {
     if (str.empty()) return std::wstring();
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
@@ -55,7 +42,8 @@ std::wstring FormatUtil::StringToWString(const std::string& str)
     return wstrTo;
 }
 
-const char* FormatUtil::GetEventClassName(EventClass eventClass)
+
+const char* FormatSystem::GetEventClassName(EventClass eventClass)
 {
     switch (eventClass)
     {
@@ -77,7 +65,7 @@ const char* FormatUtil::GetEventClassName(EventClass eventClass)
     }
 }
 
-std::string FormatUtil::EventTypeToString(EventType type) 
+std::string FormatSystem::EventTypeToString(EventType type) 
 {
     switch (type) 
     {
@@ -239,7 +227,7 @@ std::string FormatUtil::EventTypeToString(EventType type)
     }
 }
 
-const std::unordered_map<EventType, EventMetadata>& FormatUtil::GetEventDb()
+const std::unordered_map<EventType, EventMetadata>& FormatSystem::GetEventMetadata()
 {
     static const std::unordered_map<EventType, EventMetadata> db = {
         // Server

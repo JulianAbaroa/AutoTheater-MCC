@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Engine/RenderState.h"
@@ -9,6 +8,7 @@
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/SettingsSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/PreferencesSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/UI/Tabs/Primary/SettingsTab.h"
 #include "External/imgui/imgui.h"
 
@@ -101,7 +101,7 @@ void SettingsTab::DrawUserPreferences()
 		m_UIScalePreview = std::clamp(m_UIScalePreview, 1.0f, 4.0f);
 		g_pState->Infrastructure->Render->SetUIScale(m_UIScalePreview);
 
-		g_pUtil->Log.Append("[SettingsTab] INFO: Applied scale: %.2f", m_UIScalePreview);
+		g_pSystem->Debug->Log("[SettingsTab] INFO: Applied scale: %.2f", m_UIScalePreview);
 	}
 	ImGui::PopItemWidth();
 

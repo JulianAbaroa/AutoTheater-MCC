@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Director/DirectorState.h"
@@ -16,6 +15,8 @@
 #include "Core/Systems/Domain/Theater/TheaterSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
+#include <algorithm>
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -35,7 +36,7 @@ void DirectorSystem::Initialize()
 	g_pSystem->Domain->Director->SetLastReplayTime(0.0f);
 	g_pState->Domain->Director->SetInitialized(true);
 
-	g_pUtil->Log.Append("[DirectorSystem] INFO: Initialized.");
+	g_pSystem->Debug->Log("[DirectorSystem] INFO: Director initialized.");
 }
 
 void DirectorSystem::Update()
@@ -71,11 +72,10 @@ void DirectorSystem::Update()
 			currentTime,
 			[](const DirectorCommand& cmd, float timeVal) {
 				return cmd.Timestamp < timeVal;
-			}
-		);
+			});
 
 		g_pSystem->Domain->Director->SetCurrentCommandIndex(std::distance(scriptCopy.begin(), it));
-		g_pUtil->Log.Append("[DirectorSystem] INFO: Rewind detected at %.2fs. Resetting script to index %d", 
+		g_pSystem->Debug->Log("[DirectorSystem] INFO: Rewind detected at %.2fs. Resetting script to index %d",
 			currentTime, g_pSystem->Domain->Director->GetCurrentCommandIndex());
 	}
 	g_pSystem->Domain->Director->SetLastReplayTime(currentTime);
@@ -88,12 +88,12 @@ void DirectorSystem::Update()
 			if (m_StopDelayStartTime == 0.0f)
 			{
 				m_StopDelayStartTime = currentTime;
-				g_pUtil->Log.Append("[DirectorSystem] INFO: Script finished, waiting %.2f seconds before stop...", g_pState->Infrastructure->FFmpeg->GetStopDelayDuration());
+				g_pSystem->Debug->Log("[DirectorSystem] INFO: Script finished, waiting %.2f seconds before stop...", g_pState->Infrastructure->FFmpeg->GetStopDelayDuration());
 			}
 
 			if (currentTime - m_StopDelayStartTime >= g_pState->Infrastructure->FFmpeg->GetStopDelayDuration())
 			{
-				g_pUtil->Log.Append("[DirectorSystem] WARNING: Delay finished, stopping recording.");
+				g_pSystem->Debug->Log("[DirectorSystem] WARNING: Delay finished, stopping recording.");
 				g_pSystem->Infrastructure->FFmpeg->Stop();
 				m_StopDelayStartTime = 0.0f;
 			}
@@ -110,7 +110,7 @@ void DirectorSystem::Update()
 		{
 			if (command.TargetPlayerIdx != g_pState->Domain->Theater->GetSpectatedPlayerIndex())
 			{
-				g_pUtil->Log.Append("[DirectorSystem] INFO: Execute: Cut to %d Reason [%s]", command.TargetPlayerIdx, command.Reason.c_str());
+				g_pSystem->Debug->Log("[DirectorSystem] INFO: Execute: Cut to %d Reason [%s]", command.TargetPlayerIdx, command.Reason.c_str());
 
 				size_t nextCommandIndex = g_pSystem->Domain->Director->GetCurrentCommandIndex() + 1;
 				float deadline =
@@ -123,7 +123,7 @@ void DirectorSystem::Update()
 		}
 		else if (command.Type == CommandType::SetSpeed)
 		{
-			g_pUtil->Log.Append("[DirectorSystem] INFO: Speed set to [%.2fx]", command.SpeedValue);
+			g_pSystem->Debug->Log("[DirectorSystem] INFO: Speed set to [%.2fx]", command.SpeedValue);
 			g_pSystem->Domain->Theater->SetReplaySpeed(command.SpeedValue);
 		}
 
@@ -154,13 +154,13 @@ void DirectorSystem::GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 {
 	if (targetIdx >= 16) return;
 
-	g_pUtil->Log.Append("[DirectorSystem] INFO: Starting navigation to: %d", targetIdx);
+	g_pSystem->Debug->Log("[DirectorSystem] INFO: Starting navigation to: %d", targetIdx);
 
 	while (g_pState->Domain->Theater->GetSpectatedPlayerIndex() != targetIdx)
 	{
 		if (*g_pState->Domain->Theater->GetTimePtr() >= nextCommandTimestamp)
 		{
-			g_pUtil->Log.Append("[DirectorSystem] WARNING: Navigation aborted, time limit reached.");
+			g_pSystem->Debug->Log("[DirectorSystem] WARNING: Navigation aborted, time limit reached.");
 			return;
 		}
 
@@ -185,7 +185,7 @@ void DirectorSystem::GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 		std::this_thread::sleep_for(30ms);
 	}
 
-	g_pUtil->Log.Append("[DirectorSystem] INFO: Navigation successful.");
+	g_pSystem->Debug->Log("[DirectorSystem] INFO: Navigation successful.");
 }
 
 
@@ -297,7 +297,7 @@ void DirectorSystem::GenerateScript(std::vector<GameEvent> timeline)
 
 	g_pState->Domain->Director->SetScript(tempScript);
 
-	g_pUtil->Log.Append("[DirectorSystem] INFO: Script generated.");
+	g_pSystem->Debug->Log("[DirectorSystem] INFO: Script generated.");
 }
 
 void DirectorSystem::OptimizeSegments(std::vector<ActionSegment>& segments)

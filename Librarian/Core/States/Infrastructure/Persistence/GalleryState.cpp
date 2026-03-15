@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/Infrastructure/Persistence/GalleryState.h"
 #include <d3d11.h>
 
@@ -120,7 +119,6 @@ void GalleryState::SetSelectedIndex(int index) { m_SelectedIndex.store(index); }
 void GalleryState::Cleanup()
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
-	g_pUtil->Log.Append("[GalleryState] INFO: Cleaning up %zu thumbnails.", m_Videos.size());
 
 	for (auto& video : m_Videos)
 	{

@@ -1,20 +1,30 @@
 #include "pch.h"
+#include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
 #include <psapi.h>
 #include <vector>
 
-uintptr_t ScannerSystem::FindPattern(const Signature& sig)
+uintptr_t ScannerSystem::FindPattern(const Signature& sig, const wchar_t* moduleName)
 {
-    return FindPattern(sig.pattern);
+    return FindPattern(sig.pattern, moduleName);
 }
 
-uintptr_t ScannerSystem::FindPattern(const char* pattern)
+uintptr_t ScannerSystem::FindPattern(const char* pattern, const wchar_t* moduleName)
 {
-    HMODULE hModule = GetModuleHandle(L"haloreach.dll");
-    if (!hModule) return 0;
+    HMODULE hModule = GetModuleHandle(moduleName);
+
+    if (!hModule) 
+    {
+        g_pSystem->Debug->Log("[ScannerSystem] ERROR: Could not get handle for module.");
+        return 0;
+    }
 
     MODULEINFO modInfo;
-    GetModuleInformation(GetCurrentProcess(), hModule, &modInfo, sizeof(MODULEINFO));
+    if (!GetModuleInformation(GetCurrentProcess(), hModule, &modInfo, sizeof(MODULEINFO))) 
+    {
+        return 0;
+    }
 
     return Scan((uintptr_t)modInfo.lpBaseOfDll, modInfo.SizeOfImage, pattern);
 }

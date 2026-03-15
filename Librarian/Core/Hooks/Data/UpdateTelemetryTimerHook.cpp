@@ -1,11 +1,11 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/DAta/UpdateTelemetryTimerHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -33,14 +33,15 @@ void UpdateTelemetryTimerHook::HookedUpdateTelemetryTimer(uint64_t timerContext,
 			uintptr_t finalAddr = (replayTimeAddr - 0xC);
 
 			g_pState->Domain->Theater->SetTimePtr(reinterpret_cast<float*>(finalAddr));
-			g_pUtil->Log.Append("[UpdateTelemetryTimer] INFO: ReplayTime pointer found and stored.");
+			g_pSystem->Debug->Log("[UpdateTelemetryTimer] INFO: ReplayTime pointer found and stored.");
+			g_pSystem->Debug->Log("[UpdateTelemetryTimer] TEMPORAL: ReplayTime pointer: 0x%llX", finalAddr);
 		}
 		else
 		{
 			static bool loggedError = false;
 			if (!loggedError)
 			{
-				g_pUtil->Log.Append("[UpdateTelemetryTimer] ERROR: Match not found for Signatures::TimeModifier");
+				g_pSystem->Debug->Log("[UpdateTelemetryTimer] ERROR: Match not found for Signatures::TimeModifier");
 				loggedError = true;
 			}
 		}
@@ -54,24 +55,24 @@ void UpdateTelemetryTimerHook::Install()
 	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::UpdateTelemetryTimer);
 	if (!functionAddress)
 	{
-		g_pUtil->Log.Append("[UpdateTelemetryTimer] ERROR: Failed to obtain the function address.");
+		g_pSystem->Debug->Log("[UpdateTelemetryTimer] ERROR: Failed to obtain the function address.");
 		return;
 	}
 
 	m_FunctionAddress.store(functionAddress);
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedUpdateTelemetryTimer, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[UpdateTelemetryTimer] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[UpdateTelemetryTimer] ERROR: Failed to create the hook.");
 		return;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK)
 	{
-		g_pUtil->Log.Append("[UpdateTelemetryTimer] ERROR: Failed to enable the hook.");
+		g_pSystem->Debug->Log("[UpdateTelemetryTimer] ERROR: Failed to enable the hook.");
 		return;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[UpdateTelemetryTimer] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[UpdateTelemetryTimer] INFO: Hook installed.");
 }
 
 void UpdateTelemetryTimerHook::Uninstall()
@@ -82,5 +83,5 @@ void UpdateTelemetryTimerHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[UpdateTelemetryTimer] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[UpdateTelemetryTimer] INFO: Hook uninstalled.");
 }

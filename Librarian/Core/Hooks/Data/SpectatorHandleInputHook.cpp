@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -8,6 +7,8 @@
 #include "Core/Systems/Domain/Theater/TheaterSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Data/SpectatorHandleInputHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -46,8 +47,8 @@ void __fastcall SpectatorHandleInputHook::HookedSpectatorHandleInput(
 
 				if (g_pSystem->Domain->Theater->TryGetPlayerName(followedPlayerIdx, nameBuffer, 32))
 				{
-					std::string sName = g_pUtil->Format.WStringToString(nameBuffer);
-					g_pUtil->Log.Append("[SpectatorHandleInput] INFO: Changed to: [%d] %s", followedPlayerIdx, sName);
+					std::string sName = g_pSystem->Infrastructure->Format->WStringToString(nameBuffer);
+					g_pSystem->Debug->Log("[SpectatorHandleInput] INFO: Changed to: [%d] %s", followedPlayerIdx, sName);
 				}
 			}
 		}
@@ -61,24 +62,24 @@ void SpectatorHandleInputHook::Install()
 	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::SpectatorHandleInput);
 	if (!functionAddress)
 	{
-		g_pUtil->Log.Append("[SpectatorHandleInput] ERROR: Failed to obtain the function address.");
+		g_pSystem->Debug->Log("[SpectatorHandleInput] ERROR: Failed to obtain the function address.");
 		return;
 	}
 
 	m_FunctionAddress.store(functionAddress);
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedSpectatorHandleInput, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[SpectatorHandleInput] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[SpectatorHandleInput] ERROR: Failed to create the hook.");
 		return;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK)
 	{
-		g_pUtil->Log.Append("[SpectatorHandleInput] ERROR: Failed to enable the hook.");
+		g_pSystem->Debug->Log("[SpectatorHandleInput] ERROR: Failed to enable the hook.");
 		return;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[SpectatorHandleInput] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[SpectatorHandleInput] INFO: Hook installed.");
 }
 
 void SpectatorHandleInputHook::Uninstall()
@@ -89,5 +90,5 @@ void SpectatorHandleInputHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[SpectatorHandleInput] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[SpectatorHandleInput] INFO: Hook uninstalled.");
 }

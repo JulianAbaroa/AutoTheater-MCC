@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/Hooks/Memory/CoreMemoryHook.h"
 #include "Core/Hooks/Memory/PlayersTableHook.h"
@@ -12,6 +11,9 @@
 #include "Core/Systems/Domain/Theater/TheaterSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
+#include <algorithm>
 
 void TheaterSystem::Update()
 {
@@ -54,7 +56,7 @@ void TheaterSystem::SetReplaySpeed(float speed)
 		}
 		else
 		{
-			g_pUtil->Log.Append("[TheaterSystem] ERROR: No match found for Signatures::TimeScaleModifier");
+			g_pSystem->Debug->Log("[TheaterSystem] ERROR: No match found for Signatures::TimeScaleModifier");
 		}
 	}
 
@@ -78,8 +80,8 @@ void TheaterSystem::RefreshPlayerList()
 
 		if (RawReadSinglePlayer(playerTable, objectTable, i, newPlayer))
 		{
-			newPlayer.Name = g_pUtil->Format.WStringToString(newPlayer.RawPlayer.Name);
-			newPlayer.Tag = g_pUtil->Format.WStringToString(newPlayer.RawPlayer.Tag);
+			newPlayer.Name = g_pSystem->Infrastructure->Format->WStringToString(newPlayer.RawPlayer.Name);
+			newPlayer.Tag = g_pSystem->Infrastructure->Format->WStringToString(newPlayer.RawPlayer.Tag);
 			newPlayer.Id = i;
 
 			nextPlayerList[i] = newPlayer;
@@ -87,7 +89,7 @@ void TheaterSystem::RefreshPlayerList()
 		else
 		{
 			nextPlayerList[i] = PlayerInfo();
-			g_pUtil->Log.Append("[TheaterSystem] ERROR: RawReadSinglePlayer failed");
+			g_pSystem->Debug->Log("[TheaterSystem] ERROR: RawReadSinglePlayer failed");
 		}
 	}
 
@@ -145,7 +147,7 @@ void TheaterSystem::LogTables(uintptr_t playerTable, uintptr_t objectTable)
 
 	if (isFirst)
 	{
-		g_pUtil->Log.Append("[TheaterSystem] DEBUG: PlayerTable: %llx | ObjectTable: %llx", playerTable, objectTable);
+		g_pSystem->Debug->Log("[TheaterSystem] DEBUG: PlayerTable: %llx | ObjectTable: %llx", playerTable, objectTable);
 		isFirst = false;
 	}
 }
@@ -265,7 +267,7 @@ bool TheaterSystem::RawReadSinglePlayer(
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
-		g_pUtil->Log.Append("[TheaterSystem] ERROR: In RawRead Idx %d | Checkpoint %d | Addr: %016llx",
+		g_pSystem->Debug->Log("[TheaterSystem] ERROR: In RawRead Idx %d | Checkpoint %d | Addr: %016llx",
 			index, checkpoint, playerAddress);
 		return false;
 	}

@@ -2,7 +2,6 @@
 #include "Core/DllMain.h"
 #include "Proxy/ProxyExports.h"
 #include "Core/Common/AppCore.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Engine/LifecycleState.h"
@@ -11,6 +10,7 @@
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/SettingsSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/PreferencesSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Threads/CoreThread.h"
 #include "Core/Threads/Domain/MainThread.h"
 #include "Core/Threads/Domain/DirectorThread.h"
@@ -22,6 +22,7 @@
 #pragma comment(lib, "shlwapi.lib")
 
 // TODO: Event registry is not saving or loading between sessions.
+// TODO: When a video is recording with errors, the UI keeps saying its still recording.
 
 using namespace std::chrono_literals;
 
@@ -84,7 +85,7 @@ DWORD WINAPI AppLoader::InitializeLibrarian(LPVOID lpParam)
     // 6. Attempt to initialize MinHook.
     if (MH_Initialize() != MH_OK)
     {
-        g_pUtil->Log.Append("[DllMain] ERROR: MH_Initialize failed.");
+        g_pSystem->Debug->Log("[DllMain] ERROR: MH_Initialize failed.");
         return 0;
     }
 
@@ -105,7 +106,7 @@ DWORD WINAPI AppLoader::InitializeLibrarian(LPVOID lpParam)
     // Acts as the core of the capture system.
     g_DllInstance.m_CaptureThread = std::thread(&CaptureThread::Run, g_pThread->Capture.get());
 
-    g_pUtil->Log.Append("[DllMain] INFO: AutoTheater Initialized.");
+    g_pSystem->Debug->Log("[DllMain] INFO: AutoTheater Initialized.");
     return 0;
 }
 
@@ -114,7 +115,7 @@ void AppLoader::DeinitializeLibrarian(LPVOID lpReserved)
     // 1. Check if AutoTheater called FreeLibrary directly.
     if (lpReserved == NULL)
     {
-        g_pUtil->Log.Append("[DllMain] INFO: Deinitializing AutoTheater.");
+        g_pSystem->Debug->Log("[DllMain] INFO: Deinitializing AutoTheater.");
 
         // 2. Signal that the application has stopped running.
         g_pState->Infrastructure->Lifecycle->SetRunning(false);
@@ -133,6 +134,6 @@ void AppLoader::DeinitializeLibrarian(LPVOID lpReserved)
         // 5. Destroy the application.
         g_App.reset();
 
-        g_pUtil->Log.Append("[DllMain] INFO: AutoTheater Deinitialized.");
+        g_pSystem->Debug->Log("[DllMain] INFO: AutoTheater Deinitialized.");
     }
 }

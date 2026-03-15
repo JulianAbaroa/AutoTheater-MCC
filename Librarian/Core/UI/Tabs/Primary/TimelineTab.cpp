@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Timeline/TimelineState.h"
@@ -9,6 +8,7 @@
 #include "Core/Systems/Domain/CoreDomainSystem.h"
 #include "Core/Systems/Domain/Timeline/TimelineSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/ReplaySystem.h"
 #include "Core/UI/Tabs/Primary/TimelineTab.h"
 #include "External/imgui/imgui.h"
@@ -52,11 +52,11 @@ void TimelineTab::Draw()
 			
 					// Column: Timestamp
 					ImGui::TableSetColumnIndex(0);
-					ImGui::TextUnformatted(g_pUtil->Format.ToTimestamp(gameEvent.Timestamp).c_str());
+					ImGui::TextUnformatted(g_pSystem->Infrastructure->Format->ToTimestamp(gameEvent.Timestamp).c_str());
 			
 					// Column: Event
 					ImGui::TableSetColumnIndex(1);
-					ImGui::TextUnformatted(g_pUtil->Format.EventTypeToString(gameEvent.Type).c_str());
+					ImGui::TextUnformatted(g_pSystem->Infrastructure->Format->EventTypeToString(gameEvent.Type).c_str());
 			
 					// Column: Players
 					ImGui::TableSetColumnIndex(2);

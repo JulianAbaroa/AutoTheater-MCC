@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -10,6 +9,8 @@
 #include "Core/Systems/Domain/Theater/TheaterSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Data/BuildGameEventHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -50,24 +51,24 @@ void BuildGameEventHook::Install()
 	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::BuildGameEvent);
 	if (!functionAddress)
 	{
-		g_pUtil->Log.Append("[BuildGameEvent] ERROR: Failed to obtain the function address.");
+		g_pSystem->Debug->Log("[BuildGameEvent] ERROR: Failed to obtain the function address.");
 		return;
 	}
 
 	m_FunctionAddress.store(functionAddress);
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedBuildGameEvent, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[BuildGameEvent] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[BuildGameEvent] ERROR: Failed to create the hook.");
 		return;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK)
 	{
-		g_pUtil->Log.Append("[BuildGameEvent] ERROR: Failed to enable hook.");
+		g_pSystem->Debug->Log("[BuildGameEvent] ERROR: Failed to enable hook.");
 		return;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[BuildGameEvent] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[BuildGameEvent] INFO: Hook installed.");
 }
 
 void BuildGameEventHook::Uninstall()
@@ -78,7 +79,7 @@ void BuildGameEventHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[BuildGameEvent] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[BuildGameEvent] INFO: Hook uninstalled.");
 }
 
 
@@ -89,9 +90,9 @@ void BuildGameEventHook::PrintNewEvent(wchar_t* pTemplateStr, void* pEventData,
 	if (!alreadyMapped) 
 	{
 		EventData* data = (EventData*)pEventData;
-		std::string timeStr = g_pUtil->Format.ToTimestamp(currentTime);
+		std::string timeStr = g_pSystem->Infrastructure->Format->ToTimestamp(currentTime);
 
-		g_pUtil->Log.Append(
+		g_pSystem->Debug->Log(
 			"[BuildGameEvent] INFO: [%s] [NEW EVENT] Template: %ls | Msg: %ls | Slot: %d | Val: %d",
 			timeStr.c_str(), pTemplateStr, pOutBuffer, data->CauseSlotIndex, data->CustomValue);
 	}
@@ -99,5 +100,5 @@ void BuildGameEventHook::PrintNewEvent(wchar_t* pTemplateStr, void* pEventData,
 
 void BuildGameEventHook::PrintRawEvent(wchar_t* pOutBuffer)
 {
-	g_pUtil->Log.Append("[BuildGameEvent] INFO: RawEvent %ls", pOutBuffer);
+	g_pSystem->Debug->Log("[BuildGameEvent] INFO: RawEvent %ls", pOutBuffer);
 }

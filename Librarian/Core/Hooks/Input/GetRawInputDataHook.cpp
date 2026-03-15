@@ -1,8 +1,9 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Persistence/SettingsState.h"
+#include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Input/GetRawInputDataHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -38,28 +39,28 @@ void GetRawInputDataHook::Install()
 	HMODULE hUser32 = GetModuleHandle(L"user32.dll");
 	if (!hUser32) 
 	{
-		g_pUtil->Log.Append("[GetRawInputData] ERROR: Could not get handle for user32.dll");
+		g_pSystem->Debug->Log("[GetRawInputData] ERROR: Could not get handle for user32.dll");
 		return;
 	}
 
 	m_FunctionAddress.store((void*)GetProcAddress(hUser32, "GetRawInputData"));
 	if (!m_FunctionAddress.load()) 
 	{
-		g_pUtil->Log.Append("[GetRawInputData] ERROR: GetProcAddress for GetRawInputData failed");
+		g_pSystem->Debug->Log("[GetRawInputData] ERROR: GetProcAddress for GetRawInputData failed");
 		return;
 	}
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedGetRawInputData, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[GetRawInputData] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[GetRawInputData] ERROR: Failed to create the hook.");
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK) 
 	{
-		g_pUtil->Log.Append("[GetRawInputData] ERROR: Failed to enable the hook.");
+		g_pSystem->Debug->Log("[GetRawInputData] ERROR: Failed to enable the hook.");
 		return;
 	}
 	
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[GetRawInputData] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[GetRawInputData] INFO: Hook installed.");
 }
 
 void GetRawInputDataHook::Uninstall()
@@ -70,5 +71,5 @@ void GetRawInputDataHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[GetRawInputData] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[GetRawInputData] INFO: Hook uninstalled.");
 }

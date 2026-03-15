@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -8,6 +7,7 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Audio/AudioClientInitializeHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -30,8 +30,10 @@ HRESULT __stdcall AudioClientInitializeHook::HookedAudioClientInitialize(
 			pFormat->nSamplesPerSec,
 			pFormat->nBlockAlign);
 
-		g_pUtil->Log.Append("[AudioClientInitialize] INFO: Audio instance registered.");
+		g_pSystem->Debug->Log("[AudioClientInitialize] INFO: Audio instance registered.");
 	}
+	
+	// g_pSystem->Debug->Log("[AudioClientInitialize] INFO: Instance: %p | Channels: %d", pThis, pFormat->nChannels);
 
 	return m_OriginalFunction(pThis, ShareMode, StreamFlags, hnsBufferDuration, hnsPeriodicity, pFormat, AudioSessionGuid);
 }
@@ -43,24 +45,24 @@ void AudioClientInitializeHook::Install()
 	void* functionAddress = g_pSystem->Infrastructure->Audio->GetAudioClientVTableAddress(3);
 	if (!functionAddress)
 	{
-		g_pUtil->Log.Append("[AudioClientInitialize] ERROR: Failed to obtain the function address.");
+		g_pSystem->Debug->Log("[AudioClientInitialize] ERROR: Failed to obtain the function address.");
 		return;
 	}
 
 	m_FunctionAddress.store(functionAddress);
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedAudioClientInitialize, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[AudioClientInitialize] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[AudioClientInitialize] ERROR: Failed to create the hook.");
 		return;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK)
 	{
-		g_pUtil->Log.Append("[AudioClientInitialize] ERROR: Failed to enable the hook.");
+		g_pSystem->Debug->Log("[AudioClientInitialize] ERROR: Failed to enable the hook.");
 		return;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[AudioClientInitialize] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[AudioClientInitialize] INFO: Hook installed.");
 }
 
 void AudioClientInitializeHook::Uninstall()
@@ -71,5 +73,5 @@ void AudioClientInitializeHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[AudioClientInitialize] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[AudioClientInitialize] INFO: Hook uninstalled.");
 }

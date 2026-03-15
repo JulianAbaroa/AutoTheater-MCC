@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/Hooks/Window/CoreWindowHook.h"
 #include "Core/Hooks/Window/WndProcHook.h"
+#include "Core/Hooks/Memory/CoreMemoryHook.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -15,10 +15,81 @@
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/VideoSystem.h"
 #include "Core/Systems/Infrastructure/Engine/RenderSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "External/imgui/backends/imgui_impl_dx11.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "External/stb/stb_image.h"
+
+DX11Addresses RenderSystem::GetVtableAddresses()
+{
+    DX11Addresses addr = { nullptr, nullptr };
+
+    WNDCLASSEX wc = {};
+    wc.cbSize = sizeof(WNDCLASSEX);
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = DefWindowProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.lpszClassName = L"DummyWindowClass";
+
+    if (!RegisterClassEx(&wc))
+    {
+        g_pSystem->Debug->Log("[DXUtil] ERROR: RegisterClassEx failed");
+        return addr;
+    }
+
+    HWND hWnd = CreateWindowEx(
+        0, wc.lpszClassName, L"Dummy Window",
+        WS_OVERLAPPEDWINDOW, 0, 0, 100, 100,
+        NULL, NULL, wc.hInstance, NULL);
+
+    if (!hWnd)
+    {
+        g_pSystem->Debug->Log("[DXUtil] ERROR: CreateWindowEx failed");
+        UnregisterClass(wc.lpszClassName, wc.hInstance);
+        return addr;
+    }
+
+    DXGI_SWAP_CHAIN_DESC sd = {};
+    sd.BufferCount = 1;
+    sd.BufferDesc.Width = 800;
+    sd.BufferDesc.Height = 600;
+    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    sd.OutputWindow = hWnd;
+    sd.SampleDesc.Count = 1;
+    sd.Windowed = TRUE;
+    sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+
+    ID3D11Device* pDevice = nullptr;
+    IDXGISwapChain* pSwapChain = nullptr;
+    ID3D11DeviceContext* pContext = nullptr;
+
+    HRESULT hr = D3D11CreateDeviceAndSwapChain(
+        NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
+        0, NULL, 0, D3D11_SDK_VERSION, &sd,
+        &pSwapChain, &pDevice, NULL, &pContext);
+
+    if (SUCCEEDED(hr))
+    {
+        void** pVMT = *reinterpret_cast<void***>(pSwapChain);
+        addr.Present = pVMT[m_PresentVMTIndex];
+        addr.ResizeBuffers = pVMT[m_ResizeBuffersVMTIndex];
+    }
+    else
+    {
+        g_pSystem->Debug->Log("[DXUtil] ERROR: D3D11CreateDeviceAndSwapChain failed");
+    }
+
+    if (pContext) pContext->Release();
+    if (pDevice) pDevice->Release();
+    if (pSwapChain) pSwapChain->Release();
+
+    DestroyWindow(hWnd);
+    UnregisterClass(wc.lpszClassName, wc.hInstance);
+
+    return addr;
+}
 
 void RenderSystem::Initialize(IDXGISwapChain* pSwapChain)
 {
@@ -75,13 +146,13 @@ void RenderSystem::Initialize(IDXGISwapChain* pSwapChain)
         g_pHook->Window->WndProc->SetWndProc((WNDPROC)SetWindowLongPtr(sd.OutputWindow, GWLP_WNDPROC, (LONG_PTR)g_pHook->Window->WndProc->HookedWndProc));
 
         g_pState->Infrastructure->Render->SetImGuiInitialized(true);
-        g_pUtil->Log.Append("[RenderSystem] INFO: ImGui Initialized for the first time.");
+        g_pSystem->Debug->Log("[RenderSystem] INFO: ImGui Initialized for the first time.");
     }
     else
     {
         ImGui_ImplDX11_InvalidateDeviceObjects();
         ImGui_ImplDX11_CreateDeviceObjects();
-        g_pUtil->Log.Append("[RenderSystem] INFO: Device Objects Refreshed (Resize).");
+        g_pSystem->Debug->Log("[RenderSystem] INFO: Device Objects Refreshed (Resize).");
     }
 
     ID3D11Texture2D* pBackBuffer = nullptr;
@@ -119,7 +190,7 @@ void RenderSystem::Shutdown()
     }
 
     g_pState->Infrastructure->Render->FullCleanup();
-    g_pUtil->Log.Append("[RenderSystem] INFO: Shutdown complete.");
+    g_pSystem->Debug->Log("[RenderSystem] INFO: Shutdown complete.");
 }
 
 
@@ -183,11 +254,12 @@ void RenderSystem::CaptureFrame(IDXGISwapChain* pSwapChain)
     D3D11_MAPPED_SUBRESOURCE mapped;
     if (SUCCEEDED(context->Map(m_pStagingTextures[prevIndex], 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &mapped)))
     {
-        float* pTime = g_pState->Domain->Theater->GetTimePtr();
-        float currentTime = (pTime) ? *pTime : 0.0f;
+        auto now = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed = now - g_pState->Infrastructure->FFmpeg->GetStartRecordingTime();
+        double currentRealTime = elapsed.count();
 
-        g_pSystem->Infrastructure->Video->PushFrame((uint8_t*)mapped.pData, desc.Width, desc.Height, mapped.RowPitch, currentTime);
-
+        g_pSystem->Infrastructure->Video->PushFrame((uint8_t*)mapped.pData, desc.Width, desc.Height, mapped.RowPitch, currentRealTime);
+        
         context->Unmap(m_pStagingTextures[prevIndex], 0);
     }
 

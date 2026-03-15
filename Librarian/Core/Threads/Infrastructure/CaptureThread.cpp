@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/Hooks/Memory/CoreMemoryHook.h"
 #include "Core/Hooks/Memory/TargetFramerateHook.h"
@@ -18,116 +17,121 @@
 #include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
 #include "Core/Systems/Infrastructure/Capture/VideoSystem.h"
 #include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
+#include "Core/Systems/Infrastructure/Capture/SyncSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/GallerySystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Threads/Infrastructure/CaptureThread.h"
-
-// TODO: It seems recording at 240 desynchronizes the video & audio.
 
 using namespace std::chrono_literals;
 
 void CaptureThread::Run()
 {
-    g_pUtil->Log.Append("[CaptureThread] INFO: Started.");
+    g_pSystem->Debug->Log("[CaptureThread] INFO: Started.");
+
+    std::deque<AudioChunk> pendingAudio;
+    std::deque<FrameData> pendingVideo;
 
     while (g_pState->Infrastructure->Lifecycle->IsRunning())
     {
-        // Filters.
         this->VerifyAndPrepareFFmpeg();
-        if (!this->ReadyToCapture())
+        if (!this->ReadyToCapture()) 
         {
             std::this_thread::sleep_for(10ms);
             continue;
         }
 
-        // Start.
-        if (g_pState->Infrastructure->FFmpeg->RecordingStarted() && 
-            !g_pState->Infrastructure->FFmpeg->IsRecording())
+        if (g_pState->Infrastructure->FFmpeg->RecordingStarted() && !g_pState->Infrastructure->FFmpeg->IsRecording()) 
         {
             if (g_pState->Infrastructure->Audio->GetMasterInstance() != nullptr)
             {
                 this->StartRecording();
             }
-            else
-            {
-                std::this_thread::sleep_for(1ms);
-                continue;
+            else 
+            { 
+                std::this_thread::sleep_for(1ms); 
+                continue; 
             }
         }
 
         if (g_pState->Infrastructure->FFmpeg->IsRecording())
         {
-            if (this->VideoQueueOverflow()) continue;
+            auto extAudio = g_pSystem->Infrastructure->Audio->ExtractQueue();
+            auto extVideo = g_pSystem->Infrastructure->Video->ExtractQueue();
 
-            int currentFramerate = g_pHook->Memory->TargetFramerate->GetCurrentFramerateValue();
-            if (currentFramerate == 0.0f)
+            if (!extAudio.empty())
             {
-                g_pSystem->Infrastructure->FFmpeg->ForceStop();
-                g_pState->Infrastructure->FFmpeg->SetTargetFramerate(static_cast<float>(currentFramerate));
-                g_pUtil->Log.Append("[CaptureThread] ERROR: AutoTheater cannot record with UNLIMITED framerate active, recording stopped.");
-                continue;
+                pendingAudio.insert(pendingAudio.end(),
+                    std::make_move_iterator(extAudio.begin()),
+                    std::make_move_iterator(extAudio.end()));
+            }
+            if (!extVideo.empty())
+            {
+                pendingVideo.insert(pendingVideo.end(), std::make_move_iterator(extVideo.begin()), std::make_move_iterator(extVideo.end()));
             }
 
+            if (this->VideoQueueOverflow(pendingVideo.size()))
+            {
+                g_pSystem->Debug->Log("[CaptureThread] WARNING: Video queue overflow, dropping old frames!");
+
+                while (pendingVideo.size() > 10)
+                {
+                    g_pSystem->Infrastructure->Video->ReturnBuffer(std::move(pendingVideo.front().Buffer));
+                    pendingVideo.pop_front();
+                }
+            }
+
+            int currentFramerate = g_pHook->Memory->TargetFramerate->GetCurrentFramerateValue();
             int targetFramerate = static_cast<int>(g_pState->Infrastructure->FFmpeg->GetTargetFramerate());
-            
-            bool wasFramerateChanged = (currentFramerate != targetFramerate);
+
+            bool wasFramerateChanged = (currentFramerate != targetFramerate && currentFramerate != 0);
+
             if (g_pState->Infrastructure->FFmpeg->RecordingStopped() || wasFramerateChanged)
             {
-                if (wasFramerateChanged)
+                g_pSystem->Debug->Log("[CaptureThread] INFO: Final drain of %zu audio chunks and %zu frames.", pendingAudio.size(), pendingVideo.size());
+
+                this->ProcessSynchronizedStreams(pendingAudio, pendingVideo, true);
+
+                if (wasFramerateChanged) 
                 {
                     g_pSystem->Infrastructure->FFmpeg->ForceStop();
                     g_pState->Infrastructure->FFmpeg->SetTargetFramerate(static_cast<float>(currentFramerate));
-
-                    g_pUtil->Log.Append("[CaptureThread] WARNING: Recording stopped, the game framerate"
-                        " was changed from %d to %d FPS.", targetFramerate, currentFramerate);
                 }
-                else
+                else 
                 {
                     g_pSystem->Infrastructure->FFmpeg->Stop();
                 }
 
-                g_pSystem->Infrastructure->Gallery->RefreshList(g_pState->Infrastructure->FFmpeg->GetOutputPath());
+                this->Cleanup();
+                pendingAudio.clear();
+                pendingVideo.clear();
                 continue;
             }
 
-            if (!m_SyncInitialized)
+            if (!m_SyncInitialized) 
             {
-                if (g_pSystem->Infrastructure->Video->GetQueueSize() > 0)
+                if (this->CaptureBaselineEstablished(pendingAudio, pendingVideo)) 
                 {
-                    auto audioQueue = g_pSystem->Infrastructure->Audio->ExtractQueue();
-                    auto videoQueue = g_pSystem->Infrastructure->Video->ExtractQueue();
-
-                    if (this->CaptureBaselineEstablished(audioQueue, videoQueue))
-                    {
-                        this->ProcessSynchronizedStreams(audioQueue, videoQueue);
-                    }
+                    this->ProcessSynchronizedStreams(pendingAudio, pendingVideo, false);
                 }
 
                 std::this_thread::sleep_for(1ms);
                 continue;
             }
 
-            bool dataProcessed = false;
-            while (true)
+            if (pendingAudio.empty() && pendingVideo.empty())
             {
-                auto audio = g_pSystem->Infrastructure->Audio->ExtractQueue();
-                auto video = g_pSystem->Infrastructure->Video->ExtractQueue();
-
-                if (audio.empty() && video.empty()) break;
-
-                this->ProcessSynchronizedStreams(audio, video);
-                dataProcessed = true;
+                std::this_thread::sleep_for(1ms);
             }
-
-            if (!dataProcessed) std::this_thread::sleep_for(1ms);
+            else
+            {
+                this->ProcessSynchronizedStreams(pendingAudio, pendingVideo, false);
+            }
         }
-        else
+        else 
         {
             std::this_thread::sleep_for(10ms);
         }
     }
-
-    if (g_pState->Infrastructure->FFmpeg->IsRecording()) g_pSystem->Infrastructure->FFmpeg->ForceStop();
-    g_pUtil->Log.Append("[CaptureThread] INFO: Stopped.");
 }
 
 
@@ -137,7 +141,7 @@ void CaptureThread::VerifyAndPrepareFFmpeg()
         !g_pState->Infrastructure->FFmpeg->IsFFmpegInstalled() &&
         !g_pState->Infrastructure->FFmpeg->IsDownloadInProgress())
     {
-        g_pSystem->Infrastructure->FFmpeg->InitializeFFmpeg();
+        g_pSystem->Infrastructure->FFmpeg->InitializeDependencies();
     }
 }
 
@@ -152,52 +156,58 @@ bool CaptureThread::ReadyToCapture()
 
 void CaptureThread::StartRecording()
 {
+    g_pSystem->Debug->Log("[CaptureThread] INFO: StartRecording invoked. RecordingStartedFlag will be cleared.");
     g_pState->Infrastructure->FFmpeg->SetStartRecording(false);
 
-    // Filter: Avoid unlimited framerate.
     int currentFramerate = g_pHook->Memory->TargetFramerate->GetCurrentFramerateValue();
-    if (currentFramerate == 0.0f)
+    g_pSystem->Debug->Log("[CaptureThread] DEBUG: currentFramerate=%d targetFramerateBefore=%d", currentFramerate,
+        static_cast<int>(g_pState->Infrastructure->FFmpeg->GetTargetFramerate()));
+
+    if (currentFramerate == 0)
     {
         g_pState->Infrastructure->FFmpeg->SetTargetFramerate(static_cast<float>(currentFramerate));
-        g_pUtil->Log.Append("[CaptureThread] ERROR: AutoTheater cannot record with UNLIMITED framerate active, start recording cancelled.");
+        g_pSystem->Debug->Log("[CaptureThread] ERROR: AutoTheater cannot record with UNLIMITED framerate active (0). Start canceled.");
         return;
     }
 
-    // Update the target framerate.
     int targetFramerate = static_cast<int>(g_pState->Infrastructure->FFmpeg->GetTargetFramerate());
     if (currentFramerate != targetFramerate)
     {
         g_pState->Infrastructure->FFmpeg->SetTargetFramerate(static_cast<float>(currentFramerate));
-        g_pUtil->Log.Append("[CaptureThread] WARNING: Detected framerate change from %d to %d,"
-            " recording at %d FPS.", targetFramerate, currentFramerate, currentFramerate);
+        g_pSystem->Debug->Log("[CaptureThread] INFO: Detected framerate change from %d to %d, recording at %d FPS.", targetFramerate, currentFramerate, currentFramerate);
     }
 
     bool isStarted = g_pSystem->Infrastructure->FFmpeg->Start(
         g_pState->Infrastructure->FFmpeg->GetOutputPath(),
-        g_pState->Infrastructure->Render->GetWidth(), 
+        g_pState->Infrastructure->Render->GetWidth(),
         g_pState->Infrastructure->Render->GetHeight(),
         static_cast<float>(currentFramerate)
     );
 
     if (isStarted)
     {
+        g_pSystem->Debug->Log("[CaptureThread] INFO: FFmpeg Start returned true. Performing post-start cleanup and enabling video/audio recording.");
+
         this->Cleanup();
         g_pSystem->Infrastructure->Video->StartRecording();
         g_pSystem->Infrastructure->Audio->StartRecording();
     }
-    else g_pUtil->Log.Append("[CaptureThread] ERROR: Start recording failed.");
+    else
+    {
+        g_pSystem->Debug->Log("[CaptureThread] ERROR: Start recording failed (FFmpegSystem::Start returned false).");
+    }
 }
 
 void CaptureThread::StopRecording() 
 {
     g_pState->Infrastructure->FFmpeg->SetStopRecording(false);
-    g_pUtil->Log.Append("[CaptureThread] INFO: Recording stopped.");
+    g_pSystem->Debug->Log("[CaptureThread] INFO: Recording stopped.");
 }
 
 
-bool CaptureThread::VideoQueueOverflow()
+bool CaptureThread::VideoQueueOverflow(size_t pendingSize)
 {
-    if (g_pSystem->Infrastructure->Video->GetQueueSize() <= 64) return false;
+    if (pendingSize <= 64) return false;
 
     if (!m_SyncInitialized)
     {
@@ -207,7 +217,7 @@ bool CaptureThread::VideoQueueOverflow()
     }
     else
     {
-        g_pUtil->Log.Append("[CaptureThread] ERROR: Frame queue overload, aborting recording.");
+        g_pSystem->Debug->Log("[CaptureThread] ERROR: Frame queue overload, aborting recording.");
         g_pSystem->Infrastructure->FFmpeg->ForceStop();
         return true;
     }
@@ -223,106 +233,166 @@ void CaptureThread::MonitorRecordingHealth()
     DWORD exitCode = 0;
     if (hProcess && GetExitCodeProcess(hProcess, &exitCode) && exitCode != STILL_ACTIVE)
     {
-        g_pUtil->Log.Append("[CaptureThread] ERROR: FFmpeg process died. Exit code: %lu. Restarting.", exitCode);
+        g_pSystem->Debug->Log("[CaptureThread] ERROR: FFmpeg process died. Exit code: %lu. Restarting.", exitCode);
         this->StopRecording();
         std::this_thread::sleep_for(500ms);
         g_pState->Infrastructure->FFmpeg->SetStartRecording(true);
-        g_pUtil->Log.Append("[CaptureThread] WARNING: Recovery triggered, starting new segment.");
+        g_pSystem->Debug->Log("[CaptureThread] WARNING: Recovery triggered, starting new segment.");
     }
 }
 
 
 bool CaptureThread::CaptureBaselineEstablished(std::deque<AudioChunk>& audioQueue, std::deque<FrameData>& videoQueue)
 {
-    bool ready = false;
-    std::string mode = "";
+    if (audioQueue.empty() || videoQueue.empty()) return false;
 
-    if (!audioQueue.empty() && !videoQueue.empty())
-    {
-        ready = true;
-        mode = "Hybrid";
-    }
-    else if (!audioQueue.empty() && g_pState->Infrastructure->Audio->GetMasterInstance() != nullptr)
-    {
-        ready = true;
-        mode = "Audio Priority";
+    void* masterInstance = g_pState->Infrastructure->Audio->GetMasterInstance();
+    if (masterInstance == nullptr) {
+        return false;
     }
 
-    if (ready)
-    {
-        m_RecordingStartTime = std::chrono::steady_clock::now();
-        g_pState->Infrastructure->FFmpeg->SetStartRecordingTime(std::chrono::steady_clock::now());
-
-        m_TotalVideoFramesWritten = 0;
-        m_TotalAudioSamplesWritten = 0;
-        m_SyncInitialized = true;
-
-        if (!videoQueue.empty()) m_LastFrameBuffer = videoQueue.back().buffer;
-
-        void* masterInstance = g_pState->Infrastructure->Audio->GetMasterInstance();
-        if (masterInstance != nullptr)
-        {
-            m_MasterFormat = g_pState->Infrastructure->Audio->GetAudioInstance(masterInstance);
-        }
-
-        g_pUtil->Log.Append("[CaptureThread] INFO: Sync Established (%s)", mode);
-
-        return true;
+    AudioFormat format = g_pState->Infrastructure->Audio->GetAudioInstance(masterInstance);
+    if (format.BytesPerFrame == 0 || format.SamplesPerSec == 0) {
+        return false;
     }
 
-    return false;
+    m_MasterFormat = format;
+
+    m_TotalVideoFramesWritten = 0;
+    m_TotalAudioSamplesWritten = 0;
+
+    int targetFramerate = static_cast<int>(g_pState->Infrastructure->FFmpeg->GetTargetFramerate());
+    g_pSystem->Infrastructure->Sync->InitializeBaseline(targetFramerate);
+
+    auto now = std::chrono::steady_clock::now();
+    g_pState->Infrastructure->FFmpeg->SetStartRecordingTime(now);
+
+    m_SyncInitialized = true;
+    g_pState->Infrastructure->FFmpeg->SetCaptureActive(true);
+
+    g_pSystem->Debug->Log("[CaptureThread] INFO: Sync Established. Audio: %d Hz", m_MasterFormat.SamplesPerSec);
+
+    return true;
 }
 
-void CaptureThread::ProcessSynchronizedStreams(std::deque<AudioChunk>& audioQueue, std::deque<FrameData>& videoQueue)
+void CaptureThread::ProcessSynchronizedStreams(
+    std::deque<AudioChunk>& audioQueue,
+    std::deque<FrameData>& videoQueue,
+    bool forceDrain)
 {
-    if (m_MasterFormat.BytesPerFrame == 0 || m_MasterFormat.SamplesPerSec == 0) return;
-
-    if (!m_SyncTimeInitialized)
+    if (m_MasterFormat.BytesPerFrame == 0 || m_MasterFormat.SamplesPerSec == 0)
     {
-        m_SyncTimeInitialized = true;
-        g_pState->Infrastructure->FFmpeg->SetCaptureActive(true);
+        g_pSystem->Debug->Log("[CaptureThread] ERROR: Master audio format invalid.");
+        audioQueue.clear();
+        videoQueue.clear();
+        return;
+    }
+
+    int processedInThisCycle = 0;
+    const int maxItemsPerCycle = 150;
+
+    static auto lastStatLog = std::chrono::steady_clock::now();
+    static int totalFramesWritten = 0;
+    static int totalAudioChunks = 0;
+    static double totalAudioDuration = 0.0;
+
+    while ((!audioQueue.empty() || !videoQueue.empty()) && processedInThisCycle < maxItemsPerCycle)
+    {
+        processedInThisCycle++;
+
+        SyncDecision decision = g_pSystem->Infrastructure->Sync->DecideNext(
+            videoQueue.empty() ? nullptr : &videoQueue.front(),
+            audioQueue.empty() ? nullptr : &audioQueue.front());
+
+        if (decision == SyncDecision::None)
+        {
+            break;
+        }
+
+        switch (decision) {
+        case SyncDecision::WriteAudio: {
+            auto chunk = std::move(audioQueue.front());
+            audioQueue.pop_front();
+            double durationSec = (double)chunk.Data.size() / (m_MasterFormat.BytesPerFrame * m_MasterFormat.SamplesPerSec);
+
+            if (g_pSystem->Infrastructure->FFmpeg->WriteAudio(chunk.Data.data(), chunk.Data.size())) {
+                g_pSystem->Infrastructure->Sync->OnAudioWritten(durationSec);
+                totalAudioChunks++;
+                totalAudioDuration += durationSec;
+            }
+            break;
+        }
+
+        case SyncDecision::WriteVideo: {
+            auto frame = std::move(videoQueue.front());
+            videoQueue.pop_front();
+
+            if (frame.Buffer.empty()) {
+                g_pSystem->Infrastructure->Video->ReturnBuffer(std::move(frame.Buffer));
+                break;
+            }
+
+            m_LastFrameBuffer = frame.Buffer;
+
+            if (g_pSystem->Infrastructure->FFmpeg->WriteVideo(frame.Buffer.data(), frame.Buffer.size())) {
+                g_pSystem->Infrastructure->Sync->OnVideoWritten();
+                totalFramesWritten++;
+            }
+            g_pSystem->Infrastructure->Video->ReturnBuffer(std::move(frame.Buffer));
+            break;
+        }
+
+        case SyncDecision::RepeatVideo: {
+            if (!m_LastFrameBuffer.empty()) {
+                if (g_pSystem->Infrastructure->FFmpeg->WriteVideo(m_LastFrameBuffer.data(), m_LastFrameBuffer.size())) {
+                    g_pSystem->Infrastructure->Sync->OnVideoWritten();
+                    totalFramesWritten++;
+                }
+            }
+            break;
+        }
+
+        case SyncDecision::DropVideo: {
+            auto frame = std::move(videoQueue.front());
+            videoQueue.pop_front();
+
+            g_pSystem->Infrastructure->Video->ReturnBuffer(std::move(frame.Buffer));
+            break;
+        }
+        }
     }
 
     auto now = std::chrono::steady_clock::now();
-    float elapsedRealTime = std::chrono::duration<float>(now - m_RecordingStartTime).count();
-    
-    uint64_t expectedFrames = static_cast<uint64_t>(elapsedRealTime * g_pState->Infrastructure->FFmpeg->GetTargetFramerate());
-    uint64_t expectedSamples = static_cast<uint64_t>(elapsedRealTime * m_MasterFormat.SamplesPerSec);
+    if (std::chrono::duration_cast<std::chrono::seconds>(now - lastStatLog).count() >= 30) {
+        lastStatLog = now;
 
-    for (auto& frame : videoQueue)
-    {
-        if (m_TotalVideoFramesWritten <= expectedFrames)
-        {
-            g_pSystem->Infrastructure->FFmpeg->WriteVideo(frame.buffer.data(), frame.buffer.size());
-            m_TotalVideoFramesWritten++;
-        }
+        double expectedFrames = totalAudioDuration * g_pState->Infrastructure->FFmpeg->GetTargetFramerate();
+        double syncDiff = std::abs(totalFramesWritten - expectedFrames);
+        double syncRatio = (expectedFrames > 0) ? (totalFramesWritten / expectedFrames) : 1.0;
 
-        g_pSystem->Infrastructure->Video->ReturnBuffer(std::move(frame.buffer));
+        g_pSystem->Debug->Log("[CaptureThread] SYNC: Audio=%.2fs (%d chunks), Video=%d frames, Expected=%.1f, Ratio=%.3f, Diff=%.2f frames",
+            totalAudioDuration, totalAudioChunks, totalFramesWritten, expectedFrames, syncRatio, syncDiff);
     }
 
-    for (auto& chunk : audioQueue)
+    if (forceDrain)
     {
-        if (chunk.Data.size() > 0)
-        {
-            g_pSystem->Infrastructure->FFmpeg->WriteAudio(chunk.Data.data(), chunk.Data.size());
-            m_TotalAudioSamplesWritten += (chunk.Data.size() / m_MasterFormat.BytesPerFrame);
-        }
-    }
+        g_pSystem->Debug->Log("[CaptureThread] Drain: flushing %zu video frames and %zu audio chunks",
+            videoQueue.size(), audioQueue.size());
 
-    if (m_TotalAudioSamplesWritten < expectedSamples)
-    {
-        uint64_t missing = expectedSamples - m_TotalAudioSamplesWritten;
-        if (missing > (m_MasterFormat.SamplesPerSec / 100))
+        int drainedFrames = 0;
+        while (!videoQueue.empty())
         {
-            if (missing > m_MasterFormat.SamplesPerSec) missing = m_MasterFormat.SamplesPerSec;
-
-            std::vector<BYTE> silence(missing * m_MasterFormat.BytesPerFrame, 0);
-            g_pSystem->Infrastructure->FFmpeg->WriteAudio(silence.data(), silence.size());
-            m_TotalAudioSamplesWritten += missing;
+            auto frame = std::move(videoQueue.front());
+            videoQueue.pop_front();
+            g_pSystem->Infrastructure->FFmpeg->WriteVideo(frame.Buffer.data(), frame.Buffer.size());
+            g_pSystem->Infrastructure->Video->ReturnBuffer(std::move(frame.Buffer));
+            drainedFrames++;
         }
+        audioQueue.clear();
+
+        g_pSystem->Debug->Log("[CaptureThread] Drain: completed, %d frames written", drainedFrames);
     }
 }
-
 
 void CaptureThread::Cleanup()
 {

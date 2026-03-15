@@ -8,8 +8,6 @@
 #include "Core/Systems/Infrastructure/Engine/RenderSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/GallerySystem.h"
 
-// TODO: Add ShouldShowFFmpegLogs() option!!!
-
 GallerySystem::GallerySystem() 
 {
 	m_WorkerThread = std::thread(&GallerySystem::WorkerLoop, this);

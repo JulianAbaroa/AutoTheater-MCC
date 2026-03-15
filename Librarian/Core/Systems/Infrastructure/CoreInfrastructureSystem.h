@@ -13,6 +13,11 @@ class GallerySystem;
 class PreferencesSystem;
 class ReplaySystem;
 class SettingsSystem;
+class ThreadSystem;
+class FormatSystem;
+class DialogSystem;
+class DownloadSystem;
+class SyncSystem;
 
 struct CoreInfrastructureSystem
 {
@@ -30,4 +35,9 @@ struct CoreInfrastructureSystem
 	std::unique_ptr<PreferencesSystem> Preferences;
 	std::unique_ptr<ReplaySystem> Replay;
 	std::unique_ptr<SettingsSystem> Settings;
+	std::unique_ptr<ThreadSystem> Thread;
+	std::unique_ptr<FormatSystem> Format;
+	std::unique_ptr<DialogSystem> Dialog;
+	std::unique_ptr<DownloadSystem> Download;
+	std::unique_ptr<SyncSystem> Sync;
 };

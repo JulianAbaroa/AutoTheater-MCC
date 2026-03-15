@@ -19,8 +19,11 @@ void FFmpegState::SetStopOnLastEvent(bool value) { m_StopOnLastEvent.store(value
 float FFmpegState::GetStopDelayDuration() const { return m_StopDelayDuration.load(); }
 void FFmpegState::SetStopDelayDuration(float value) { m_StopDelayDuration.store(value); }
 
-std::chrono::steady_clock::time_point FFmpegState::GetStartRecordingTime() const { return m_StartRecordingTime; }
-void FFmpegState::SetStartRecordingTime(std::chrono::steady_clock::time_point time_point) { m_StartRecordingTime = time_point; }
+float FFmpegState::GetRecordingSpeed() const { return m_RecordingSpeed.load(); }
+void FFmpegState::SetRecordingSpeed(float value) { m_RecordingSpeed.store(value); }
+
+std::chrono::steady_clock::time_point FFmpegState::GetStartRecordingTime() const { return m_StartRecordingTime.load(); }
+void FFmpegState::SetStartRecordingTime(std::chrono::steady_clock::time_point value) { m_StartRecordingTime.store(value); }
 
 HANDLE FFmpegState::GetVideoPipeHandle() const { return m_hVideoPipe.load(); }
 void FFmpegState::SetVideoPipeHandle(HANDLE h) { m_hVideoPipe.store(h); }
@@ -88,8 +91,6 @@ void FFmpegState::Cleanup()
 	m_hVideoPipe.store(INVALID_HANDLE_VALUE);
 	m_hAudioPipe.store(INVALID_HANDLE_VALUE);
 	m_hProcess.store(INVALID_HANDLE_VALUE);
-
-	m_StartRecordingTime = {};
 }
 
 

@@ -9,6 +9,7 @@
 #include "Core/States/Infrastructure/Persistence/GalleryState.h"
 #include "Core/States/Infrastructure/Persistence/ReplayState.h"
 #include "Core/States/Infrastructure/Persistence/SettingsState.h"
+#include "Core/States/Infrastructure/Capture/MuxerState.h"
 
 CoreInfrastructureState::CoreInfrastructureState()
 {
@@ -21,6 +22,7 @@ CoreInfrastructureState::CoreInfrastructureState()
 	Gallery = std::make_unique<GalleryState>();
 	Replay = std::make_unique<ReplayState>();
 	Settings = std::make_unique<SettingsState>();
+	Muxer = std::make_unique<MuxerState>();
 }
 
 CoreInfrastructureState::~CoreInfrastructureState() = default;

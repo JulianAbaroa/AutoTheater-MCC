@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -9,6 +8,8 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/InputSystem.h"
+#include "Core/Systems/Infrastructure/Engine/ThreadSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Threads/Infrastructure/InputThread.h"
 #include <chrono>
 
@@ -16,7 +17,7 @@ using namespace std::chrono_literals;
 
 void InputThread::Run()
 {
-    g_pUtil->Log.Append("[InputThread] INFO: Started.");
+    g_pSystem->Debug->Log("[InputThread] INFO: Started.");
 
     while (g_pState->Infrastructure->Lifecycle->IsRunning())
     {
@@ -30,8 +31,8 @@ void InputThread::Run()
             g_pSystem->Infrastructure->Input->AutomaticInput();
         }
 
-        g_pUtil->Thread.WaitOrExit(100ms);
+        g_pSystem->Infrastructure->Thread->WaitOrExit(100ms);
     }
 
-    g_pUtil->Log.Append("[InputThread] INFO: Stopped.");
+    g_pSystem->Debug->Log("[InputThread] INFO: Stopped.");
 }

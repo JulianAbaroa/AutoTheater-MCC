@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Director/DirectorState.h"
@@ -9,6 +8,9 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Domain/CoreDomainSystem.h"
 #include "Core/Systems/Domain/Director/DirectorSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/ThreadSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Threads/Domain/DirectorThread.h"
 #include <chrono>
 
@@ -16,7 +18,7 @@ using namespace std::chrono_literals;
 
 void DirectorThread::Run()
 {
-    g_pUtil->Log.Append("[DirectorThread] INFO: Started.");
+    g_pSystem->Debug->Log("[DirectorThread] INFO: Started.");
     
     while (g_pState->Infrastructure->Lifecycle->IsRunning())
     {
@@ -36,7 +38,7 @@ void DirectorThread::Run()
                 }
             }
         
-            g_pUtil->Thread.WaitOrExit(16ms);
+            g_pSystem->Infrastructure->Thread->WaitOrExit(16ms);
         }
         else 
         {
@@ -44,5 +46,5 @@ void DirectorThread::Run()
         }
     }
 
-    g_pUtil->Log.Append("[DirectorThread] INFO: Stopped.");
+    g_pSystem->Debug->Log("[DirectorThread] INFO: Stopped.");
 }

@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Director/DirectorState.h"
@@ -8,6 +7,8 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Domain/CoreDomainSystem.h"
 #include "Core/Systems/Domain/Director/DirectorSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
 #include "Core/UI/Tabs/Primary/DirectorTab.h"
 #include "External/imgui/imgui.h"
 
@@ -57,7 +58,7 @@ void DirectorTab::Draw()
 
 				// Column: Timestamp
 				ImGui::TableSetColumnIndex(0);
-				ImGui::TextUnformatted(g_pUtil->Format.ToTimestamp(cmd.Timestamp).c_str());
+				ImGui::TextUnformatted(g_pSystem->Infrastructure->Format->ToTimestamp(cmd.Timestamp).c_str());
 
 				// Column: Type
 				ImGui::TableSetColumnIndex(1);
@@ -131,7 +132,7 @@ void DirectorTab::DrawDirectorProgress(bool& autoScroll)
 	size_t totalCommands = g_pState->Domain->Director->GetScriptSize();
 
 	ImGui::AlignTextToFramePadding();
-	ImGui::Text("Playback Time: %s", g_pUtil->Format.ToTimestamp(lastTime).c_str());
+	ImGui::Text("Playback Time: %s", g_pSystem->Infrastructure->Format->ToTimestamp(lastTime).c_str());
 
 	ImGui::SameLine(0.0f, 40.0f);
 

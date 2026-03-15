@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -8,7 +7,9 @@
 #include "Core/States/Infrastructure/Capture/FFmpegState.h"
 #include "Core/States/Infrastructure/Engine/LifecycleState.h"
 #include "Core/States/Infrastructure/Engine/RenderState.h"
+#include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/PreferencesSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include <fstream>
 
 void PreferencesSystem::SavePreferences()
@@ -18,7 +19,7 @@ void PreferencesSystem::SavePreferences()
 	std::ofstream file(this->GetPreferencesFilePath(), std::ios::trunc);
 	if (!file.is_open())
 	{
-		g_pUtil->Log.Append("[PreferencesSystem] ERROR: Failed to save user preferences.");
+		g_pSystem->Debug->Log("[PreferencesSystem] ERROR: Failed to save user preferences.");
 		return;
 	}
 
@@ -29,7 +30,7 @@ void PreferencesSystem::SavePreferences()
 	this->SaveSettingsState(file);
 	this->SaveUI(file);
 
-	g_pUtil->Log.Append("[PreferencesSystem] INFO: User preferences saved successfully.");
+	g_pSystem->Debug->Log("[PreferencesSystem] INFO: User preferences saved successfully.");
 }
 
 void PreferencesSystem::LoadPreferences()
@@ -39,7 +40,7 @@ void PreferencesSystem::LoadPreferences()
 	std::ifstream file(this->GetPreferencesFilePath());
 	if (!file.is_open())
 	{
-		g_pUtil->Log.Append("[PreferencesSystem] WARNING: No user preferences file found, using defaults.");
+		g_pSystem->Debug->Log("[PreferencesSystem] WARNING: No user preferences file found, using defaults.");
 		return;
 	}
 
@@ -49,7 +50,7 @@ void PreferencesSystem::LoadPreferences()
 		this->ParseLine(line);
 	}
 
-	g_pUtil->Log.Append("[PreferencesSystem] INFO: User preferences loaded successfully.");
+	g_pSystem->Debug->Log("[PreferencesSystem] INFO: User preferences loaded successfully.");
 }
 
 
@@ -95,7 +96,7 @@ void PreferencesSystem::SaveFFmpegState(std::ofstream& file)
 
 	file << "FFmpeg_ThreadQueueSize=" << encoderOptions.ThreadQueueSize << "\n";
 	file << "FFmpeg_BitrateKbps=" << encoderOptions.BitrateKbps << "\n";
-	file << "Ffmpeg_VideoBufferPipeSize=" << encoderOptions.VideoBufferPipeSize << "\n";
+	file << "FFmpeg_VideoBufferPipeSize=" << encoderOptions.VideoBufferPipeSize << "\n";
 	file << "FFmpeg_VideoPreset=" << static_cast<int>(encoderOptions.VideoPreset) << "\n";
 	file << "FFmpeg_ScalingFilter=" << static_cast<int>(encoderOptions.ScalingFilter) << "\n";
 	file << "FFmpeg_OutputContainer=" << static_cast<int>(encoderOptions.OutputContainer) << "\n";
@@ -190,7 +191,7 @@ void PreferencesSystem::LoadFFmpegState(std::string& key, std::string& value)
 	{
 		encoderConfig.BitrateKbps = std::stoi(value);
 	}
-	else if (key == "Ffmpeg_VideoBufferPipeSize")
+	else if (key == "FFmpeg_VideoBufferPipeSize")
 	{
 		encoderConfig.VideoBufferPipeSize = std::stoi(value);
 	}

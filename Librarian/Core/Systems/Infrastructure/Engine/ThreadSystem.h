@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-class ThreadUtil
+class ThreadSystem
 {
 public:
 	bool WaitOrExit(std::chrono::milliseconds ms);

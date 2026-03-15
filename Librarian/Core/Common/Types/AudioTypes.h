@@ -7,6 +7,7 @@
 struct CandidateInfo
 {
     void* Instance;
+    bool HasHadActivity;
     bool IsInvalid;
 };
 
@@ -15,7 +16,7 @@ struct CandidateInfo
 struct AudioChunk
 {
     std::vector<BYTE> Data{};
-    float EngineTime = 0.0f;
+    double RealTime = 0.0;
     bool IsSilent = false;
 };
 

@@ -132,7 +132,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)External\imgui;$(ProjectDir)External\imgui\backends;$(ProjectDir)External\minhook\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)External\imgui;$(ProjectDir)External\imgui\backends;$(ProjectDir)External\minhook\include;$(ProjectDir)External\stb;</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp23</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -156,7 +156,9 @@
     <ClInclude Include="Core\Common\Types\GalleryTypes.h" />
     <ClInclude Include="Core\Common\Types\InputTypes.h" />
     <ClInclude Include="Core\Common\Types\LogTypes.h" />
+    <ClInclude Include="Core\Common\Types\MuxerTypes.h" />
     <ClInclude Include="Core\Common\Types\SignatureTypes.h" />
+    <ClInclude Include="Core\Common\Types\SyncTypes.h" />
     <ClInclude Include="Core\Common\Types\TimelineTypes.h" />
     <ClInclude Include="Core\Common\Types\UITypes.h" />
     <ClInclude Include="Core\Common\Types\VideoTypes.h" />
@@ -197,6 +199,7 @@
     <ClInclude Include="Core\States\Domain\Timeline\TimelineState.h" />
     <ClInclude Include="Core\States\Infrastructure\Capture\AudioState.h" />
     <ClInclude Include="Core\States\Infrastructure\Capture\FFmpegState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Capture\MuxerState.h" />
     <ClInclude Include="Core\States\Infrastructure\Capture\VideoState.h" />
     <ClInclude Include="Core\States\Infrastructure\CoreInfrastructureState.h" />
     <ClInclude Include="Core\States\Infrastructure\Engine\InputState.h" />
@@ -213,13 +216,18 @@
     <ClInclude Include="Core\Systems\Domain\Theater\TheaterSystem.h" />
     <ClInclude Include="Core\Systems\Domain\Timeline\TimelineSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\Capture\AudioSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Capture\DownloadSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\Capture\FFmpegSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Capture\SyncSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\Capture\VideoSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\CoreInfrastructureSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\DialogSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\FormatSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\Engine\InputSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\Engine\LifecycleSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\Engine\RenderSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\Engine\ScannerSystem.h" />
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\ThreadSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\Persistence\GallerySystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\Persistence\PreferencesSystem.h" />
     <ClInclude Include="Core\Systems\Infrastructure\Persistence\ReplaySystem.h" />
@@ -240,11 +248,6 @@
     <ClInclude Include="Core\UI\Tabs\Primary\TheaterTab.h" />
     <ClInclude Include="Core\UI\Tabs\Primary\TimelineTab.h" />
     <ClInclude Include="Core\UI\MainInterface.h" />
-    <ClInclude Include="Core\Utils\CoreUtil.h" />
-    <ClInclude Include="Core\Utils\DXUtil.h" />
-    <ClInclude Include="Core\Utils\FormatUtil.h" />
-    <ClInclude Include="Core\Utils\LogUtil.h" />
-    <ClInclude Include="Core\Utils\ThreadUtil.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_win32.h" />
     <ClInclude Include="External\imgui\imgui.h" />
@@ -296,6 +299,7 @@
     <ClCompile Include="Core\States\Domain\Timeline\TimelineState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\Capture\AudioState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\Capture\FFmpegState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Capture\MuxerState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\Capture\VideoState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\CoreInfrastructureState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\Engine\InputState.cpp" />
@@ -312,13 +316,18 @@
     <ClCompile Include="Core\Systems\Domain\Theater\TheaterSystem.cpp" />
     <ClCompile Include="Core\Systems\Domain\Timeline\TimelineSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\Capture\AudioSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Capture\DownloadSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\Capture\FFmpegSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Capture\SyncSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\Capture\VideoSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\CoreInfrastructureSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\DialogSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\FormatSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\Engine\InputSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\Engine\LifecycleSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\Engine\RenderSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\Engine\ScannerSystem.cpp" />
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\ThreadSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\Persistence\GallerySystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\Persistence\PreferencesSystem.cpp" />
     <ClCompile Include="Core\Systems\Infrastructure\Persistence\ReplaySystem.cpp" />
@@ -329,6 +338,7 @@
     <ClCompile Include="Core\Threads\Domain\MainThread.cpp" />
     <ClCompile Include="Core\Threads\Infrastructure\CaptureThread.cpp" />
     <ClCompile Include="Core\Threads\Infrastructure\InputThread.cpp" />
+    <ClCompile Include="Core\UI\CoreUI.cpp" />
     <ClCompile Include="Core\UI\Tabs\Logs\LogsTab.cpp" />
     <ClCompile Include="Core\UI\Tabs\Optional\CaptureTab.cpp" />
     <ClCompile Include="Core\UI\Tabs\Optional\EventRegistryTab.cpp" />
@@ -338,10 +348,6 @@
     <ClCompile Include="Core\UI\Tabs\Primary\TheaterTab.cpp" />
     <ClCompile Include="Core\UI\Tabs\Primary\TimelineTab.cpp" />
     <ClCompile Include="Core\UI\MainInterface.cpp" />
-    <ClCompile Include="Core\Utils\DXUtil.cpp" />
-    <ClCompile Include="Core\Utils\FormatUtil.cpp" />
-    <ClCompile Include="Core\Utils\LogUtil.cpp" />
-    <ClCompile Include="Core\Utils\ThreadUtil.cpp" />
     <ClCompile Include="External\imgui\backends\imgui_impl_dx11.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>

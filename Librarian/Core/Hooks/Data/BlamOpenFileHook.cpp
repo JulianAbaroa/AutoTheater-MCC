@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Timeline/TimelineState.h"
@@ -9,6 +8,7 @@
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/ReplaySystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Threads/CoreThread.h"
 #include "Core/Threads/Domain/MainThread.h"
 #include "Core/Hooks/Data/BlamOpenFileHook.h"
@@ -40,16 +40,16 @@ void BlamOpenFileHook::HookedBlamOpenFile(
 
 			if (g_pState->Infrastructure->Lifecycle->GetCurrentPhase() == Phase::Timeline)
 			{
-				g_pUtil->Log.Append("[BlamOpenFile] INFO: Replay path: %s", filePath);
+				g_pSystem->Debug->Log("[BlamOpenFile] INFO: Replay path: %s", filePath);
 
 				g_pState->Domain->Timeline->SetAssociatedReplayHash(currentFileHash);
-				g_pUtil->Log.Append("[BlamOpenFile] INFO: Timeline bound to Replay Hash: %s", currentFileHash.substr(0, 8).c_str());
+				g_pSystem->Debug->Log("[BlamOpenFile] INFO: Timeline bound to Replay Hash: %s", currentFileHash.substr(0, 8).c_str());
 
-				g_pUtil->Log.Append("[BlamOpenFile] INFO: Recorded by: %s", replay.ReplayMetadata.Author);
+				g_pSystem->Debug->Log("[BlamOpenFile] INFO: Recorded by: %s", replay.ReplayMetadata.Author);
 
 				if (!replay.ReplayMetadata.Info.empty())
 				{
-					g_pUtil->Log.Append("[BlamOpenFile] INFO: %s", replay.ReplayMetadata.Info.c_str());
+					g_pSystem->Debug->Log("[BlamOpenFile] INFO: %s", replay.ReplayMetadata.Info.c_str());
 				}
 			}
 			else if (g_pState->Infrastructure->Lifecycle->GetCurrentPhase() == Phase::Director)
@@ -58,11 +58,11 @@ void BlamOpenFileHook::HookedBlamOpenFile(
 
 				if (requiredHash.empty())
 				{
-					g_pUtil->Log.Append("[BlamOpenFile] WARNING: Director launched but no Timeline is loaded in memory.");
+					g_pSystem->Debug->Log("[BlamOpenFile] INFO: Director launched but no Timeline is loaded in memory.");
 				}
 				else if (currentFileHash != requiredHash)
 				{
-					g_pUtil->Log.Append("[BlamOpenFile] ERROR: Replay mismatch! Opened hash %s does not match Timeline hash %s."
+					g_pSystem->Debug->Log("[BlamOpenFile] ERROR: Replay mismatch! Opened hash %s does not match Timeline hash %s."
 						" Director phase cancelled to prevent crashes.",
 						currentFileHash.substr(0, 8).c_str(), requiredHash.substr(0, 8).c_str());
 
@@ -70,7 +70,7 @@ void BlamOpenFileHook::HookedBlamOpenFile(
 				}
 				else
 				{
-					g_pUtil->Log.Append("[BlamOpenFile] INFO: Replay Hash matches Timeline, proceding.");
+					g_pSystem->Debug->Log("[BlamOpenFile] INFO: Replay Hash matches Timeline, proceding.");
 				}
 			}
 		}
@@ -84,24 +84,24 @@ void BlamOpenFileHook::Install()
 	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::BlamOpenFile);
 	if (!functionAddress)
 	{
-		g_pUtil->Log.Append("[BlamOpenFile] ERROR: Failed to obtain the function address.");
+		g_pSystem->Debug->Log("[BlamOpenFile] ERROR: Failed to obtain the function address.");
 		return;
 	}
 
 	m_FunctionAddress.store(functionAddress);
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedBlamOpenFile, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[BlamOpenFile] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[BlamOpenFile] ERROR: Failed to create the hook.");
 		return;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK)
 	{
-		g_pUtil->Log.Append(" [BlamOpenFile] ERROR: Failed to enable hook.");
+		g_pSystem->Debug->Log(" [BlamOpenFile] ERROR: Failed to enable hook.");
 		return;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[BlamOpenFile] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[BlamOpenFile] INFO: Hook installed.");
 }
 
 void BlamOpenFileHook::Uninstall()
@@ -112,5 +112,5 @@ void BlamOpenFileHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[BlamOpenFile] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[BlamOpenFile] INFO: Hook uninstalled.");
 }

@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/Hooks/Data/CoreDataHook.h"
 #include "Core/Hooks/Data/BlamOpenFileHook.h"
@@ -9,6 +8,8 @@
 #include "Core/Hooks/Data/UpdateTelemetryTimerHook.h"
 #include "Core/Hooks/Input/CoreInputHook.h"
 #include "Core/Hooks/Input/GetButtonStateHook.h"
+#include "Core/Hooks/Memory/CoreMemoryHook.h"
+#include "Core/Hooks/Memory/TargetFramerateHook.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -20,7 +21,9 @@
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
 #include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
+#include "Core/Systems/Infrastructure/Capture/VideoSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Lifecycle/DestroySubsystemsHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -47,13 +50,18 @@ void __fastcall DestroySubsystemsHook::HookedDestroySubsystems(void)
 	g_pState->Domain->Theater->SetTimeScalePtr(nullptr);
 
 	if (g_pState->Infrastructure->FFmpeg->IsRecording()) g_pSystem->Infrastructure->FFmpeg->ForceStop();
-	if (g_pState->Infrastructure->Audio->GetMasterInstance() != nullptr) g_pSystem->Infrastructure->Audio->Cleanup();
+	
+	g_pSystem->Infrastructure->FFmpeg->Cleanup();
+	g_pSystem->Infrastructure->Audio->Cleanup();
+	g_pSystem->Infrastructure->Video->Cleanup();
+
+	g_pHook->Memory->TargetFramerate->Reset();
 
 	g_pState->Infrastructure->Lifecycle->SetEngineStatus({ EngineStatus::Destroyed });
 
 	m_OriginalFunction();
 
-	g_pUtil->Log.Append("[DestroySubsystems] INFO: Game engine destroyed.");
+	g_pSystem->Debug->Log("[DestroySubsystems] INFO: Game engine destroyed.");
 }
 
 bool DestroySubsystemsHook::Install(bool silent)
@@ -63,7 +71,7 @@ bool DestroySubsystemsHook::Install(bool silent)
 	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::DestroySubsystems);
 	if (!functionAddress)
 	{
-		if (!silent) g_pUtil->Log.Append("[DestroySubsystems] ERROR: Failed to obtain the function address.");
+		if (!silent)  g_pSystem->Debug->Log("[DestroySubsystems] ERROR: Failed to obtain the function address.");
 		return false;
 	}
 
@@ -71,17 +79,17 @@ bool DestroySubsystemsHook::Install(bool silent)
 	MH_RemoveHook(m_FunctionAddress.load());
 	if (MH_CreateHook(m_FunctionAddress.load(), &HookedDestroySubsystems, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[DestroySubsystems] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[DestroySubsystems] ERROR: Failed to create the hook.");
 		return false;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK) 
 	{
-		g_pUtil->Log.Append("[DestroySubsystems] ERROR: Failed to enable the hook.");
+		g_pSystem->Debug->Log("[DestroySubsystems] ERROR: Failed to enable the hook.");
 		return false;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[DestroySubsystems] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[DestroySubsystems] INFO: Hook installed.");
 	return true;
 }
 
@@ -93,7 +101,7 @@ void DestroySubsystemsHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[DestroySubsystems] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[DestroySubsystems] INFO: Hook uninstalled.");
 }
 
 void* DestroySubsystemsHook::GetFunctionAddress()

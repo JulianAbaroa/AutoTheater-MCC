@@ -11,6 +11,7 @@ struct RenderState;
 struct GalleryState;
 struct ReplayState;
 struct SettingsState;
+class MuxerState;
 
 struct CoreInfrastructureState
 {
@@ -26,4 +27,5 @@ struct CoreInfrastructureState
 	std::unique_ptr<GalleryState> Gallery;
 	std::unique_ptr<ReplayState> Replay;
 	std::unique_ptr<SettingsState> Settings;
+	std::unique_ptr<MuxerState> Muxer;
 };

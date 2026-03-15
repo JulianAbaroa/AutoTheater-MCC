@@ -2,9 +2,9 @@
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Engine/LifecycleState.h"
-#include "Core/Utils/ThreadUtil.h"
+#include "Core/Systems/Infrastructure/Engine/ThreadSystem.h"
 
-bool ThreadUtil::WaitOrExit(std::chrono::milliseconds ms)
+bool ThreadSystem::WaitOrExit(std::chrono::milliseconds ms)
 {
 	std::unique_lock<std::mutex> lock(g_pState->Infrastructure->Lifecycle->GetMutex());
 

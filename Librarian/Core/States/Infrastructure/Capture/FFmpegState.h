@@ -21,7 +21,7 @@ public:
 	void SetCaptureActive(bool value);
 
 	std::chrono::steady_clock::time_point GetStartRecordingTime() const;
-	void SetStartRecordingTime(std::chrono::steady_clock::time_point time_point);
+	void SetStartRecordingTime(std::chrono::steady_clock::time_point value);
 	
 	HANDLE GetVideoPipeHandle() const;
 	void SetVideoPipeHandle(HANDLE h);
@@ -53,6 +53,9 @@ public:
 	float GetStopDelayDuration() const;
 	void SetStopDelayDuration(float value);
 
+	float GetRecordingSpeed() const;
+	void SetRecordingSpeed(float value);
+
 	bool IsFFmpegInstalled() const;
 	void SetFFmpegInstalled(bool value);
 
@@ -80,12 +83,13 @@ private:
 	std::atomic<HANDLE> m_hAudioPipe{ INVALID_HANDLE_VALUE };
 	std::atomic<HANDLE> m_hProcess{ INVALID_HANDLE_VALUE };
 
-	std::chrono::steady_clock::time_point m_StartRecordingTime;
+	std::atomic<std::chrono::steady_clock::time_point> m_StartRecordingTime{};
 	std::atomic<ResolutionType> m_ResolutionType{ ResolutionType::UHD_4K };
 	std::atomic<float> m_TargetFramerate{ 60.0f };
 	std::atomic<bool> m_ShouldRecordUI{ false };
 	std::atomic<bool> m_StopOnLastEvent{ false };
 	std::atomic<float> m_StopDelayDuration{ 0.0f };
+	std::atomic<float> m_RecordingSpeed{ 0.0f };
 
 	std::string m_OutputPath{};
 

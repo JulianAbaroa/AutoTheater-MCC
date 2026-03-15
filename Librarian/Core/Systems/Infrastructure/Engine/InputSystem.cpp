@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -10,6 +9,7 @@
 #include "Core/Systems/Domain/Theater/TheaterSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/InputSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -61,7 +61,7 @@ void InputSystem::AutomaticInput()
     
         if (!g_pSystem->Infrastructure->Input->InjectInput(currentReq, condition, 500ms, 50ms)) 
         {
-            g_pUtil->Log.Append("[InputThread] WARNING: Freecam toggle timed out.");
+            g_pSystem->Debug->Log("[InputThread] WARNING: Freecam toggle timed out.");
         }
 
         return;

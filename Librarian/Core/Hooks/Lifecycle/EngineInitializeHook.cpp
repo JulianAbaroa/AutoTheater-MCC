@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/Hooks/Data/CoreDataHook.h"
 #include "Core/Hooks/Data/BlamOpenFileHook.h"
@@ -22,6 +21,7 @@
 #include "Core/Systems/Domain/Theater/TheaterSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Lifecycle/EngineInitializeHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -45,7 +45,7 @@ void __fastcall EngineInitializeHook::HookedEngineInitialize(void)
 
 	if (g_pState->Infrastructure->Lifecycle->GetCurrentPhase() == Phase::Timeline)
 	{
-		g_pUtil->Log.Append("[EngineInitialize] INFO: Timeline phase active.");
+		g_pSystem->Debug->Log("[EngineInitialize] INFO: Timeline phase active.");
 		
 		g_pHook->Data->ReplayInitializeState->Install();			// Gets the FLMH data
 		g_pHook->Data->UpdateTelemetryTimer->Install();        // Gets the current ReplayTime
@@ -57,7 +57,7 @@ void __fastcall EngineInitializeHook::HookedEngineInitialize(void)
 	}
 	else if (g_pState->Infrastructure->Lifecycle->GetCurrentPhase() == Phase::Director)
 	{
-		g_pUtil->Log.Append("[EngineInitialize] INFO: Director phase active.");
+		g_pSystem->Debug->Log("[EngineInitialize] INFO: Director phase active.");
 
 		g_pHook->Data->UpdateTelemetryTimer->Install();
 		g_pHook->Data->SpectatorHandleInput->Install();
@@ -67,7 +67,7 @@ void __fastcall EngineInitializeHook::HookedEngineInitialize(void)
 	}
 	else if (g_pState->Infrastructure->Lifecycle->GetCurrentPhase() == Phase::Default)
 	{
-		g_pUtil->Log.Append("[EngineInitialize] INFO: Default phase active.");
+		g_pSystem->Debug->Log("[EngineInitialize] INFO: Default phase active.");
 
 		g_pHook->Data->UpdateTelemetryTimer->Install();
 	}
@@ -83,7 +83,7 @@ bool EngineInitializeHook::Install(bool silent)
 	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::EngineInitialize);
 	if (!functionAddress)
 	{
-		if (!silent) g_pUtil->Log.Append("[EngineInitialize] ERROR: Failed to obtain the function address.");
+		if (!silent)  g_pSystem->Debug->Log("[EngineInitialize] ERROR: Failed to obtain the function address.");
 		return false;
 	}
 
@@ -91,17 +91,17 @@ bool EngineInitializeHook::Install(bool silent)
 	MH_RemoveHook(m_FunctionAddress.load());
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedEngineInitialize, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[EngineInitialize] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[EngineInitialize] ERROR: Failed to create the hook.");
 		return false;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK) 
 	{
-		g_pUtil->Log.Append("[EngineInitialize] ERROR: Failed to enable the hook.");
+		g_pSystem->Debug->Log("[EngineInitialize] ERROR: Failed to enable the hook.");
 		return false;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[EngineInitialize] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[EngineInitialize] INFO: Hook installed.");
 	return true;
 }
 
@@ -113,7 +113,7 @@ void EngineInitializeHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[EngineInitialize] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[EngineInitialize] INFO: Hook uninstalled.");
 }
 
 void* EngineInitializeHook::GetFunctionAddress()

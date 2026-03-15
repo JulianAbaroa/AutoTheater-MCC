@@ -94,9 +94,6 @@
     <Filter Include="Core\UI\Tabs\Logs">
       <UniqueIdentifier>{914cb15e-9a6c-46dd-ba62-5a0afc6e83ab}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Core\Utils">
-      <UniqueIdentifier>{2d3c11a4-bc06-4d75-b289-b954a1021b4d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Core\Hooks\Memory">
       <UniqueIdentifier>{00e374de-5f5b-43be-986d-73d977963244}</UniqueIdentifier>
     </Filter>
@@ -278,18 +275,6 @@
     </ClInclude>
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Core\Utils\DXUtil.h">
-      <Filter>Core\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Utils\FormatUtil.h">
-      <Filter>Core\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Utils\LogUtil.h">
-      <Filter>Core\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Utils\ThreadUtil.h">
-      <Filter>Core\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Hooks\CoreHook.h">
       <Filter>Core\Hooks</Filter>
     </ClInclude>
@@ -304,9 +289,6 @@
     </ClInclude>
     <ClInclude Include="Core\UI\CoreUI.h">
       <Filter>Core\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Utils\CoreUtil.h">
-      <Filter>Core\Utils</Filter>
     </ClInclude>
     <ClInclude Include="Core\DllMain.h">
       <Filter>Core</Filter>
@@ -467,6 +449,30 @@
     <ClInclude Include="Core\Common\Types\DX11Types.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\ThreadSystem.h">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\FormatSystem.h">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Engine\DialogSystem.h">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Capture\MuxerState.h">
+      <Filter>Core\States\Infrastructure\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\MuxerTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Capture\DownloadSystem.h">
+      <Filter>Core\Systems\Infrastructure\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Systems\Infrastructure\Capture\SyncSystem.h">
+      <Filter>Core\Systems\Infrastructure\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\SyncTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\DllMain.cpp">
@@ -594,18 +600,6 @@
       <Filter>Core\UI\Tabs\Primary</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Core\Utils\DXUtil.cpp">
-      <Filter>Core\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\FormatUtil.cpp">
-      <Filter>Core\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\LogUtil.cpp">
-      <Filter>Core\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Utils\ThreadUtil.cpp">
-      <Filter>Core\Utils</Filter>
-    </ClCompile>
     <ClCompile Include="Core\States\CoreState.cpp">
       <Filter>Core\States</Filter>
     </ClCompile>
@@ -758,6 +752,27 @@
     </ClCompile>
     <ClCompile Include="Core\Threads\CoreThread.cpp">
       <Filter>Core\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\ThreadSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\FormatSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Engine\DialogSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\UI\CoreUI.cpp">
+      <Filter>Core\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Capture\MuxerState.cpp">
+      <Filter>Core\States\Infrastructure\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Capture\DownloadSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Systems\Infrastructure\Capture\SyncSystem.cpp">
+      <Filter>Core\Systems\Infrastructure\Capture</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

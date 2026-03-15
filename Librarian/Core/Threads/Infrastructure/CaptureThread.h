@@ -14,19 +14,18 @@ public:
 private:
 	void VerifyAndPrepareFFmpeg();
 	bool ReadyToCapture();
-
+	
 	void StartRecording();
 	void StopRecording();
 
-	bool VideoQueueOverflow();
+	bool VideoQueueOverflow(size_t pendingSize);
 	void MonitorRecordingHealth();
 
 	bool CaptureBaselineEstablished(std::deque<AudioChunk>& audioQueue, std::deque<FrameData>& videoQueue);
-	void ProcessSynchronizedStreams(std::deque<AudioChunk>& audioQueue, std::deque<FrameData>& videoQueue);
+	void ProcessSynchronizedStreams(std::deque<AudioChunk>& audioQueue, std::deque<FrameData>& videoQueue, bool forceDrain);
 
 	void Cleanup();
 
-	std::chrono::steady_clock::time_point m_RecordingStartTime{};
 	std::atomic<uint64_t> m_TotalVideoFramesWritten{ 0 };
 	std::atomic<uint64_t> m_TotalAudioSamplesWritten{ 0 };
 	std::atomic<bool> m_SyncTimeInitialized{ false };

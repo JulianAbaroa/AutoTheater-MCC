@@ -11,7 +11,15 @@ int TargetFramerateHook::GetCurrentFramerateValue()
         int32_t* addr = m_pTargetFramerateAddr.load();
         if (addr)
         {
-            return *addr;
+            __try 
+            {
+                return *addr;
+            }
+            __except (EXCEPTION_EXECUTE_HANDLER)
+            {
+                m_pTargetFramerateAddr.store(nullptr);
+                return 0;
+            }
         }
     }
 
@@ -27,11 +35,16 @@ bool TargetFramerateHook::ResolveAddress()
     {
         int32_t relativeOffset = *(int32_t*)(match + 2);
 
-        uintptr_t targetFPSAddr = (match + 7) + relativeOffset;
+        uintptr_t targetFramerateAddr = (match + 7) + relativeOffset;
 
-        m_pTargetFramerateAddr.store(reinterpret_cast<int32_t*>(targetFPSAddr));
+        m_pTargetFramerateAddr.store(reinterpret_cast<int32_t*>(targetFramerateAddr));
         return true;
     }
 
     return false;
+}
+
+void TargetFramerateHook::Reset()
+{
+    m_pTargetFramerateAddr.store(nullptr);
 }

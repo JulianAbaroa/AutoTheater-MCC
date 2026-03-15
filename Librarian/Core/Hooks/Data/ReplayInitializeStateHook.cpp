@@ -1,11 +1,12 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Data/ReplayInitializeStateHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -22,11 +23,11 @@ void ReplayInitializeStateHook::HookedReplayInitializeState(uint64_t sessionCont
 {
 	if (headerBuffer != 0)
 	{
-		g_pUtil->Log.Append("[ReplayInitializeState] INFO: Analyzing FLMH from disk.");
+		g_pSystem->Debug->Log("[ReplayInitializeState] INFO: Analyzing FLMH from disk.");
 
 		char* mapName = reinterpret_cast<char*>(headerBuffer + 0x930);
-		g_pUtil->Log.Append("[ReplayInitializeState] INFO: Base map: %s.", mapName);
-		g_pUtil->Log.Append("[ReplayInitializeState] INFO: Players present at joining:");
+		 g_pSystem->Debug->Log("[ReplayInitializeState] INFO: Base map: %s.", mapName);
+		 g_pSystem->Debug->Log("[ReplayInitializeState] INFO: Players present at joining:");
 
 		std::vector<int> missingIndices;
 		std::vector<PlayerInfo> firstPlayerList;
@@ -39,10 +40,10 @@ void ReplayInitializeStateHook::HookedReplayInitializeState(uint64_t sessionCont
 		
 			if (wName[0] != 0 && iswprint(wName[0]))
 			{
-				std::string finalName = g_pUtil->Format.ToCompactAlpha(wName);
+				std::string finalName = ToCompactAlpha(wName);
 		
 				wchar_t* wTag = reinterpret_cast<wchar_t*>(playerOffset + 0x44);
-				std::string tag = g_pUtil->Format.WStringToString(wTag);
+				std::string tag = g_pSystem->Infrastructure->Format->WStringToString(wTag);
 
 				PlayerInfo info;
 				info.Name = finalName;
@@ -51,7 +52,7 @@ void ReplayInitializeStateHook::HookedReplayInitializeState(uint64_t sessionCont
 		
 				firstPlayerList[i] = info;
 		
-				g_pUtil->Log.Append("[ReplayInitializeState] INFO: Player [%d]: %s [%s].", i, finalName, tag);
+				g_pSystem->Debug->Log("[ReplayInitializeState] INFO: Player [%d]: %s [%s].", i, finalName, tag);
 			}
 			else
 			{
@@ -77,12 +78,27 @@ void ReplayInitializeStateHook::HookedReplayInitializeState(uint64_t sessionCont
 				if (offset >= (int)sizeof(listBuffer)) break;
 			}
 
-			g_pUtil->Log.Append("[ReplayInitializeState] INFO: Slots [%s] are empty in header.", listBuffer);
+			g_pSystem->Debug->Log("[ReplayInitializeState] INFO: Slots [%s] are empty in header.", listBuffer);
 		}
 	}
 
 	m_OriginalFunction(sessionContext, headerBuffer);
 }
+
+std::string ReplayInitializeStateHook::ToCompactAlpha(const std::wstring& ws)
+{
+	std::string s;
+	s.reserve(ws.length());
+	for (wchar_t wc : ws)
+	{
+		if (wc > 0 && wc < 127 && iswprint(wc) && wc != L' ')
+		{
+			s += static_cast<char>(std::tolower(static_cast<unsigned char>(wc)));
+		}
+	}
+	return s;
+}
+
 
 void ReplayInitializeStateHook::Install()
 {
@@ -91,24 +107,24 @@ void ReplayInitializeStateHook::Install()
 	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::ReplayInitializeState);
 	if (!functionAddress)
 	{
-		g_pUtil->Log.Append("[ReplayInitializeState] ERROR: Failed to obtain the function address.");
+		g_pSystem->Debug->Log("[ReplayInitializeState] ERROR: Failed to obtain the function address.");
 		return;
 	}
 
 	m_FunctionAddress.store(functionAddress);
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedReplayInitializeState, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[ReplayInitializeState] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[ReplayInitializeState] ERROR: Failed to create the hook.");
 		return;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK)
 	{
-		g_pUtil->Log.Append("[ReplayInitializeState] ERROR: Failed to enable the hook.");
+		g_pSystem->Debug->Log("[ReplayInitializeState] ERROR: Failed to enable the hook.");
 		return;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[ReplayInitializeState] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[ReplayInitializeState] INFO: Hook installed.");
 }
 
 void ReplayInitializeStateHook::Uninstall()
@@ -119,5 +135,5 @@ void ReplayInitializeStateHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[ReplayInitializeState] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[ReplayInitializeState] INFO: Hook uninstalled.");
 }

@@ -1,11 +1,11 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Engine/InputState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Input/GetButtonStateHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -38,24 +38,24 @@ void GetButtonStateHook::Install()
     void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::GetButtonState);
     if (!functionAddress)
     {
-        g_pUtil->Log.Append("[GetButtonState] ERROR: Failed to obtain the function address.");
+        g_pSystem->Debug->Log("[GetButtonState] ERROR: Failed to obtain the function address.");
         return;
     }
 
     m_FunctionAddress.store(functionAddress);
     if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedGetButtonState, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
     {
-        g_pUtil->Log.Append("[GetButtonState] ERROR: Failed to create the hook.");
+        g_pSystem->Debug->Log("[GetButtonState] ERROR: Failed to create the hook.");
         return;
     }
     if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK)
     {
-        g_pUtil->Log.Append("[GetButtonState] ERROR: Failed to enable the hook.");
+        g_pSystem->Debug->Log("[GetButtonState] ERROR: Failed to enable the hook.");
         return;
     }
 
     m_IsHookInstalled.store(true);
-    g_pUtil->Log.Append("[GetButtonState] INFO: Hook installed.");
+    g_pSystem->Debug->Log("[GetButtonState] INFO: Hook installed.");
 }
 
 void GetButtonStateHook::Uninstall()
@@ -66,5 +66,5 @@ void GetButtonStateHook::Uninstall()
     MH_RemoveHook(m_FunctionAddress.load());
 
     m_IsHookInstalled.store(false);
-    g_pUtil->Log.Append("[GetButtonState] INFO: Hook uninstalled.");
+    g_pSystem->Debug->Log("[GetButtonState] INFO: Hook uninstalled.");
 }

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <atomic>
+#include <string>
 
 class ReplayInitializeStateHook
 {
@@ -11,6 +12,7 @@ public:
 
 private:
 	static void HookedReplayInitializeState(uint64_t sessionContext, uint64_t headerBuffer);
+	static std::string ToCompactAlpha(const std::wstring& ws);
 
 	typedef void(__fastcall* ReplayInitializeState_t)(uint64_t sessionContext, uint64_t headerBuffer);
 	static inline ReplayInitializeState_t m_OriginalFunction = nullptr;

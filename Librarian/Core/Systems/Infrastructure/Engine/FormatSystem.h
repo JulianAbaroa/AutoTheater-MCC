@@ -5,16 +5,15 @@
 #include <unordered_map>
 #include <string>
 
-class FormatUtil
+class FormatSystem
 {
 public:
     std::string ToTimestamp(float totalSeconds);
 
-    std::string ToCompactAlpha(const std::wstring& ws);
     std::string WStringToString(const std::wstring& wstr);
     std::wstring StringToWString(const std::string& str);
 
     std::string EventTypeToString(EventType type);
     const char* GetEventClassName(EventClass eventClass);
-    const std::unordered_map<EventType, EventMetadata>& GetEventDb();
+    const std::unordered_map<EventType, EventMetadata>& GetEventMetadata();
 };

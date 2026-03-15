@@ -1,11 +1,11 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Lifecycle/GameEngineStartHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -24,12 +24,12 @@ void __fastcall GameEngineStartHook::HookedGameEngineStart(
 
 	if (memcmp(param_3, m_TheaterSignature, 16) == 0)
 	{
-		g_pUtil->Log.Append("[GameEngineStart] INFO: Theater detected, proceding.");
+		g_pSystem->Debug->Log("[GameEngineStart] INFO: Theater detected, proceding.");
 		g_pState->Domain->Theater->SetTheaterMode(true);
 	}
 	else
 	{
-		g_pUtil->Log.Append("[GameEngineStart] WARNING: Theater wasn't detected, aborting.");
+		g_pSystem->Debug->Log("[GameEngineStart] WARNING: Theater wasn't detected, aborting.");
 		g_pState->Domain->Theater->SetTheaterMode(false);
 	}
 }
@@ -41,7 +41,7 @@ bool GameEngineStartHook::Install(bool silent)
 	void* functionAddress = (void*)g_pSystem->Infrastructure->Scanner->FindPattern(Signatures::GameEngineStart);
 	if (!functionAddress)
 	{
-		if (!silent) g_pUtil->Log.Append("[GameEngineStart] ERROR: Failed to obtain the function address.");
+		if (!silent)  g_pSystem->Debug->Log("[GameEngineStart] ERROR: Failed to obtain the function address.");
 		return false;
 	}
 
@@ -49,17 +49,17 @@ bool GameEngineStartHook::Install(bool silent)
 	MH_RemoveHook(m_FunctionAddress.load());
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedGameEngineStart, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[GameEngineStart] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[GameEngineStart] ERROR: Failed to create the hook.");
 		return false;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK) 
 	{
-		g_pUtil->Log.Append("[GameEngineStart] ERROR: Failed to enable the hook.");
+		g_pSystem->Debug->Log("[GameEngineStart] ERROR: Failed to enable the hook.");
 		return false;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[GameEngineStart] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[GameEngineStart] INFO: Hook installed.");
 	return true;
 }
 
@@ -71,7 +71,7 @@ void GameEngineStartHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[GameEngineStart] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[GameEngineStart] INFO: Hook uninstalled.");
 }
 
 void* GameEngineStartHook::GetFunctionAddress()

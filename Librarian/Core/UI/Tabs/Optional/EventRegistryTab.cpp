@@ -1,11 +1,13 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Director/EventRegistryState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Domain/CoreDomainSystem.h"
 #include "Core/Systems/Domain/Director/EventRegistrySystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/UI/Tabs/Optional/EventRegistryTab.h"
 #include <set>
 
@@ -49,7 +51,7 @@ void EventRegistryTab::RefreshEventCache()
 
 void EventRegistryTab::DrawEventRow(EventInfo& item, const std::string& filter)
 {
-	std::string name = g_pUtil->Format.EventTypeToString(item.Type);
+	std::string name = g_pSystem->Infrastructure->Format->EventTypeToString(item.Type);
 
 	if (!filter.empty())
 	{
@@ -90,7 +92,7 @@ void EventRegistryTab::DrawEventTooltip(EventInfo& item)
 {
 	ImGui::BeginTooltip();
 
-	const auto& eventDb = g_pUtil->Format.GetEventDb();
+	const auto& eventDb = g_pSystem->Infrastructure->Format->GetEventMetadata();
 	auto it = eventDb.find(item.Type);
 
 	if (it != eventDb.end())
@@ -125,7 +127,7 @@ void EventRegistryTab::DrawCategoryView(const std::string& filter)
 {
 	for (EventClass category : m_Categories)
 	{
-		const char* categoryName = g_pUtil->Format.GetEventClassName(category);
+		const char* categoryName = g_pSystem->Infrastructure->Format->GetEventClassName(category);
 
 		ImGui::PushID(categoryName);
 

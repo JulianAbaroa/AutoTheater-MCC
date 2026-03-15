@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/Hooks/Lifecycle/CoreLifecycleHook.h"
 #include "Core/Hooks/Lifecycle/EngineInitializeHook.h"
@@ -13,6 +12,7 @@
 #include "Core/Hooks/Audio/ReleaseBufferHook.h"
 #include "Core/Hooks/Audio/GetBufferHook.h"
 #include "Core/Hooks/Audio/GetServiceHook.h"
+#include "Core/Hooks/Memory/CoreMemoryHook.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Director/DirectorState.h"
@@ -27,6 +27,9 @@
 #include "Core/Systems/Domain/Director/DirectorSystem.h"
 #include "Core/Systems/Domain/Director/EventRegistrySystem.h"
 #include "Core/Systems/Domain/Timeline/TimelineSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/ThreadSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Threads/Domain/MainThread.h"
 #include <chrono>
 
@@ -35,9 +38,9 @@ using namespace std::chrono_literals;
 void MainThread::Run() 
 {
     // Initial delay.
-    g_pUtil->Thread.WaitOrExit(5000ms);
+    g_pSystem->Infrastructure->Thread->WaitOrExit(5000ms);
 
-    g_pUtil->Log.Append("[MainThread] INFO: Started.");
+    g_pSystem->Debug->Log("[MainThread] INFO: Started.");
 
     this->InitializeAutoTheater();
     this->InstallCaptureHooks();
@@ -48,7 +51,7 @@ void MainThread::Run()
 
         if (g_pState->Infrastructure->Lifecycle->GetEngineStatus() == EngineStatus::Destroyed)
         {
-            g_pUtil->Log.Append("[MainThread] INFO: Game engine destruction detected, resetting lifecycle.");
+            g_pSystem->Debug->Log("[MainThread] INFO: Game engine destruction detected, resetting lifecycle.");
 
             if (!this->IsStillRunning()) break;
 
@@ -65,7 +68,7 @@ void MainThread::Run()
 
             if (!this->TryInstallLifecycleHooks("Engine Reset Cycle")) 
             {
-                g_pUtil->Log.Append("[MainThread] ERROR: Failed to re-install hooks after engine reset.");
+                g_pSystem->Debug->Log("[MainThread] ERROR: Failed to re-install hooks after engine reset.");
                 Shutdown();
                 return;
             }
@@ -74,14 +77,14 @@ void MainThread::Run()
             g_pState->Domain->Theater->SetTheaterMode(false);
         }
 
-        g_pUtil->Thread.WaitOrExit(1000ms);
+        g_pSystem->Infrastructure->Thread->WaitOrExit(1000ms);
     }
 
     this->UninstallCaptureHooks();
     this->UninstallLifecycleHooks();
 
     std::this_thread::sleep_for(200ms);
-    g_pUtil->Log.Append("[MainThread] INFO: Stopped.");
+    g_pSystem->Debug->Log("[MainThread] INFO: Stopped.");
 
     HMODULE hMod = g_pState->Infrastructure->Lifecycle->GetHandleModule();
     if (hMod != nullptr) FreeLibraryAndExitThread(hMod, 0);
@@ -177,14 +180,14 @@ void MainThread::CheckHooksHealth()
 
     if (areHooksIntact && g_pState->Infrastructure->Lifecycle->IsRunning())
     {
-        g_pUtil->Log.Append("[MainThread] WARNING: Hooks corrupted, rebooting.");
+        g_pSystem->Debug->Log("[MainThread] WARNING: Hooks corrupted, rebooting.");
         g_pState->Infrastructure->Lifecycle->SetEngineStatus({ EngineStatus::Destroyed });
     }
 }
 
 bool MainThread::IsStillRunning()
 {
-    g_pUtil->Thread.WaitOrExit(1000ms);
+    g_pSystem->Infrastructure->Thread->WaitOrExit(1000ms);
     if (!g_pState->Infrastructure->Lifecycle->IsRunning()) return false;
     return true;
 }
@@ -216,7 +219,7 @@ bool MainThread::TryInstallLifecycleHooks(const char* context)
             return true;
         }
 
-        g_pUtil->Thread.WaitOrExit(1000ms);
+        g_pSystem->Infrastructure->Thread->WaitOrExit(1000ms);
     }
 
     return false;
@@ -224,6 +227,6 @@ bool MainThread::TryInstallLifecycleHooks(const char* context)
 
 void MainThread::Shutdown()
 {
-    g_pUtil->Log.Append("[MainThread] ERROR: Initiating emergency shutdown.");
+    g_pSystem->Debug->Log("[MainThread] ERROR: Initiating emergency shutdown.");
     g_pState->Infrastructure->Lifecycle->SetRunning(false);
 }

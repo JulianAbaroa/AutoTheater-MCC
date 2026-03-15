@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -8,6 +7,7 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Audio/GetServiceHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -31,8 +31,10 @@ HRESULT __stdcall GetServiceHook::HookedGetService(IAudioClient* pThis, REFIID r
 				format.SamplesPerSec,
 				format.BytesPerFrame);
 
-			g_pUtil->Log.Append("[GetService] INFO: Audio instance converted.");
+			g_pSystem->Debug->Log("[GetService] INFO: Audio instance converted.");
 		}
+		
+		// g_pSystem->Debug->Log("[GetService] INFO: Client: %p -> RenderClient: %p", pThis, pRenderClient);
 	}
 
 	return hr;
@@ -45,24 +47,24 @@ void GetServiceHook::Install()
 	void* functionAddress = g_pSystem->Infrastructure->Audio->GetAudioClientVTableAddress(14);
 	if (!functionAddress)
 	{
-		g_pUtil->Log.Append("[GetService] ERROR: Failed to obtain the function address.");
+		g_pSystem->Debug->Log("[GetService] ERROR: Failed to obtain the function address.");
 		return;
 	}
 
 	m_FunctionAddress.store(functionAddress);
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedGetService, reinterpret_cast<LPVOID*>(&m_OriginalFunction)) != MH_OK)
 	{
-		g_pUtil->Log.Append("[GetService] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[GetService] ERROR: Failed to create the hook.");
 		return;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK)
 	{
-		g_pUtil->Log.Append("[GetService] ERROR: Failed to enable the hook.");
+		g_pSystem->Debug->Log("[GetService] ERROR: Failed to enable the hook.");
 		return;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[GetService] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[GetService] INFO: Hook installed.");
 }
 
 void GetServiceHook::Uninstall()
@@ -73,5 +75,5 @@ void GetServiceHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[GetService] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[GetService] INFO: Hook uninstalled.");
 }

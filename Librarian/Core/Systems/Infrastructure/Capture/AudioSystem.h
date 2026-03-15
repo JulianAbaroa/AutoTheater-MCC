@@ -24,11 +24,12 @@ public:
 private:
     void ScrutinizeAudioInstance(void* instance, BYTE* pData, size_t size, bool isSilent);
     void MarkAsInvalid(void* instance, CandidateInfo* currentCandidate);
+    bool SafeCopy(void* dest, const void* src, size_t size);
 
     std::deque<AudioChunk> m_AudioQueue;
     std::mutex m_QueueMutex;
 
-    std::vector<CandidateInfo> m_Candidates{ 16 };
+    std::vector<CandidateInfo> m_Candidates{};
     std::atomic<bool> m_IsScrutinyStarted{ true };
     std::chrono::steady_clock::time_point m_ScrutinyStart;
     std::mutex m_ScrutinyMutex;

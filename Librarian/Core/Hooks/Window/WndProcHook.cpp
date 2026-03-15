@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Engine/LifecycleState.h"
@@ -9,6 +8,7 @@
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/LifecycleSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/PreferencesSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Window/WndProcHook.h"
 #include "External/imgui/imgui.h"
 #include <chrono>
@@ -26,7 +26,7 @@ LRESULT __stdcall WndProcHook::HookedWndProc(
 	{
 		if (g_pState->Infrastructure->Lifecycle->IsRunning())
 		{
-			g_pUtil->Log.Append("[WndProc] WARNING: MCC shutdown detected.");
+			g_pSystem->Debug->Log("[WndProc] WARNING: MCC shutdown detected.");
 
 			g_pSystem->Infrastructure->Preferences->SavePreferences();
 			g_pState->Infrastructure->Gallery->Cleanup();

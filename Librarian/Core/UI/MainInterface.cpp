@@ -1,6 +1,14 @@
 #include "pch.h"
 #include "Core/UI/CoreUI.h"
-#include "Core/Utils/CoreUtil.h"
+#include "Core/UI/MainInterface.h"
+#include "Core/UI/Tabs/Logs/LogsTab.h"
+#include "Core/UI/Tabs/Optional/CaptureTab.h"
+#include "Core/UI/Tabs/Optional/EventRegistryTab.h"
+#include "Core/UI/Tabs/Optional/ReplayManagerTab.h"
+#include "Core/UI/Tabs/Primary/DirectorTab.h"
+#include "Core/UI/Tabs/Primary/SettingsTab.h"
+#include "Core/UI/Tabs/Primary/TheaterTab.h"
+#include "Core/UI/Tabs/Primary/TimelineTab.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -8,6 +16,8 @@
 #include "Core/States/Infrastructure/Engine/LifecycleState.h"
 #include "Core/States/Infrastructure/Engine/RenderState.h"
 #include "Core/States/Infrastructure/Persistence/SettingsState.h"
+#include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Threads/CoreThread.h"
 #include "Core/Threads/Domain/MainThread.h"
 #include "External/imgui/imgui_internal.h"
@@ -205,7 +215,7 @@ void MainInterface::DrawTabs()
 		if (alertColor != nullptr)
 		{
 			auto now = std::chrono::steady_clock::now();
-			auto elapsed = std::chrono::duration<float>(now - g_pUtil->Log.GetLastAlertTime()).count();
+			auto elapsed = std::chrono::duration<float>(now - g_pSystem->Debug->GetLastAlertTime()).count();
 
 			ImVec4 finalColor = *alertColor;
 
@@ -237,18 +247,18 @@ void MainInterface::DrawTabs()
 	};
 
 	// Primary
-	AddTab("Timeline", []() { g_pUI->Timeline.Draw(); }, false, nullptr);
-	AddTab("Theater", []() { g_pUI->Theater.Draw();  }, false, nullptr);
-	AddTab("Director", []() { g_pUI->Director.Draw(); }, false, nullptr);
-	AddTab("Settings", []() { g_pUI->Settings.Draw(); }, firstLaunch, nullptr);
+	AddTab("Timeline", []() { g_pUI->Timeline->Draw(); }, false, nullptr);
+	AddTab("Theater", []() { g_pUI->Theater->Draw();  }, false, nullptr);
+	AddTab("Director", []() { g_pUI->Director->Draw(); }, false, nullptr);
+	AddTab("Settings", []() { g_pUI->Settings->Draw(); }, firstLaunch, nullptr);
 
 	// Optional
 	bool useAppData = g_pState->Infrastructure->Settings->ShouldUseAppData();
 	if (!useAppData) ImGui::BeginDisabled();
 
-	AddTab("Replay Manager", []() { g_pUI->Replay.Draw();        }, false, nullptr);
-	AddTab("Event Registry", []() { g_pUI->EventRegistry.Draw(); }, false, nullptr);
-	AddTab("Capture", []() { g_pUI->Capture.Draw();       }, false, nullptr);
+	AddTab("Replay Manager", []() { g_pUI->Replay->Draw();        }, false, nullptr);
+	AddTab("Event Registry", []() { g_pUI->EventRegistry->Draw(); }, false, nullptr);
+	AddTab("Capture", []() { g_pUI->Capture->Draw();       }, false, nullptr);
 
 	if (!useAppData) ImGui::EndDisabled();
 
@@ -257,12 +267,12 @@ void MainInterface::DrawTabs()
 	static ImVec4 colorError(1.0f, 0.33f, 0.33f, 1.0f);
 	static ImVec4 colorWarning(1.0f, 0.79f, 0.23f, 1.0f);
 
-	if (g_pUtil->Log.HasUnreadError()) activeAlert = &colorError;
-	else if (g_pUtil->Log.HasUnreadWarning()) activeAlert = &colorWarning;
+	if (g_pSystem->Debug->HasUnreadError()) activeAlert = &colorError;
+	else if (g_pSystem->Debug->HasUnreadWarning()) activeAlert = &colorWarning;
 
 	AddTab("Logs", []() {
-		g_pUtil->Log.ClearUnreadStates();
-		g_pUI->Logs.Draw();
+		g_pSystem->Debug->ClearUnreadStates();
+		g_pUI->Logs->Draw();
 	}, false, activeAlert);
 
 	firstLaunch = false;

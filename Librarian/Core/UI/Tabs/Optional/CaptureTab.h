@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mutex>
+#include <chrono>
 
 class CaptureTab
 {
@@ -14,14 +15,12 @@ private:
 
 	void DrawGallery(bool isRecording);
 
-	void DrawRecordingSettingsPopup();
-	void DrawRecordingSettings();
+	void DrawRecordingSettingsPopup(bool isRecording);
+	void DrawRecordingSettings(bool isRecording);
 
 	void DrawPopups();
 	void DrawUninstallPopup();
 	void DrawDeleteVideoPopup();
-
-	std::string OpenFolderDialog();
 
 	std::atomic<bool> m_IsReadyTocapture{ false };
 	std::atomic<int> m_VideoIndexToDelete{ -1 };
@@ -35,4 +34,6 @@ private:
 	std::atomic<bool> m_FolderPickerActive{ false };
 	std::string m_PendingNewPath = "";
 	std::mutex m_Mutex;
+
+	std::chrono::steady_clock::time_point m_StopRequestedTime{};
 };

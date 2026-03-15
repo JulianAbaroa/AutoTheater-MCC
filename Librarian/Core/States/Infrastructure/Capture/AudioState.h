@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Common/Types/AudioTypes.h"
+#include <unordered_map>
 #include <atomic>
 #include <mutex>
 #include <map>
@@ -9,10 +10,10 @@ struct AudioState
 {
 public:
 	bool IsRecording() const;
-	BYTE* GetLastBuffer() const;
-	
 	void SetRecording(bool value);
-	void SetLastBuffer(BYTE* pBuffer);
+
+	BYTE* GetBufferForInstance(void* instanece);
+	void SetBufferForInstance(void* instance, BYTE* buffer);
 
 	void* GetMasterInstance() const;
 	void SetMasterInstance(void* newInstance);
@@ -25,9 +26,9 @@ public:
 
 private:
 	std::atomic<bool> m_IsRecording{ false };
-	std::atomic<BYTE*> m_LastBuffer{ nullptr };
 	std::atomic<void*> m_MasterInstance{ nullptr };
 
 	std::map<void*, AudioFormat> m_AudioInstances{};
+	std::unordered_map<void*, BYTE*> m_InstanceBuffers{};
 	mutable std::mutex m_Mutex;
 };

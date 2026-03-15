@@ -1,13 +1,19 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
+#include "Core/Hooks/CoreHook.h"
+#include "Core/Hooks/Memory/CoreMemoryHook.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Capture/AudioState.h"
+#include "Core/States/Infrastructure/Capture/FFmpegState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
+#include "Core/Systems/Infrastructure/Capture/SyncSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include <mmdeviceapi.h>
+#include <chrono>
 
 void* AudioSystem::GetRenderClientVTableAddress(int index)
 {
@@ -106,14 +112,14 @@ void AudioSystem::StartRecording()
     this->ClearQueue();
     m_IsScrutinyStarted.store(false);
     g_pState->Infrastructure->Audio->SetRecording(true);
-    g_pUtil->Log.Append("[AudioSystem] INFO: Samples recording started.");
+    g_pSystem->Debug->Log("[AudioSystem] INFO: Audio recording started.");
 }
 
 void AudioSystem::StopRecording() 
 {
     this->ClearQueue();
     g_pState->Infrastructure->Audio->SetRecording(false);
-    g_pUtil->Log.Append("[AudioSystem] INFO: Samples recording stopped.");
+    g_pSystem->Debug->Log("[AudioSystem] INFO: Audio recording stopped.");
 }
 
 
@@ -130,34 +136,67 @@ void AudioSystem::WriteAudio(void* instance, BYTE* pData, size_t size, bool isSi
 
     if (instance == masterInstance)
     {
-        AudioChunk chunk;
-        float* pTime = g_pState->Domain->Theater->GetTimePtr();
-        chunk.EngineTime = (pTime) ? *pTime : 0.0f;
-        chunk.IsSilent = isSilent;
+        auto now = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed = now - g_pState->Infrastructure->FFmpeg->GetStartRecordingTime();
+        double currentRealTime = elapsed.count();
 
+        AudioChunk chunk;
+        chunk.RealTime = currentRealTime;
+        chunk.IsSilent = isSilent;
         chunk.Data.resize(size);
 
-        if (!isSilent && pData != nullptr)
+        static bool logged = false;
+        if (!logged)
         {
-            memcpy(chunk.Data.data(), pData, size);
+            logged = true;
+            auto fmt = g_pState->Infrastructure->Audio->GetAudioInstance(instance);
+            g_pSystem->Debug->Log("[AudioSystem] FORMAT: SamplesPerSec=%u, Channels=%u, BitsPerSample=%u, BytesPerFrame=%u",
+                fmt.SamplesPerSec, fmt.Channels, fmt.SamplesPerSec, fmt.BytesPerFrame);
+            g_pSystem->Debug->Log("[AudioSystem] FORMAT: chunk size=%zu bytes, frames_per_chunk=%zu",
+                size, size / fmt.BytesPerFrame);
+        }
+
+        if (isSilent)
+        {
+            std::fill(chunk.Data.begin(), chunk.Data.end(), 0);
+        }
+        else
+        {
+            if (!SafeCopy(chunk.Data.data(), pData, size))
+            {
+                g_pSystem->Debug->Log("[AudioSystem] ERROR: Memory access violation during SafeCopy.");
+                g_pState->Infrastructure->Audio->SetMasterInstance(nullptr);
+                return;
+            }
 
             float* samples = reinterpret_cast<float*>(chunk.Data.data());
             size_t numSamples = size / sizeof(float);
 
-            for (size_t i = 0; i < numSamples; ++i) 
+            for (size_t i = 0; i < numSamples; ++i)
             {
-                if (!std::isfinite(samples[i])) samples[i] = 0.0f;
-                else if (samples[i] > 1.0f) samples[i] = 1.0f;
-                else if (samples[i] < -1.0f) samples[i] = -1.0f;
+                float s = samples[i];
+
+                if (!std::isfinite(s))
+                {
+                    samples[i] = 0.0f;
+                    continue;
+                }
+
+                if (std::abs(s) < 1e-10f)
+                {
+                    samples[i] = 0.0f;
+                    continue;
+                }
+
+                if (s > 1.0f) samples[i] = 1.0f;
+                else if (s < -1.0f) samples[i] = -1.0f;
             }
         }
-        else 
-        {
-            memset(chunk.Data.data(), 0, size);
-        }
 
-        std::lock_guard<std::mutex> lock(m_QueueMutex);
-        m_AudioQueue.push_back(std::move(chunk));
+        {
+            std::lock_guard<std::mutex> lock(m_QueueMutex);
+            m_AudioQueue.push_back(std::move(chunk));
+        }
     }
 }
 
@@ -179,6 +218,8 @@ void AudioSystem::ClearQueue()
     std::lock_guard<std::mutex> lock(m_QueueMutex);
     if (m_AudioQueue.empty()) return;
     m_AudioQueue.clear();
+
+    g_pSystem->Debug->Log("[AudioSystem] INFO: Audio queue cleared.");
 }
 
 
@@ -186,13 +227,22 @@ void AudioSystem::Cleanup()
 {
     this->ClearQueue();
     g_pState->Infrastructure->Audio->Cleanup();
-    g_pUtil->Log.Append("[AudioSystem] INFO: Cleanup completed.");
+
+    std::lock_guard<std::mutex> lock(m_ScrutinyMutex);
+    m_Candidates.clear();
+    m_IsScrutinyStarted.store(false);
+    m_ScrutinyStart = std::chrono::steady_clock::time_point();
+
+    g_pSystem->Debug->Log("[AudioSystem] INFO: Audio cleanup completed.");
 }
 
 
 void AudioSystem::ScrutinizeAudioInstance(void* instance, BYTE* pData, size_t size, bool isSilent)
 {
     if (g_pState->Infrastructure->Audio->GetMasterInstance() != nullptr) return;
+
+    auto* pTheaterTime = g_pState->Domain->Theater->GetTimePtr();
+    if (pTheaterTime == nullptr || *pTheaterTime < 0.0f) return;
 
     std::lock_guard<std::mutex> lock(m_ScrutinyMutex);
 
@@ -206,45 +256,50 @@ void AudioSystem::ScrutinizeAudioInstance(void* instance, BYTE* pData, size_t si
         }
     }
 
-    // Filter: Exists & Channels.
     if (currentCandidate && currentCandidate->IsInvalid) return;
 
     auto const& audioInstances = g_pState->Infrastructure->Audio->GetAudioInstances();
     auto itActive = audioInstances.find(instance);
-
-    if (itActive == audioInstances.end()) return;
-
-    if (itActive->second.Channels != 8)
+    if (itActive == audioInstances.end() || itActive->second.Channels != 8)
     {
         this->MarkAsInvalid(instance, currentCandidate);
         return;
     }
 
-    // Filter: Nan or Inf.
     const float* samples = reinterpret_cast<const float*>(pData);
     const size_t numSamples = size / sizeof(float);
+    bool chunkHasActivity = false;
+    const float activityThreshold = 0.00001f; // TODO: maybe incrase this.
 
     for (size_t i = 0; i < numSamples; ++i)
     {
-        const uint32_t sampleBits = *(reinterpret_cast<const uint32_t*>(&samples[i]));
+        float s = samples[i];
+        const uint32_t sampleBits = *(reinterpret_cast<const uint32_t*>(&s));
 
-        // Check if the sample's exponent bits are all set (0x7F800000).
-        // According to IEEE 754, if the exponent is 0xFF (all 1s), the value is either NaN or Infinity.
         if ((sampleBits & m_IEE754NanInfMask) == m_IEE754NanInfMask)
         {
             this->MarkAsInvalid(instance, currentCandidate);
             return;
         }
+
+        if (!chunkHasActivity && std::abs(s) > activityThreshold)
+        {
+            chunkHasActivity = true;
+        }
     }
 
-    // Mark as valid.
     if (!currentCandidate)
     {
         m_Candidates.push_back({ instance, false });
         currentCandidate = &m_Candidates.back();
+        currentCandidate->HasHadActivity = false;
     }
 
-    // Scrutiny.
+    if (chunkHasActivity)
+    {
+        currentCandidate->HasHadActivity = true;
+    }
+
     if (!m_IsScrutinyStarted.load())
     {
         m_ScrutinyStart = std::chrono::steady_clock::now();
@@ -259,7 +314,7 @@ void AudioSystem::ScrutinizeAudioInstance(void* instance, BYTE* pData, size_t si
 
     for (auto& candidate : m_Candidates)
     {
-        if (!candidate.IsInvalid)
+        if (!candidate.IsInvalid && candidate.HasHadActivity)
         {
             potentialMaster = candidate.Instance;
             survivorCount++;
@@ -269,17 +324,13 @@ void AudioSystem::ScrutinizeAudioInstance(void* instance, BYTE* pData, size_t si
     if (survivorCount == 1)
     {
         g_pState->Infrastructure->Audio->SetMasterInstance(potentialMaster);
-
+        g_pSystem->Debug->Log("[AudioSystem] INFO: Master instance selected by Activity Scrutiny.");
         m_Candidates.clear();
         m_IsScrutinyStarted.store(false);
-        g_pUtil->Log.Append("[AudioSystem] INFO: Master instance selected.");
     }
     else
     {
-        g_pUtil->Log.Append(survivorCount == 0
-            ? "[AudioSystem] WARNING: No valid candidates after scrutiny, restarting."
-            : "[AudioSystem] WARNING: Multiple candidates survived scrutiny, restarting.");
-
+        g_pSystem->Debug->Log("[AudioSystem] WARNING: Scrutiny Failed: %d survivors (Activity required). Restarting...", survivorCount);
         m_Candidates.clear();
         m_IsScrutinyStarted.store(false);
     }
@@ -289,4 +340,18 @@ void AudioSystem::MarkAsInvalid(void* instance, CandidateInfo* currentCandidate)
 {
     if (!currentCandidate) m_Candidates.push_back({ instance, true });
     else currentCandidate->IsInvalid = true;
+}
+
+bool AudioSystem::SafeCopy(void* dest, const void* src, size_t size)
+{
+    __try
+    {
+        if (src == nullptr || dest == nullptr) return false;
+        memcpy(dest, src, size);
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        return false;
+    }
 }

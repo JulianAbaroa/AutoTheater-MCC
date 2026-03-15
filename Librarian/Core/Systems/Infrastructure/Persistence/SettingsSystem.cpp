@@ -1,10 +1,11 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/SettingsSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
+#include <filesystem>
 #include <shlobj.h>
 #include <fstream>
 
@@ -101,6 +102,6 @@ void SettingsSystem::DeleteAppData()
 
 	if (errorCode)
 	{
-		g_pUtil->Log.Append("[SettingsSystem] ERROR: While deleting AppData. %s.", errorCode.message().c_str());
+		g_pSystem->Debug->Log("[SettingsSystem] ERROR: While deleting AppData. %s.", errorCode.message().c_str());
 	}
 }

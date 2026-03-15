@@ -1,32 +1,31 @@
 #pragma once
 
-#include "Core/UI/MainInterface.h"
-#include "Core/UI/Tabs/Logs/LogsTab.h"
-#include "Core/UI/Tabs/Optional/CaptureTab.h"
-#include "Core/UI/Tabs/Optional/EventRegistryTab.h"
-#include "Core/UI/Tabs/Optional/ReplayManagerTab.h"
-#include "Core/UI/Tabs/Primary/DirectorTab.h"
-#include "Core/UI/Tabs/Primary/SettingsTab.h"
-#include "Core/UI/Tabs/Primary/TheaterTab.h"
-#include "Core/UI/Tabs/Primary/TimelineTab.h"
+#include <memory>
+
+class MainInterface;
+class LogsTab;
+class CaptureTab;
+class EventRegistryTab;
+class ReplayManagerTab;
+class DirectorTab;
+class SettingsTab;
+class TheaterTab;
+class TimelineTab;
 
 struct CoreUI
 {
-	MainInterface Main;
+	CoreUI();
+	~CoreUI();
 
-	// Logs
-	LogsTab Logs;
-
-	// Optional
-	CaptureTab Capture;
-	EventRegistryTab EventRegistry;
-	ReplayManagerTab Replay;
-
-	// Primary
-	DirectorTab Director;
-	SettingsTab Settings;
-	TheaterTab Theater;
-	TimelineTab Timeline;
+	std::unique_ptr<MainInterface> Main;
+	std::unique_ptr<LogsTab> Logs;
+	std::unique_ptr<CaptureTab> Capture;
+	std::unique_ptr<EventRegistryTab> EventRegistry;
+	std::unique_ptr<ReplayManagerTab> Replay;
+	std::unique_ptr<DirectorTab> Director;
+	std::unique_ptr<SettingsTab> Settings;
+	std::unique_ptr<TheaterTab> Theater;
+	std::unique_ptr<TimelineTab> Timeline;
 };
 
 extern CoreUI* g_pUI;

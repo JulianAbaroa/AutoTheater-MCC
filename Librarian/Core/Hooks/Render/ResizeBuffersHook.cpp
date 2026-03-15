@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Engine/RenderState.h"
@@ -9,6 +8,7 @@
 #include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/GallerySystem.h"
 #include "Core/Systems/Infrastructure/Engine/RenderSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Render/ResizeBuffersHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -21,7 +21,7 @@ HRESULT __stdcall ResizeBuffersHook::HookedResizeBuffers(IDXGISwapChain* pSwapCh
 
 	if (g_pState->Infrastructure->FFmpeg->IsRecording())
 	{
-		g_pUtil->Log.Append("[ResizeBuffers] WARNING: Capture stopped due to resolution change.");
+		g_pSystem->Debug->Log("[ResizeBuffers] WARNING: Recording stopped due to resolution change.");
 		g_pSystem->Infrastructure->FFmpeg->Stop();
 		g_pSystem->Infrastructure->Gallery->RefreshList(g_pState->Infrastructure->FFmpeg->GetOutputPath());
 	}
@@ -51,23 +51,23 @@ void ResizeBuffersHook::Install()
 {
 	if (m_IsHookInstalled.load()) return;
 
-	auto addresses = g_pUtil->DX.GetVtableAddresses();
+	auto addresses = g_pSystem->Infrastructure->Render->GetVtableAddresses();
 	if (!addresses.ResizeBuffers) return;
 
 	m_FunctionAddress.store(addresses.ResizeBuffers);
 	if (MH_CreateHook(m_FunctionAddress.load(), &this->HookedResizeBuffers, reinterpret_cast<LPVOID*>(&m_OriginalFunction)))
 	{
-		g_pUtil->Log.Append("[ResizeBuffers] ERROR: Failed to create the hook.");
+		g_pSystem->Debug->Log("[ResizeBuffers] ERROR: Failed to create the hook.");
 		return;
 	}
 	if (MH_EnableHook(m_FunctionAddress.load()) != MH_OK) 
 	{
-		g_pUtil->Log.Append("[ResizeBuffers] ERROR: Failed to enable the hook.");
+		g_pSystem->Debug->Log("[ResizeBuffers] ERROR: Failed to enable the hook.");
 		return;
 	}
 
 	m_IsHookInstalled.store(true);
-	g_pUtil->Log.Append("[ResizeBuffers] INFO: Hook installed.");
+	g_pSystem->Debug->Log("[ResizeBuffers] INFO: Hook installed.");
 }
 
 void ResizeBuffersHook::Uninstall()
@@ -78,5 +78,5 @@ void ResizeBuffersHook::Uninstall()
 	MH_RemoveHook(m_FunctionAddress.load());
 
 	m_IsHookInstalled.store(false);
-	g_pUtil->Log.Append("[ResizeBuffers] INFO: Hook uninstalled.");
+	g_pSystem->Debug->Log("[ResizeBuffers] INFO: Hook uninstalled.");
 }

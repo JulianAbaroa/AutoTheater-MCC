@@ -10,7 +10,7 @@ public:
 	void StartRecording();
 	void StopRecording();
 
-	void PushFrame(const uint8_t* pData, UINT width, UINT height, UINT rowPitch, float engineTime);
+	void PushFrame(const uint8_t* pData, UINT width, UINT height, UINT rowPitch, double engineTime);
 	
 	std::deque<FrameData> ExtractQueue();
 	size_t GetQueueSize();
@@ -18,6 +18,8 @@ public:
 
 	void PreallocatePool(UINT width, UINT height);
 	void ReturnBuffer(std::vector<uint8_t>&& buffer);
+
+	void Cleanup();
 
 private:
 	std::deque<FrameData> m_FrameQueue;

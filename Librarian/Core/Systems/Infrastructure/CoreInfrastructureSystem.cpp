@@ -11,6 +11,11 @@
 #include "Core/Systems/Infrastructure/Persistence/PreferencesSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/ReplaySystem.h"
 #include "Core/Systems/Infrastructure/Persistence/SettingsSystem.h"
+#include "Core/Systems/Infrastructure/Engine/ThreadSystem.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
+#include "Core/Systems/Infrastructure/Engine/DialogSystem.h"
+#include "Core/Systems/Infrastructure/Capture/DownloadSystem.h"
+#include "Core/Systems/Infrastructure/Capture/SyncSystem.h"
 
 CoreInfrastructureSystem::CoreInfrastructureSystem()
 {
@@ -25,6 +30,11 @@ CoreInfrastructureSystem::CoreInfrastructureSystem()
 	Preferences = std::make_unique<PreferencesSystem>();
 	Replay = std::make_unique<ReplaySystem>();
 	Settings = std::make_unique<SettingsSystem>();
+	Thread = std::make_unique<ThreadSystem>();
+	Format = std::make_unique<FormatSystem>();
+	Dialog = std::make_unique<DialogSystem>();
+	Download = std::make_unique<DownloadSystem>();
+	Sync = std::make_unique<SyncSystem>();
 }
 
 CoreInfrastructureSystem::~CoreInfrastructureSystem() = default;

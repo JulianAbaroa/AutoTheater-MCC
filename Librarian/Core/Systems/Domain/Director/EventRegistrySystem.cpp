@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Director/EventRegistryState.h"
@@ -8,6 +7,9 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Domain/CoreDomainSystem.h"
 #include "Core/Systems/Domain/Director/EventRegistrySystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include <fstream>
 
 EventRegistrySystem::EventRegistrySystem()
@@ -26,10 +28,12 @@ void EventRegistrySystem::SaveEventRegistry()
 	file << "# AutoTheater Event Weights\n";
 	for (const auto& [name, info] : eventRegistryCopy)
 	{
-		file << g_pUtil->Format.WStringToString(name) << "=" << info.Weight << "\n";
+		file << g_pSystem->Infrastructure->Format->WStringToString(name) << "=" << info.Weight << "\n";
 	}
 
 	file.close();
+
+	g_pSystem->Debug->Log("[EventRegistryTab] INFO: Event registry saved.");
 }
 
 void EventRegistrySystem::LoadEventRegistry()
@@ -51,7 +55,7 @@ void EventRegistrySystem::LoadEventRegistry()
 			std::string nameStr = line.substr(0, delimiterPos);
 			std::string weightStr = line.substr(delimiterPos + 1);
 
-			std::wstring eventName = g_pUtil->Format.StringToWString(nameStr);
+			std::wstring eventName = g_pSystem->Infrastructure->Format->StringToWString(nameStr);
 
 			if (eventRegistryCopy.count(eventName))
 			{
@@ -66,6 +70,8 @@ void EventRegistrySystem::LoadEventRegistry()
 	file.close();
 
 	g_pState->Domain->EventRegistry->SetEventRegistry(eventRegistryCopy);
+
+	g_pSystem->Debug->Log("[MainThread] INFO: Event registry loaded.");
 }
 
 

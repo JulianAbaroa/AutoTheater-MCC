@@ -50,11 +50,10 @@ namespace Signatures
 		"48 89 5C 24 08 57 48 83 EC 30 49 8B F8 48 8D 0D ? ? ? ? 48 8B DA 41 B8 ? ? ? ? 48 8B D7 E8"
 	};
 
-	const Signature CreateMasteringVoice_Wrapper = {
-		"CreateMasteringVoice_Wrapper",
-		"40 53 48 83 EC 50 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 44 24 40 48 83 64 24 20 00 48 8B DA 80 7A 31 00 74 43 33 D2 48 8D 4C 24 20 FF 15 ?? ?? ?? ?? 85 C0 78 32 80 7B 30 00 74 2C 48 8B 4C 24 20 48 8D 54 24 28 0F 57 C0 C7 44 24 28 03 00 00 00 F3 0F 7F 44 24 30 C7 44 24 2C 01 00 00 00 45 33 C0 48 8B 01 FF 50 60"
+	const Signature UpdateEngineTime = {
+		"UpdateEngineTime",
+		"48 8B C4 48 89 58 10 48 89 70 18 57 48 83 EC 40 8B 0D ?? ?? ?? ?? 0F 29 70 E8 0F 29 78 D8"
 	};
-
 	// Variables
 	const Signature TimeScaleModifier = {
 		"TimeScaleModifier",
@@ -74,5 +73,20 @@ namespace Signatures
 	const Signature TargetFramerate_Var = {
 		"TargetFramerate_Var",
 		"83 25 ?? ?? ?? ?? 00 0F 57 C0 F3 0F 11 05"
+	};
+
+	const Signature EngineTime_Var = {
+		"EngineTime_Var",
+		"3B 1D ?? ?? ?? ?? 7C CE F2 0F 11 35 ?? ?? ?? ?? 48 8B 5C 24 58 48 8B 74 24 60 0F 28 74 24 30 0F 28 7C 24 20 48 83 C4 40 5F C3"
+	};
+
+	const Signature LastEngineTimestamp = {
+		"LastEngineTimestamp",
+		"F2 0F 5C 05 ?? ?? ?? ?? 66 0F 5A F8"
+	};
+
+	const Signature QpcInvFreq = {
+		"QpcInvFreq",
+		"F2 0F 59 35 ?? ?? ?? ?? F2 0F 58 F7 0F 28 C6 F2 0F 5C 05 ?? ?? ?? ?? 66 0F 5A F8"
 	};
 }

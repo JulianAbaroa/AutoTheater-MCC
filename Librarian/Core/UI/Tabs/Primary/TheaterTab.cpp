@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Core/Utils/CoreUtil.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -8,6 +7,8 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Domain/CoreDomainSystem.h"
 #include "Core/Systems/Domain/Theater/TheaterSystem.h"
+#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
+#include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
 #include "Core/UI/Tabs/Primary/TheaterTab.h"
 #include "External/imgui/imgui_internal.h"
 #include "External/imgui/imgui.h"
@@ -110,7 +111,7 @@ void TheaterTab::DrawPlaybackControls(bool& autoScroll)
 	float* pTime = g_pState->Domain->Theater->GetTimePtr();
 
 	ImGui::AlignTextToFramePadding();
-	if (pTime) ImGui::Text("Time: %s", g_pUtil->Format.ToTimestamp(*pTime).c_str());
+	if (pTime) ImGui::Text("Time: %s", g_pSystem->Infrastructure->Format->ToTimestamp(*pTime).c_str());
 	else       ImGui::TextDisabled("Time: --:--:--.--");
 
 	ImGui::SameLine(0, 30.0f);
