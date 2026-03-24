@@ -7,6 +7,7 @@ class DirectorThread;
 class InputThread;
 class CaptureThread;
 
+// Main container for the application's threads.
 struct CoreThread
 {
 	CoreThread();

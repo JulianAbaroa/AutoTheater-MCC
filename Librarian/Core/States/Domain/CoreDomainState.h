@@ -2,11 +2,17 @@
 
 #include <memory>
 
-struct DirectorState;
-struct EventRegistryState;
-struct TheaterState;
-struct TimelineState;
+// Director
+class DirectorState;
+class EventRegistryState;
 
+// Theater
+class TheaterState;
+
+// Timeline
+class TimelineState;
+
+// Main container for the application's domain states.
 struct CoreDomainState
 {
 	CoreDomainState();

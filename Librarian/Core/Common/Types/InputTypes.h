@@ -12,15 +12,15 @@ enum class InputAction
 
 	// Theater Mode Controls.
 	TogglePanel = 59,
-	ToggleInterface = 58,
-	TogglePOV = 60,
+	ToggleUIMode = 58,
+	TogglePOVMode = 60,
 	NextPlayer = 78,
 	PreviousPlayer = 77,
 	JumpForward = 80,
 	JumpBackward = 79,
 	PlayPause = 56,
 	FastForward = 33,
-	ToggleFreecam = 72,
+	ToggleCameraMode = 72,
 	Boost = 57,
 	FasterBoost = 69,
 	Ascend = 34,

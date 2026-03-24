@@ -31,25 +31,18 @@ void TimelineSystem::ProcessEngineEvent(float timestamp, std::wstring& templateS
 	if (event.Type == EventType::Wins) g_pSystem->Domain->Timeline->SetLastEventReached(true);
 }
 
-std::vector<PlayerInfo> TimelineSystem::ExtractPlayers(EventData* rawData) 
+std::vector<PlayerInfo> TimelineSystem::ExtractPlayers(EventData* rawData)
 {
 	std::vector<PlayerInfo> detectedPlayers;
 	if (!rawData) return detectedPlayers;
 
-	std::vector<PlayerInfo> playerListCopy = g_pState->Domain->Theater->GetPlayerListCopy();
-
-	size_t maxPlayers = playerListCopy.size();
-
 	auto AddPlayerBySlot = [&](uint8_t slotIndex) {
-		if (slotIndex < maxPlayers) 
-		{
-			PlayerInfo& player = playerListCopy[slotIndex];
+		auto player = g_pState->Domain->Theater->GetPlayerBySlot(slotIndex);
 
-			if (player.RawPlayer.Name[0] != L'\0') 
-			{
-				detectedPlayers.push_back(player);
-				return true;
-			}
+		if (player && player->RawPlayer.Name[0] != L'\0')
+		{
+			detectedPlayers.push_back(*player);
+			return true;
 		}
 
 		return false;
@@ -106,20 +99,12 @@ bool TimelineSystem::IsDuplicate(const GameEvent& newEvent)
 	}
 
 	m_DeduplicationHistory.push_back(newEvent);
-	if (m_DeduplicationHistory.size() > MAX_HISTORY) 
+	if (m_DeduplicationHistory.size() > m_MaxHistory) 
 	{
 		m_DeduplicationHistory.pop_front();
 	}
 
 	return false;
-}
-
-float TimelineSystem::GetLatestTimestamp() const
-{
-	std::vector<GameEvent> allEvents = g_pState->Domain->Timeline->GetTimelineCopy();
-
-	if (allEvents.empty()) return 0.0f;
-	return allEvents.back().Timestamp;
 }
 
 
@@ -128,17 +113,7 @@ bool TimelineSystem::HasReachedLastEvent() const
 	return m_LastEventReached.load();
 }
 
-size_t TimelineSystem::GetLoggedEventsCount() const
-{
-	return m_LoggedEventsCount.load();
-}
-
 void TimelineSystem::SetLastEventReached(bool value)
 {
 	m_LastEventReached.store(value);
-}
-
-void TimelineSystem::SetLoggedEventsCount(size_t value)
-{
-	m_LoggedEventsCount.store(value);
 }

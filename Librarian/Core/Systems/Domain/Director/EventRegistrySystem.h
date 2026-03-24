@@ -4,11 +4,10 @@ class EventRegistrySystem
 {
 public:
 	EventRegistrySystem();
+	void InitializeDefaultRegistry();
 
 	void SaveEventRegistry();
 	void LoadEventRegistry();
-
-	void InitializeDefaultRegistry();
 
 private:
 	EventInfo BuildEvent(EventType type, int weight);

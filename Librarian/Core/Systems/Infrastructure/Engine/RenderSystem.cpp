@@ -131,7 +131,7 @@ void RenderSystem::Initialize(IDXGISwapChain* pSwapChain)
         ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", finalFontSize);
         if (!font) font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", finalFontSize);
 
-        ApplyCustomStyle();
+        this->ApplyCustomStyle();
 
         if (g_pState->Infrastructure->Settings->ShouldUseAppData())
         {
@@ -144,6 +144,9 @@ void RenderSystem::Initialize(IDXGISwapChain* pSwapChain)
         ImGui_ImplDX11_Init(device, context);
 
         g_pHook->Window->WndProc->SetWndProc((WNDPROC)SetWindowLongPtr(sd.OutputWindow, GWLP_WNDPROC, (LONG_PTR)g_pHook->Window->WndProc->HookedWndProc));
+        
+        bool showOnStart = g_pState->Infrastructure->Settings->ShouldOpenUIOnStart();
+        g_pState->Infrastructure->Settings->SetMenuVisible(showOnStart);
 
         g_pState->Infrastructure->Render->SetImGuiInitialized(true);
         g_pSystem->Debug->Log("[RenderSystem] INFO: ImGui Initialized for the first time.");

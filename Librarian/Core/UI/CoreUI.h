@@ -12,6 +12,7 @@ class SettingsTab;
 class TheaterTab;
 class TimelineTab;
 
+// Main container for the application's UIs.
 struct CoreUI
 {
 	CoreUI();

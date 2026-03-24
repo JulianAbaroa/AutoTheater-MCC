@@ -19,22 +19,17 @@ HRESULT __stdcall ReleaseBufferHook::HookedReleaseBuffer(IAudioRenderClient* pTh
     {
         return m_OriginalFunction(pThis, NumFramesWritten, Flags);
     }
-
     BYTE* pBuffer = g_pState->Infrastructure->Audio->GetBufferForInstance(pThis);
-
     if (NumFramesWritten > 0 && pBuffer != nullptr)
     {
         AudioFormat format = g_pState->Infrastructure->Audio->GetAudioInstance(pThis);
-
-        if (format.BytesPerFrame > 0 && format.Channels == 8)
+        if (format.BytesPerFrame > 0 && (format.Channels == 8 || format.Channels == 2 || format.Channels == 6))
         {
             bool isSilent = (Flags & AUDCLNT_BUFFERFLAGS_SILENT);
             size_t dataSize = (size_t)NumFramesWritten * format.BytesPerFrame;
-
             g_pSystem->Infrastructure->Audio->WriteAudio(pThis, pBuffer, dataSize, isSilent);
         }
     }
-
     return m_OriginalFunction(pThis, NumFramesWritten, Flags);
 }
 

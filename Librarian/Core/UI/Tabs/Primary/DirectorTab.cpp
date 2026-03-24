@@ -2,6 +2,7 @@
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Director/DirectorState.h"
+#include "Core/States/Domain/Theater/TheaterState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Systems/CoreSystem.h"
@@ -41,12 +42,17 @@ void DirectorTab::Draw()
 			ImGui::TableSetupColumn("Reason", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort);
 			ImGui::TableHeadersRow();
 
-			const auto& script = g_pState->Domain->Director->GetScriptCopy();
+			if (!m_ScriptCached)
+			{
+				m_CachedScript = g_pState->Domain->Director->GetScriptCopy();
+				m_ScriptCached = true;
+			}
+
 			size_t currentIndex = g_pSystem->Domain->Director->GetCurrentCommandIndex();
 
-			for (size_t i = 0; i < script.size(); i++)
+			for (size_t i = 0; i < m_CachedScript.size(); i++)
 			{
-				const auto& cmd = script[i];
+				const auto& cmd = m_CachedScript[i];
 				ImGui::TableNextRow();
 
 				bool isCurrent = (i == (currentIndex > 0 ? currentIndex - 1 : 0) && currentIndex > 0);
@@ -94,6 +100,14 @@ void DirectorTab::Draw()
 	ImGui::EndChild();
 }
 
+
+void DirectorTab::ResetCachedScript()
+{
+	m_CachedScript = {};
+	m_ScriptCached = false;
+}
+
+
 void DirectorTab::DrawDirectorSystemStatus()
 {
 	bool init = g_pState->Domain->Director->IsInitialized();
@@ -122,6 +136,76 @@ void DirectorTab::DrawDirectorSystemStatus()
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Direct memory hooks into the game engine for camera/speed control.");
+	}
+
+	ImGui::Separator();
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextDisabled("Force Spectator Modes");
+	ImGui::SameLine();
+
+	ImGui::Text("Camera:");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(150.0f);
+	const char* cameraModes[] = { "Unselected", "Following", "Free" };
+	int currentCamera = static_cast<int>(g_pState->Domain->Theater->GetCameraMode()) + 1;
+
+	if (ImGui::Combo("##CameraCombo", &currentCamera, cameraModes, IM_ARRAYSIZE(cameraModes)))
+	{
+		g_pState->Domain->Theater->SetCameraMode(static_cast<CameraMode>(currentCamera - 1));
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Forces the camera to be attached to a player or be completely free.");
+	}
+
+	ImGui::SameLine(0.0f, 15.0f);
+	ImGui::Text("POV:");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(150.0f);
+
+	const char* povModes[] = { "Unselected", "Third Person", "First Person" };
+	POVMode actualMode = g_pState->Domain->Theater->GetPOVMode();
+	int currentPOVIdx = 0;
+	if (actualMode == POVMode::ThirdPersonAttached) currentPOVIdx = 1;
+	else if (actualMode == POVMode::FirstPerson) currentPOVIdx = 2;
+
+	if (ImGui::Combo("##POVCombo", &currentPOVIdx, povModes, IM_ARRAYSIZE(povModes)))
+	{
+		POVMode selected;
+		switch (currentPOVIdx) {
+		case 1:  selected = POVMode::ThirdPersonAttached; break;
+		case 2:  selected = POVMode::FirstPerson; break;
+		default: selected = POVMode::Unselected; break;
+		}
+		g_pState->Domain->Theater->SetPOVMode(selected);
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::TextUnformatted("Forces the point of view between Third Person and First Person.");
+		ImGui::Separator();
+
+		ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "NOTE:");
+		ImGui::SameLine();
+		ImGui::TextDisabled("First Person only works with the replay author.");
+		ImGui::EndTooltip();
+	}
+
+	ImGui::SameLine(0.0f, 15.0f);
+	ImGui::Text("HUD:");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(150.0f);
+
+	const char* uiModes[] = { "Unselected", "Theater", "Normal", "None" };
+	int currentUI = static_cast<int>(g_pState->Domain->Theater->GetUIMode()) + 1;
+
+	if (ImGui::Combo("##HUDCombo", &currentUI, uiModes, IM_ARRAYSIZE(uiModes)))
+	{
+		g_pState->Domain->Theater->SetUIMode(static_cast<UIMode>(currentUI - 1));
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Forces the visibility of the game's User Interface.");
 	}
 }
 

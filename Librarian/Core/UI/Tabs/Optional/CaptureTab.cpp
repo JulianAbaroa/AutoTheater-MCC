@@ -1,4 +1,8 @@
 #include "pch.h"
+#include "Core/UI/CoreUI.h"
+#include "Core/UI/Tabs/Primary/SettingsTab.h"
+#include "Core/Threads/CoreThread.h"
+#include "Core/Threads/Infrastructure/CaptureThread.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -6,6 +10,7 @@
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Capture/FFmpegState.h"
 #include "Core/States/Infrastructure/Capture/AudioState.h"
+#include "Core/States/Infrastructure/Capture/DownloadState.h"
 #include "Core/States/Infrastructure/Persistence/GalleryState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
@@ -25,7 +30,7 @@ void CaptureTab::Draw()
 
 	ImGui::Separator();
 
-	if (g_pState->Infrastructure->FFmpeg->IsFFmpegInstalled())
+	if (g_pState->Infrastructure->Download->IsFFmpegInstalled())
 	{
         this->DrawGallery(isRecording);
 	}
@@ -39,7 +44,7 @@ void CaptureTab::DrawTopBar(bool isRecording)
     bool isCaptureActive = g_pState->Infrastructure->FFmpeg->IsCaptureActive();
     float totalWidth = ImGui::GetContentRegionAvail().x;
 
-    if (g_pState->Infrastructure->FFmpeg->IsFFmpegInstalled())
+    if (g_pState->Infrastructure->Download->IsFFmpegInstalled())
     {
         // Left side
         this->DrawRecordingControls(isRecording, isCaptureActive);
@@ -94,9 +99,7 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
         m_StopRequestedTime = std::chrono::steady_clock::time_point();
 
         bool canRecord = g_pState->Domain->Theater->IsTheaterMode() &&
-            g_pState->Domain->Theater->GetTimePtr() != nullptr &&
-            g_pState->Domain->Director->IsInitialized() &&
-            g_pState->Infrastructure->Audio->GetMasterInstance() != nullptr;
+            g_pState->Domain->Theater->GetTimePtr() != nullptr;
 
         if (!canRecord) ImGui::BeginDisabled();
 
@@ -113,8 +116,6 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
                 ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Recording unavailable:");
                 if (!g_pState->Domain->Theater->IsTheaterMode())             ImGui::BulletText("Theater Mode is not active");
                 if (g_pState->Domain->Theater->GetTimePtr() == nullptr)      ImGui::BulletText("Theater Time not found");
-                if (!g_pState->Domain->Director->IsInitialized())            ImGui::BulletText("Director is not initialized");
-                if (g_pState->Infrastructure->Audio->GetMasterInstance() == nullptr) ImGui::BulletText("Audio Master Instance missing");
                 ImGui::EndTooltip();
             }
             ImGui::EndDisabled();
@@ -131,7 +132,6 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
             {
                 g_pState->Infrastructure->FFmpeg->SetStopRecording(true);
                 m_StopRequestedTime = std::chrono::steady_clock::now();
-                g_pSystem->Infrastructure->Gallery->RefreshList(g_pState->Infrastructure->FFmpeg->GetOutputPath());
             }
 
             if (!isCaptureActive && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
@@ -180,7 +180,9 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
         ImGui::SameLine(0, 10.0f);
 
         float speed = g_pState->Infrastructure->FFmpeg->GetRecordingSpeed();
-        ImVec4 speedColor = (speed < 0.98f) ? ImVec4(1.0f, 0.4f, 0.4f, 1.0f) : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
+        ImVec4 speedColor = (speed < 0.98f) ? 
+            ImVec4(1.0f, 0.4f, 0.4f, 1.0f) : 
+            ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
         ImGui::TextDisabled("Speed:");
         ImGui::SameLine();
@@ -196,7 +198,38 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
             ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "CRITICAL: < 0.90x causes desync/fast-motion.");
 
             ImGui::Spacing();
-            ImGui::TextDisabled("Fix: Lower Res, FPS, or use a faster Preset.");
+            ImGui::TextDisabled("Fix: Lower resolution, framerate, or use a faster preset.");
+            ImGui::EndTooltip();
+        }
+
+        ImGui::SameLine();
+
+        ImGui::TextDisabled("Ratio:");
+        ImGui::SameLine();
+
+        static double smoothedRatio = 1.0;
+        double rawRatio = g_pThread->Capture->GetSyncRatio();
+
+        const double alpha = 0.05;
+        smoothedRatio = alpha * rawRatio + (1.0 - alpha) * smoothedRatio;
+
+        ImVec4 ratioColor = (smoothedRatio < 0.999)
+            ? ImVec4(1.0f, 0.4f, 0.4f, 1.0f)
+            : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+        ImGui::TextColored(ratioColor, "%.3f", smoothedRatio);
+
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("Sync Ratio (Video-Audio): %.3f", smoothedRatio);
+            ImGui::Separator();
+
+            ImGui::Text("Target: 1.000");
+            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "CRITICAL: < 0.999x causes video-audio desync.");
+
+            ImGui::Spacing();
+            ImGui::TextDisabled("Fix: Use higher video pipe buffer and higher buffer queue size (uses more RAM).");
             ImGui::EndTooltip();
         }
     }
@@ -210,7 +243,7 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
 
     float padding = ImGui::GetStyle().ItemSpacing.x;
 
-    if (g_pState->Infrastructure->FFmpeg->IsDownloadInProgress())
+    if (g_pState->Infrastructure->Download->IsDownloadInProgress())
     {
         float barW = 180.0f;
         float btnW = ImGui::CalcTextSize("Cancel").x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -218,7 +251,7 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
 
         ImGui::SetCursorPosX(totalWidth - groupW - padding);
 
-        float progress = g_pState->Infrastructure->FFmpeg->GetDownloadProgress() / 100.0f;
+        float progress = g_pState->Infrastructure->Download->GetDownloadProgress() / 100.0f;
 
         char buf[32]{};
         sprintf_s(buf, "%.0f%%", progress * 100.0f);
@@ -241,7 +274,7 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
 
         if (isFinished) ImGui::EndDisabled();
     }
-    else if (g_pState->Infrastructure->FFmpeg->IsFFmpegInstalled())
+    else if (g_pState->Infrastructure->Download->IsFFmpegInstalled())
     {
         float textW = ImGui::CalcTextSize("FFmpeg Installed").x;
         float btnW = ImGui::CalcTextSize("Uninstall").x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -380,7 +413,7 @@ void CaptureTab::DrawRecordingSettings(bool isRecording)
         if (isRecording) ImGui::BeginDisabled();
 
         ImGui::AlignTextToFramePadding();
-        ImGui::Text("Resolution Scale:");
+        ImGui::Text("Resolution Scale");
         ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
         ImGui::SetNextItemWidth(205.0f);
 
@@ -416,7 +449,7 @@ void CaptureTab::DrawRecordingSettings(bool isRecording)
         ImGui::Spacing();
 
         ImGui::AlignTextToFramePadding();
-        ImGui::TextDisabled("Target Framerate:");
+        ImGui::TextDisabled("Target Framerate");
         ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
         ImGui::SetNextItemWidth(205.0f);
 
@@ -675,6 +708,12 @@ void CaptureTab::DrawRecordingSettings(bool isRecording)
             g_pState->Infrastructure->FFmpeg->SetRecordUI(recordOverlay);
         }
 
+        bool muted = g_pState->Infrastructure->Audio->IsMuted();
+        if (ImGui::Checkbox("Record muted", &muted))
+        {
+            g_pState->Infrastructure->Audio->SetMuted(muted);
+        }
+
         bool stopOnLast = g_pState->Infrastructure->FFmpeg->StopOnLastEvent();
         if (ImGui::Checkbox("Stop on last event", &stopOnLast))
         {
@@ -685,7 +724,7 @@ void CaptureTab::DrawRecordingSettings(bool isRecording)
         if (shouldDisableSlider) ImGui::BeginDisabled();
 
         ImGui::AlignTextToFramePadding();
-        ImGui::Text("Post-roll Delay:");
+        ImGui::Text("Post-roll Delay");
         ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
         ImGui::SetNextItemWidth(205.0f);
 
@@ -703,23 +742,19 @@ void CaptureTab::DrawRecordingSettings(bool isRecording)
     DrawSectionCard("Output & Storage", [&]() {
         if (isRecording) ImGui::BeginDisabled();
 
-        ImGui::Text("Output Directory:");
-
         std::string outputPath = g_pState->Infrastructure->FFmpeg->GetOutputPath();
 
-        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 110.0f);
-        ImGui::InputText("##OutputPath", (char*)outputPath.c_str(), outputPath.size(), ImGuiInputTextFlags_ReadOnly);
-        
-        ImGui::PopStyleColor();
+        g_pUI->Settings->DrawPathField("Output Directory", outputPath, 110.0f);
+
         ImGui::SameLine();
 
-        if (ImGui::Button("Browse...", ImVec2(100, 0))) 
+        if (ImGui::Button("Browse", ImVec2(100, 0)))
         {
             m_FolderPickerActive.store(true);
+
             std::thread([this]() {
                 std::string selectedPath = g_pSystem->Infrastructure->Dialog->OpenFolderDialog();
-                if (!selectedPath.empty()) 
+                if (!selectedPath.empty())
                 {
                     std::lock_guard<std::mutex> lock(m_Mutex);
                     this->m_PendingNewPath = selectedPath;
@@ -903,11 +938,11 @@ void CaptureTab::DrawGallery(bool isRecording)
                         {
                             if (video.Duration > 0.0f) 
                             {
-                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Duration: %s", g_pSystem->Infrastructure->Gallery->FormatDuration(video.Duration).c_str());
+                                ImGui::TextDisabled("Duration: %s", g_pSystem->Infrastructure->Gallery->FormatDuration(video.Duration).c_str());
                             }
                             else 
                             {
-                                ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Duration: [Recording]");
+                                ImGui::TextDisabled("Duration: --:--:--");
                             }
                         }
                         else 

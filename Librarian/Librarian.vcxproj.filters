@@ -458,12 +458,6 @@
     <ClInclude Include="Core\Systems\Infrastructure\Engine\DialogSystem.h">
       <Filter>Core\Systems\Infrastructure\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Core\States\Infrastructure\Capture\MuxerState.h">
-      <Filter>Core\States\Infrastructure\Capture</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Common\Types\MuxerTypes.h">
-      <Filter>Core\Common\Types</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Systems\Infrastructure\Capture\DownloadSystem.h">
       <Filter>Core\Systems\Infrastructure\Capture</Filter>
     </ClInclude>
@@ -471,6 +465,12 @@
       <Filter>Core\Systems\Infrastructure\Capture</Filter>
     </ClInclude>
     <ClInclude Include="Core\Common\Types\SyncTypes.h">
+      <Filter>Core\Common\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\States\Infrastructure\Capture\DownloadState.h">
+      <Filter>Core\States\Infrastructure\Capture</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Common\Types\TheaterTypes.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
   </ItemGroup>
@@ -765,14 +765,14 @@
     <ClCompile Include="Core\UI\CoreUI.cpp">
       <Filter>Core\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Core\States\Infrastructure\Capture\MuxerState.cpp">
-      <Filter>Core\States\Infrastructure\Capture</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Systems\Infrastructure\Capture\DownloadSystem.cpp">
       <Filter>Core\Systems\Infrastructure\Capture</Filter>
     </ClCompile>
     <ClCompile Include="Core\Systems\Infrastructure\Capture\SyncSystem.cpp">
       <Filter>Core\Systems\Infrastructure\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\States\Infrastructure\Capture\DownloadState.cpp">
+      <Filter>Core\States\Infrastructure\Capture</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,4 +1,7 @@
 #include "pch.h"
+#include "Core/Common/Types/BlamTypes.h"
+#include "Core/UI/CoreUI.h"
+#include "Core/UI/Tabs/Primary/DirectorTab.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Director/DirectorState.h"
@@ -24,77 +27,91 @@ using namespace std::chrono_literals;
 void DirectorSystem::Initialize()
 {
 	std::vector<GameEvent> timelineCopy = g_pState->Domain->Timeline->GetTimelineCopy();
+	if (timelineCopy.empty())
+	{
+		g_pSystem->Debug->Log("[DirectorSystem] INFO: Timeline empty, skipping director initialization.");
+		g_pState->Domain->Director->SetSkipped(true);
+		return;
+	}
 
-	PrioritizeEvents(timelineCopy);
-	RemoveDuplicates(timelineCopy);
+	// Cleaning.
+	this->Cleanup();
 
-	g_pState->Domain->Director->ClearScript();
+	// Prepare for the script creation.
+	this->PrioritizeEvents(timelineCopy);
+	this->RemoveDuplicates(timelineCopy);
 
-	if (!timelineCopy.empty()) this->GenerateScript(timelineCopy);
-	
-	g_pSystem->Domain->Director->SetCurrentCommandIndex(0);
-	g_pSystem->Domain->Director->SetLastReplayTime(0.0f);
+	// Create the script.
+	this->GenerateScript(timelineCopy);
+
 	g_pState->Domain->Director->SetInitialized(true);
-
 	g_pSystem->Debug->Log("[DirectorSystem] INFO: Director initialized.");
 }
 
 void DirectorSystem::Update()
 {
-	if (!g_pState->Domain->Theater->GetTimePtr() || g_pState->Infrastructure->Lifecycle->GetCurrentPhase() != Phase::Director) 
+	// Conditions to execute the update.
+	float* timePtr = g_pState->Domain->Theater->GetTimePtr();
+	auto currentPhase = g_pState->Infrastructure->Lifecycle->GetCurrentPhase();
+	if (!timePtr || currentPhase != Phase::Director) return;
+
+	ReplayModule replayModule= g_pState->Domain->Theater->GetModuleSnapshot();
+
+	this->ForceSpectatorModes(replayModule);
+
+	// Script: Get a copy.
+	if (!m_ScriptCached)
 	{
-		return;
+		m_CachedScript = g_pState->Domain->Director->GetScriptCopy();
+		m_ScriptCached = true;
 	}
+	
+	if (m_CachedScript.empty()) return;
 
-	if (g_pState->Domain->Theater->GetReplayModule() != 0 && 
-		g_pState->Domain->Theater->GetCameraMode() == 0x01 &&
-		g_pState->Domain->Theater->IsThirdPersonForced()) 
-	{
-		InputRequest request{};
-		request.Context = InputContext::Theater;
-		request.Action = InputAction::ToggleFreecam;
-		g_pState->Infrastructure->Input->EnqueueRequest(request, true);
-	}
+	// Script: Warmup time.
+	float currentTime = this->SafeGetCurrentTime();
+	if (*timePtr < m_DirectorWarmupTime) return;
 
-	std::vector<DirectorCommand> scriptCopy = g_pState->Domain->Director->GetScriptCopy();;
-	if (scriptCopy.empty()) return;
-
-	// g_LastReplayTime can produce bugs if it's not reseted correctly
-	float currentTime = SafeGetCurrentTime();
-	float* pTime = g_pState->Domain->Theater->GetTimePtr();
-	if (!pTime || *pTime < m_DirectorWarmupTime) return;
-
-	if (currentTime < g_pSystem->Domain->Director->GetLastReplayTime())
+	// Script: Handle command rewind.
+	if (currentTime < this->GetLastReplayTime())
 	{
 		auto it = std::lower_bound(
-			scriptCopy.begin(),
-			scriptCopy.end(),
-			currentTime,
+			m_CachedScript.begin(), m_CachedScript.end(), currentTime,
 			[](const DirectorCommand& cmd, float timeVal) {
 				return cmd.Timestamp < timeVal;
-			});
+		});
 
-		g_pSystem->Domain->Director->SetCurrentCommandIndex(std::distance(scriptCopy.begin(), it));
+		this->SetCurrentCommandIndex(std::distance(m_CachedScript.begin(), it));
+
 		g_pSystem->Debug->Log("[DirectorSystem] INFO: Rewind detected at %.2fs. Resetting script to index %d",
-			currentTime, g_pSystem->Domain->Director->GetCurrentCommandIndex());
+			currentTime, this->GetCurrentCommandIndex());
 	}
-	g_pSystem->Domain->Director->SetLastReplayTime(currentTime);
 
-	size_t currentIndex = g_pSystem->Domain->Director->GetCurrentCommandIndex();
-	if (currentIndex >= scriptCopy.size())
+	this->SetLastReplayTime(currentTime);
+
+	// Script: Handle stop recording.
+	size_t currentIndex = this->GetCurrentCommandIndex();
+	if (currentIndex >= m_CachedScript.size())
 	{
-		if (g_pState->Infrastructure->FFmpeg->StopOnLastEvent() && g_pState->Infrastructure->FFmpeg->IsRecording())
+		bool isRecording = g_pState->Infrastructure->FFmpeg->IsRecording();
+		bool stopOnLastEvent = g_pState->Infrastructure->FFmpeg->StopOnLastEvent();
+		if (isRecording && stopOnLastEvent)
 		{
+			float stopDelayDuration = g_pState->Infrastructure->FFmpeg->GetStopDelayDuration();
+
 			if (m_StopDelayStartTime == 0.0f)
 			{
 				m_StopDelayStartTime = currentTime;
-				g_pSystem->Debug->Log("[DirectorSystem] INFO: Script finished, waiting %.2f seconds before stop...", g_pState->Infrastructure->FFmpeg->GetStopDelayDuration());
+				g_pSystem->Debug->Log("[DirectorSystem] INFO: Script finished," 
+					" waiting %.2f seconds before stop.", stopDelayDuration);
 			}
 
-			if (currentTime - m_StopDelayStartTime >= g_pState->Infrastructure->FFmpeg->GetStopDelayDuration())
+			if (currentTime - m_StopDelayStartTime >= stopDelayDuration)
 			{
-				g_pSystem->Debug->Log("[DirectorSystem] WARNING: Delay finished, stopping recording.");
-				g_pSystem->Infrastructure->FFmpeg->Stop();
+				g_pSystem->Debug->Log("[DirectorSystem] WARNING: Delay finished,"
+					" stopping recording.");
+
+				g_pState->Infrastructure->FFmpeg->SetStopRecording(true);
 				m_StopDelayStartTime = 0.0f;
 			}
 		}
@@ -102,32 +119,34 @@ void DirectorSystem::Update()
 		return;
 	}
 
-	DirectorCommand& command = scriptCopy[g_pSystem->Domain->Director->GetCurrentCommandIndex()];
-
+	// Script: Process command.
+	DirectorCommand& command = m_CachedScript[this->GetCurrentCommandIndex()];
 	if (currentTime >= command.Timestamp)
 	{
 		if (command.Type == CommandType::Cut)
 		{
-			if (command.TargetPlayerIdx != g_pState->Domain->Theater->GetSpectatedPlayerIndex())
+
+			uint8_t playerIndex = (uint8_t)replayModule.FollowedPlayerIndex;
+			if (command.TargetPlayerIdx != playerIndex)
 			{
-				g_pSystem->Debug->Log("[DirectorSystem] INFO: Execute: Cut to %d Reason [%s]", command.TargetPlayerIdx, command.Reason.c_str());
+				g_pSystem->Debug->Log("[DirectorSystem] INFO: Execute: Cut to %d Reason [%s]", 
+					command.TargetPlayerIdx, command.Reason.c_str());
 
-				size_t nextCommandIndex = g_pSystem->Domain->Director->GetCurrentCommandIndex() + 1;
-				float deadline =
-					(nextCommandIndex < scriptCopy.size()) ?
-					scriptCopy[nextCommandIndex].Timestamp - 1.0f :
-					(currentTime + 36000.0f);
-
+				size_t nextCommandIndex = this->GetCurrentCommandIndex() + 1;
+				DirectorCommand nextCommand = m_CachedScript[nextCommandIndex];
+				float deadline = currentTime + nextCommand.Timestamp;
 				GoToPlayer(command.TargetPlayerIdx, deadline);
 			}
 		}
 		else if (command.Type == CommandType::SetSpeed)
 		{
-			g_pSystem->Debug->Log("[DirectorSystem] INFO: Speed set to [%.2fx]", command.SpeedValue);
+			g_pSystem->Debug->Log("[DirectorSystem] INFO: Speed set to [%.2fx]", 
+				command.SpeedValue);
+
 			g_pSystem->Domain->Theater->SetReplaySpeed(command.SpeedValue);
 		}
 
-		g_pSystem->Domain->Director->IncrementCurrentCommandIndex();
+		this->IncrementCurrentCommandIndex();
 	}
 }
 
@@ -138,121 +157,127 @@ void DirectorSystem::SetLastReplayTime(float lastReplayTime) { m_LastReplayTime.
 size_t DirectorSystem::GetCurrentCommandIndex() const { return m_CurrentCommandIndex.load(); }
 void DirectorSystem::SetCurrentCommandIndex(size_t cmdIndex) { m_CurrentCommandIndex.store(cmdIndex); }
 
-void DirectorSystem::IncrementCurrentCommandIndex()
-{
-	size_t scriptSize = g_pState->Domain->Director->GetScriptSize();
-	size_t current = m_CurrentCommandIndex.load();
 
-	if (current < scriptSize)
-	{
-		m_CurrentCommandIndex.store(current + 1);
-	}
+void DirectorSystem::Cleanup()
+{
+	m_StopDelayStartTime.store(0.0f);
+	m_CurrentCommandIndex.store(0);
+	m_LastReplayTime.store(0.0f);
+	m_ScriptCached = false;
+
+	g_pState->Domain->Director->Cleanup();
+
+	g_pSystem->Debug->Log("[DirectorSystem] INFO: Cleanup completed.");
 }
 
 
-void DirectorSystem::GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
+// Re-orders the timeline by timestamp (ascending), using event weight 
+// as a tie-breaker for simultaneous events.
+void DirectorSystem::PrioritizeEvents(std::vector<GameEvent> timeline)
 {
-	if (targetIdx >= 16) return;
+	std::sort(timeline.begin(), timeline.end(), [](const GameEvent& a, const GameEvent& b) {
+		if (abs(a.Timestamp - b.Timestamp) < 0.001f)
+		{
+			int weightA = g_pState->Domain->EventRegistry->GetEventWeight(a);
+			int weightB = g_pState->Domain->EventRegistry->GetEventWeight(b);
+			return weightA > weightB;
+		}
+	
+		return a.Timestamp < b.Timestamp;
+	});
 
-	g_pSystem->Debug->Log("[DirectorSystem] INFO: Starting navigation to: %d", targetIdx);
+	g_pState->Domain->Timeline->SetTimeline(timeline);
+}
 
-	while (g_pState->Domain->Theater->GetSpectatedPlayerIndex() != targetIdx)
+void DirectorSystem::RemoveDuplicates(std::vector<GameEvent> timeline)
+{
+	std::vector<GameEvent> uniqueEvents;
+
+	for (const auto& currentEvent : timeline)
 	{
-		if (*g_pState->Domain->Theater->GetTimePtr() >= nextCommandTimestamp)
+		bool isDuplicate = false;
+
+		for (auto i = std::ssize(uniqueEvents) - 1; i >= 0; --i)
 		{
-			g_pSystem->Debug->Log("[DirectorSystem] WARNING: Navigation aborted, time limit reached.");
-			return;
+			const auto& existingEvent = uniqueEvents[i];
+
+			float timeDiff = std::abs(currentEvent.Timestamp - existingEvent.Timestamp);
+
+			if (timeDiff <= 1.0f)
+			{
+				if (currentEvent.Type == existingEvent.Type)
+				{
+					if (HasTheSamePlayers(currentEvent.Players, existingEvent.Players))
+					{
+						isDuplicate = true;
+						break;
+					}
+				}
+			}
 		}
 
-		uint8_t current = g_pState->Domain->Theater->GetSpectatedPlayerIndex();
-		int forwardSteps = (targetIdx - current + 16) % 16;
-		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
-
-		InputRequest request{};
-		request.Context = InputContext::Theater;
-		request.Action = movingForward ? InputAction::NextPlayer : InputAction::PreviousPlayer;
-		g_pState->Infrastructure->Input->EnqueueRequest(request, true);
-
-		auto startWait = std::chrono::steady_clock::now();
-
-		while (!g_pState->Infrastructure->Input->IsProcessing() && (std::chrono::steady_clock::now() - startWait < 100ms))
+		if (!isDuplicate)
 		{
-			std::this_thread::yield();
+			uniqueEvents.push_back(currentEvent);
 		}
-
-		while (g_pState->Infrastructure->Input->IsProcessing()) { std::this_thread::yield(); }
-
-		std::this_thread::sleep_for(30ms);
 	}
 
-	g_pSystem->Debug->Log("[DirectorSystem] INFO: Navigation successful.");
+	g_pState->Domain->Timeline->SetTimeline(uniqueEvents);
+}
+
+bool DirectorSystem::HasTheSamePlayers(const std::vector<PlayerInfo>& listA, const std::vector<PlayerInfo>& listB)
+{
+	if (listA.size() != listB.size()) return false;
+
+	for (size_t i = 0; i < listA.size(); ++i)
+	{
+		if (listA[i].Id != listB[i].Id) return false;
+	}
+
+	return true;
 }
 
 
 void DirectorSystem::GenerateScript(std::vector<GameEvent> timeline)
 {
-	auto registryCopy = g_pState->Domain->EventRegistry->GetEventRegistryCopy();
-
 	std::vector<ActionSegment> rawSegments;
 
 	for (size_t i = 0; i < timeline.size(); ++i)
 	{
 		const auto& currentEvent = timeline[i];
-		if (currentEvent.Timestamp < m_DirectorWarmupTime + 2.0f) continue;
-		if (currentEvent.Players.empty()) continue;
 
-		const PlayerInfo* targetPlayer = &currentEvent.Players[0];
+		// Filter: Warmup time & empty players.
+		if (currentEvent.Timestamp <= m_DirectorWarmupTime ||
+			currentEvent.Players.empty()) continue;
 
-		int weight = GetWeight(currentEvent, registryCopy);
+		// Filter: Zero weight.
+		int weight = g_pState->Domain->EventRegistry->GetEventWeight(currentEvent);
 		if (weight == 0) continue;
 
+		// Players[0] is the perpetrator of the event.
+		const PlayerInfo* targetPlayer = &currentEvent.Players[0];
 		ActionSegment segment;
+
 		segment.PlayerName = targetPlayer->Name;
 		segment.PlayerID = targetPlayer->Id;
+		segment.StartTime = currentEvent.Timestamp - m_EventPadding;
+		segment.EndTime = currentEvent.Timestamp + m_EventPadding;
+		segment.Score = weight;
+		segment.Events.push_back(currentEvent.Type);
 
-		float rawStart = currentEvent.Timestamp - 4.0f;
-		float startTime = (rawStart < m_DirectorWarmupTime) ? m_DirectorWarmupTime : rawStart;
-		float endTime = currentEvent.Timestamp + 4.0f;
-
-		float lookAheadWindow = 8.0f;
-		for (size_t j = i + 1; j < timeline.size(); ++j)
-		{
-			const auto& nextEvent = timeline[j];
-			if (nextEvent.Timestamp - currentEvent.Timestamp > lookAheadWindow) break;
-
-			bool isInvolved = false;
-			for (const auto& player : nextEvent.Players)
-			{
-				if (player.Id == targetPlayer->Id) 
-				{
-					isInvolved = true; break;
-				}
-			}
-
-			if (isInvolved)
-			{
-				float newEndTime = nextEvent.Timestamp + 4.0f;
-				if (newEndTime > endTime)
-				{
-					endTime = newEndTime;
-				}
-			}
-		}
-
-		segment.StartTime = startTime;
-		segment.EndTime = endTime;
-		if (segment.EndTime - segment.StartTime < 5.0f) continue;
-
-		segment.TotalScore = weight;
-		segment.TotalEvents.push_back(currentEvent.Type);
 		rawSegments.push_back(segment);
 	}
 
-	OptimizeSegments(rawSegments);
+	if (rawSegments.empty())
+	{
+		g_pSystem->Debug->Log("[DirectorSystem] WARNING: Raw segments are empty, script generation cancelled.");
+		return;
+	}
 
-	float lastSegmentEnd = m_DirectorWarmupTime;
+	RefineActionSegments(rawSegments);
 
 	std::vector<DirectorCommand> tempScript;
+	float lastSegmentEnd = m_DirectorWarmupTime;
 
 	for (const auto& segment : rawSegments)
 	{
@@ -276,14 +301,14 @@ void DirectorSystem::GenerateScript(std::vector<GameEvent> timeline)
 		}
 
 		DirectorCommand cutCmd;
-		cutCmd.Timestamp = segment.StartTime - 0.25f;
+		cutCmd.Timestamp = segment.StartTime - m_CameraTransitionTime;
 		cutCmd.Type = CommandType::Cut;
 		cutCmd.TargetPlayerIdx = segment.PlayerID;
 		cutCmd.TargetPlayerName = segment.PlayerName;
 
 		char buffer[128]{};
 		snprintf(buffer, sizeof(buffer), "Score: %d Events: %zu", 
-			segment.TotalScore, segment.TotalEvents.size());
+			segment.Score, segment.Events.size());
 		cutCmd.Reason = buffer;
 
 		lastSegmentEnd = segment.EndTime;
@@ -296,15 +321,14 @@ void DirectorSystem::GenerateScript(std::vector<GameEvent> timeline)
 	});
 
 	g_pState->Domain->Director->SetScript(tempScript);
-
+	g_pUI->Director->ResetCachedScript();
 	g_pSystem->Debug->Log("[DirectorSystem] INFO: Script generated.");
 }
 
-void DirectorSystem::OptimizeSegments(std::vector<ActionSegment>& segments)
+void DirectorSystem::RefineActionSegments(std::vector<ActionSegment>& segments)
 {
-	if (segments.empty()) return;
-
-	std::sort(segments.begin(), segments.end(), [](const ActionSegment& a, const ActionSegment& b) {
+	std::sort(segments.begin(), segments.end(), 
+		[](const ActionSegment& a, const ActionSegment& b) {
 		return a.StartTime < b.StartTime;
 	});
 
@@ -317,61 +341,53 @@ void DirectorSystem::OptimizeSegments(std::vector<ActionSegment>& segments)
 		ActionSegment& previous = merged.back();
 
 		float originalStartTime = current.StartTime;
-		float estimatedEventTimestamp = originalStartTime + 6.0f;
+		float eventTimestamp = originalStartTime + m_EventPadding;
 
-		bool overlaps = current.StartTime <= (previous.EndTime + 4.0f);
-
+		bool overlaps = current.StartTime <= (previous.EndTime + m_CameraTransitionTime);
 		if (overlaps)
 		{
 			if (previous.PlayerName == current.PlayerName)
 			{
 				previous.EndTime = (std::max)(previous.EndTime, current.EndTime);
-				previous.TotalScore += current.TotalScore;
-				previous.TotalEvents.insert(
-					previous.TotalEvents.end(),
-					current.TotalEvents.begin(),
-					current.TotalEvents.end()
-				);
+				previous.Score += current.Score;
+
+				previous.Events.insert(previous.Events.end(),
+					current.Events.begin(), current.Events.end());
 			}
 			else
 			{
 				float previousDurationSoFar = current.StartTime - previous.StartTime;
 
-				float scoreMultiplier = 1.3f;
-				if (previous.TotalScore > 50.0f) scoreMultiplier = 2.5f;
-				else if (previous.TotalScore > 30.0f) scoreMultiplier = 1.8f;
+				float scoreMultiplier = (previous.Score > 50.0f) ? 
+					2.5f : (previous.Score > 30.0f ? 1.8f : 1.3f);
 
-				if (previousDurationSoFar > 3.0f && current.TotalScore > (previous.TotalScore * scoreMultiplier))
+				if (previousDurationSoFar > 3.0f && 
+					current.Score > (previous.Score * scoreMultiplier))
 				{
-					if (current.StartTime < previous.EndTime)
-					{
-						previous.EndTime = current.StartTime;
-					}
-
-					previous.EndTime = current.StartTime;
+					previous.EndTime = current.StartTime - m_CameraTransitionTime;
 					merged.push_back(current);
 				}
 				else
 				{
-					float proposedNewStartTime = previous.EndTime;
-					float remainingPrePoll = estimatedEventTimestamp - proposedNewStartTime;
+					float proposedNewStartTime = previous.EndTime + m_CameraTransitionTime;
+					float remainingPrePoll = eventTimestamp - proposedNewStartTime;
 
-					const float MIN_PREROLL_NEEDED = 4.0f;
-
-					if (remainingPrePoll >= MIN_PREROLL_NEEDED)
+					if (remainingPrePoll >= (m_EventPadding / 2.0f))
 					{
 						current.StartTime = proposedNewStartTime;
-
-						if (current.EndTime - current.StartTime > 5.0f)
-						{
-							merged.push_back(current);
-						}
+						merged.push_back(current);
 					}
 				}
 			}
 		}
 		else
 		{
+			float currentGap = current.StartTime - previous.EndTime;
+			if (currentGap < m_CameraTransitionTime)
+			{
+				current.StartTime = previous.EndTime + m_CameraTransitionTime;
+			}
+
 			merged.push_back(current);
 		}
 	}
@@ -379,7 +395,7 @@ void DirectorSystem::OptimizeSegments(std::vector<ActionSegment>& segments)
 	std::vector<ActionSegment> finalSegments;
 	for (const auto& seg : merged)
 	{
-		if ((seg.EndTime - seg.StartTime) >= 4.0f)
+		if ((seg.EndTime - seg.StartTime) >= 3.0f)
 		{
 			finalSegments.push_back(seg);
 		}
@@ -388,90 +404,70 @@ void DirectorSystem::OptimizeSegments(std::vector<ActionSegment>& segments)
 	segments = finalSegments;
 }
 
-int DirectorSystem::GetWeight(const GameEvent& event, const std::unordered_map<std::wstring, EventInfo>& localRegistry)
+
+void DirectorSystem::ForceSpectatorModes(ReplayModule replayModule)
 {
-	for (const auto& entry : localRegistry)
+	auto now = std::chrono::steady_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_LastInputTime).count();
+	if (elapsed < 200) return;
+
+	bool inputSent = false;
+
+	CameraMode desiredCamera = g_pState->Domain->Theater->GetCameraMode();
+	POVMode desiredPOV = g_pState->Domain->Theater->GetPOVMode();
+	UIMode desiredUI = g_pState->Domain->Theater->GetUIMode();
+
+	// Force camera mode.
+	if (desiredCamera != CameraMode::Unselected)
 	{
-		if (entry.second.Type == event.Type)
+		CameraMode activeCamera = static_cast<CameraMode>(replayModule.CameraMode);
+		if (activeCamera != desiredCamera)
 		{
-			return entry.second.Weight;
+			g_pState->Infrastructure->Input->EnqueueRequest({
+				InputContext::Theater, InputAction::ToggleCameraMode }, true);
+			
+			inputSent = true;
 		}
 	}
 
-	return 0;
-}
-
-
-void DirectorSystem::PrioritizeEvents(std::vector<GameEvent> timeline)
-{
-	std::sort(timeline.begin(), timeline.end(), [](const GameEvent& a, const GameEvent& b)
+	// Force ui mode.
+	if (!inputSent && desiredUI != UIMode::Unselected)
+	{
+		UIMode activeUI = static_cast<UIMode>(replayModule.UIMode);
+		if (activeUI != desiredUI)
 		{
-			if (abs(a.Timestamp - b.Timestamp) < 0.001f)
+			g_pState->Infrastructure->Input->EnqueueRequest({
+				InputContext::Theater, InputAction::ToggleUIMode }, true);
+
+			inputSent = true;
+		}
+	}
+
+	// Force POV mode.
+	if (!inputSent && desiredPOV != POVMode::Unselected)
+	{
+		POVMode activePOV = static_cast<POVMode>(replayModule.POVMode);
+		if (activePOV != desiredPOV)
+		{
+			if (activePOV == POVMode::FirstPerson || activePOV == POVMode::ThirdPersonAttached)
 			{
-				return a.Players.size() > b.Players.size();
+				g_pState->Infrastructure->Input->EnqueueRequest({
+					InputContext::Theater, InputAction::TogglePOVMode }, true);
+			}
+			else
+			{
+				g_pState->Infrastructure->Input->EnqueueRequest({
+					InputContext::Theater, InputAction::ToggleCameraMode }, true);
 			}
 
-			return a.Timestamp < b.Timestamp;
-		});
-
-	g_pState->Domain->Timeline->SetTimeline(timeline);
-}
-
-bool DirectorSystem::ArePlayerSetsEqual(const std::vector<PlayerInfo>& listA, const std::vector<PlayerInfo>& listB)
-{
-	if (listA.size() != listB.size()) return false;
-
-	for (size_t i = 0; i < listA.size(); ++i)
-	{
-		if (listA[i].Id != listB[i].Id) return false;
-	}
-
-	return true;
-}
-
-void DirectorSystem::RemoveDuplicates(std::vector<GameEvent> timeline)
-{
-	if (timeline.empty()) return;
-
-	std::sort(timeline.begin(), timeline.end(), [](const GameEvent& a, const GameEvent& b) {
-		return a.Timestamp < b.Timestamp;
-	});
-
-	std::vector<GameEvent> uniqueEvents;
-
-	for (const auto& currentEvent : timeline)
-	{
-		bool isDuplicate = false;
-
-		for (auto i = std::ssize(uniqueEvents) - 1; i >= 0; --i)
-		{
-			const auto& existingEvent = uniqueEvents[i];
-
-			float timeDiff = std::abs(currentEvent.Timestamp - existingEvent.Timestamp);
-
-			if (timeDiff > 1.0f) break;
-
-			if (timeDiff <= 1.0f)
-			{
-				if (currentEvent.Type == existingEvent.Type)
-				{
-					if (ArePlayerSetsEqual(currentEvent.Players, existingEvent.Players))
-					{
-						isDuplicate = true;
-
-						break;
-					}
-				}
-			}
-		}
-
-		if (!isDuplicate)
-		{
-			uniqueEvents.push_back(currentEvent);
+			inputSent = true;
 		}
 	}
 
-	g_pState->Domain->Timeline->SetTimeline(uniqueEvents);
+	if (inputSent)
+	{
+		m_LastInputTime = now;
+	}
 }
 
 float DirectorSystem::SafeGetCurrentTime()
@@ -483,5 +479,64 @@ float DirectorSystem::SafeGetCurrentTime()
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
 		return 0.0f;
+	}
+}
+
+
+void DirectorSystem::GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
+{
+	if (targetIdx >= 16) return;
+
+	g_pSystem->Debug->Log("[DirectorSystem] INFO: Starting navigation to: %d", targetIdx);
+
+	while (true)
+	{
+		auto currentModule = g_pState->Domain->Theater->GetModuleSnapshot();
+		uint8_t currentIndex = std::to_integer<uint8_t>(currentModule.FollowedPlayerIndex);
+
+		if (currentIndex == targetIdx)
+		{
+			break;
+		}
+
+		if (*g_pState->Domain->Theater->GetTimePtr() >= nextCommandTimestamp)
+		{
+			g_pSystem->Debug->Log("[DirectorSystem] WARNING: Navigation aborted, time limit reached.");
+			return;
+		}
+
+		int forwardSteps = (targetIdx - currentIndex + 16) % 16;
+		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
+
+		InputRequest request{};
+		request.Context = InputContext::Theater;
+		request.Action = movingForward ? InputAction::NextPlayer : InputAction::PreviousPlayer;
+		g_pState->Infrastructure->Input->EnqueueRequest(request, true);
+
+		auto startWait = std::chrono::steady_clock::now();
+		while (!g_pState->Infrastructure->Input->IsProcessing() &&
+			(std::chrono::steady_clock::now() - startWait < 100ms))
+		{
+			std::this_thread::yield();
+		}
+
+		while (g_pState->Infrastructure->Input->IsProcessing())
+		{
+			std::this_thread::yield();
+		}
+	}
+
+	g_pSystem->Debug->Log("[DirectorSystem] INFO: Navigation successful.");
+}
+
+
+void DirectorSystem::IncrementCurrentCommandIndex()
+{
+	size_t scriptSize = g_pState->Domain->Director->GetScriptSize();
+	size_t current = m_CurrentCommandIndex.load();
+
+	if (current < scriptSize)
+	{
+		m_CurrentCommandIndex.store(current + 1);
 	}
 }

@@ -4,7 +4,7 @@
 #include <condition_variable>
 #include <atomic>
 
-struct LifecycleState
+class LifecycleState
 {
 public:
 	bool IsRunning() const;
@@ -13,13 +13,13 @@ public:
 	Phase GetCurrentPhase() const;
 	bool ShouldAutoUpdatePhase() const;
 	std::mutex& GetMutex() const;
+	std::condition_variable& GetCV() const;
 	
 	void SetRunning(bool value);
 	void SetHandleModule(HMODULE value);
 	void SetEngineStatus(EngineStatus value);
 	void SetCurrentPhase(Phase value);
 	void SetAutoUpdatePhase(bool value);
-	std::condition_variable& GetCV() const;
 
 private:
 	std::atomic<bool> m_IsRunning{ false };

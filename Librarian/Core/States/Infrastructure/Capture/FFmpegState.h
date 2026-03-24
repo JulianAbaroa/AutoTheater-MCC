@@ -5,98 +5,75 @@
 #include <atomic>
 #include <mutex>
 
-struct FFmpegState 
+class FFmpegState 
 {
 public:
+	using TimePoint = std::chrono::steady_clock::time_point;
+
+	// Recording state.
 	bool RecordingStarted() const;
-	void SetStartRecording(bool value);
-
 	bool RecordingStopped() const;
-	void SetStopRecording(bool value);
-
 	bool IsRecording() const;
-	void SetRecording(bool value);
-
 	bool IsCaptureActive() const;
+	float GetRecordingSpeed() const;
+	TimePoint GetStartRecordingTime() const;
+
+	void SetStartRecording(bool value);
+	void SetStopRecording(bool value);
+	void SetRecording(bool value);
 	void SetCaptureActive(bool value);
+	void SetRecordingSpeed(float value);
+	void SetStartRecordingTime(TimePoint value);
 
-	std::chrono::steady_clock::time_point GetStartRecordingTime() const;
-	void SetStartRecordingTime(std::chrono::steady_clock::time_point value);
-	
+	// Handles.
 	HANDLE GetVideoPipeHandle() const;
-	void SetVideoPipeHandle(HANDLE h);
-
 	HANDLE GetAudioPipeHandle() const;
-	void SetAudioPipeHandle(HANDLE h);
-
 	HANDLE GetProcessHandle() const;
+
+	void SetVideoPipeHandle(HANDLE h);
+	void SetAudioPipeHandle(HANDLE h);
 	void SetProcessHandle(HANDLE h);
 
-	ResolutionType GetResolutionType();
-	void SetResolutionType(ResolutionType type);
-
-	int GetTargetWidth();
-	int GetTargetHeight();
-
+	// Settings.
+	ResolutionType GetResolutionType() const;
+	int GetTargetWidth() const;
+	int GetTargetHeight() const;
 	float GetTargetFramerate() const;
-	void SetTargetFramerate(float framerate);
-
 	bool ShouldRecordUI() const;
-	void SetRecordUI(bool value);
-
 	std::string GetOutputPath() const;
-	void SetOutputPath(std::string outputPath);
-
 	bool StopOnLastEvent() const;
-	void SetStopOnLastEvent(bool value);
-
 	float GetStopDelayDuration() const;
+	FFmpegEncoderConfig GetEncoderConfig() const;
+
+	void SetResolutionType(ResolutionType type);
+	void SetTargetFramerate(float framerate);
+	void SetRecordUI(bool value);
+	void SetStopOnLastEvent(bool value);
 	void SetStopDelayDuration(float value);
-
-	float GetRecordingSpeed() const;
-	void SetRecordingSpeed(float value);
-
-	bool IsFFmpegInstalled() const;
-	void SetFFmpegInstalled(bool value);
-
-	bool IsDownloadInProgress() const;
-	void SetDownloadInProgress(bool value);
-
-	float GetDownloadProgress() const;
-	void SetDownloadProgress(float value);
-
-	std::string GetExecutablePath() const;
-	void SetExecutablePath(std::string path);
+	void SetOutputPath(std::string outputPath);
+	void UpdateEncoderConfig(const FFmpegEncoderConfig newEncoderConfig);
 
 	void Cleanup();
-
-	FFmpegEncoderConfig GetEncoderConfig() const;
-	void UpdateEncoderConfig(const FFmpegEncoderConfig newEncoderConfig);
 
 private:
 	std::atomic<bool> m_StartRecording{ false };
 	std::atomic<bool> m_StopRecording{ false };
 	std::atomic<bool> m_IsRecording{ false };
 	std::atomic<bool> m_IsCaptureActive{ false };
+	std::atomic<float> m_RecordingSpeed{ 0.0f };
+	std::atomic<TimePoint> m_StartRecordingTime{};
 	
 	std::atomic<HANDLE> m_hVideoPipe{ INVALID_HANDLE_VALUE };
 	std::atomic<HANDLE> m_hAudioPipe{ INVALID_HANDLE_VALUE };
 	std::atomic<HANDLE> m_hProcess{ INVALID_HANDLE_VALUE };
 
-	std::atomic<std::chrono::steady_clock::time_point> m_StartRecordingTime{};
 	std::atomic<ResolutionType> m_ResolutionType{ ResolutionType::UHD_4K };
 	std::atomic<float> m_TargetFramerate{ 60.0f };
 	std::atomic<bool> m_ShouldRecordUI{ false };
 	std::atomic<bool> m_StopOnLastEvent{ false };
 	std::atomic<float> m_StopDelayDuration{ 0.0f };
-	std::atomic<float> m_RecordingSpeed{ 0.0f };
-
+	
 	std::string m_OutputPath{};
-
-	std::atomic<bool> m_IsFFmpegInstalled{ false };
-	std::atomic<bool> m_IsDownloadInProgress{ false };
-	std::atomic<float> m_DownloadProgress{ 0.0f }; 
-	std::string m_ExecutablePath;
 	mutable std::mutex m_Mutex;
 
 	FFmpegEncoderConfig m_EncoderConfig;

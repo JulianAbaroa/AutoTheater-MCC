@@ -1,4 +1,6 @@
 #include "pch.h"
+#include "Core/UI/CoreUI.h"
+#include "Core/UI/Tabs/Primary/TheaterTab.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Domain/CoreDomainState.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
@@ -39,6 +41,8 @@ unsigned char BuildGameEventHook::HookedBuildGameEvent(
 	//PrintRawEvent(pOutBuffer);
 
 	g_pSystem->Domain->Theater->RefreshPlayerList();
+	g_pUI->Theater->SetPlayerListDirty();
+
 	g_pSystem->Domain->Timeline->ProcessEngineEvent(currentTime, currentTemplate, eventData);
 
 	return result;

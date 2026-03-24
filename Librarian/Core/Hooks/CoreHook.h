@@ -10,6 +10,7 @@ struct CoreInputHook;
 struct CoreRenderHook;
 struct CoreWindowHook;
 
+// Main container for th application's hooks.
 struct CoreHook
 {
 	CoreHook();

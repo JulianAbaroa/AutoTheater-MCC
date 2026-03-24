@@ -6,6 +6,7 @@ struct CoreDomainSystem;
 struct CoreInfrastructureSystem;
 class DebugSystem;
 
+// Main container for the application's systems.
 struct CoreSystem
 {
 	CoreSystem();

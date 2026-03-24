@@ -1,17 +1,9 @@
 #include "pch.h"
 #include "Core/States/Infrastructure/Engine/InputState.h"
 
-InputRequest InputState::GetNextRequest() const
-{
-	// We don't use a mutex here because the hkGetButtonState() is very sensitive.
-	return m_NextRequest;
-}
-
-bool InputState::IsProcessing() const
-{
-	return m_IsProcessing.load();
-}
-
+// We don't use a mutex here because the HookedGetButtonState() is very sensitive.
+InputRequest InputState::GetNextRequest() const { return m_NextRequest; }
+bool InputState::IsProcessing() const { return m_IsProcessing.load(); }
 
 void InputState::SetNextRequest(InputContext context, InputAction action)
 {
@@ -20,10 +12,7 @@ void InputState::SetNextRequest(InputContext context, InputAction action)
 	m_NextRequest = { context, action };
 }
 
-void InputState::SetProcessing(bool processing)
-{
-	m_IsProcessing.store(processing);
-}
+void InputState::SetProcessing(bool processing) { m_IsProcessing.store(processing); }
 
 
 void InputState::EnqueueRequest(const InputRequest& request, bool uniqueRequest)
@@ -46,7 +35,7 @@ bool InputState::DequeueRequest(InputRequest& outRequest)
 	return true;
 }
 
-void InputState::Reset()
+void InputState::Cleanup()
 {
 	{
 		std::lock_guard<std::mutex> lock(m_Mutex);

@@ -5,7 +5,7 @@
 #include <functional>
 #include <mutex>
 
-struct EventRegistryState
+class EventRegistryState
 {
 public:
 	bool IsEventRegistered(const std::wstring& templateStr) const;
@@ -16,6 +16,8 @@ public:
 
 	void ForEachEvent(std::function<void(const std::wstring&, const EventInfo&)> callback) const;
 	void UpdateWeightsByType(EventType type, int newWeight);
+
+	int GetEventWeight(const GameEvent& event);
 
 private:
 	std::unordered_map<std::wstring, EventInfo> m_EventRegistry;

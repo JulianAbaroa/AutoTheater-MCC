@@ -156,9 +156,9 @@
     <ClInclude Include="Core\Common\Types\GalleryTypes.h" />
     <ClInclude Include="Core\Common\Types\InputTypes.h" />
     <ClInclude Include="Core\Common\Types\LogTypes.h" />
-    <ClInclude Include="Core\Common\Types\MuxerTypes.h" />
     <ClInclude Include="Core\Common\Types\SignatureTypes.h" />
     <ClInclude Include="Core\Common\Types\SyncTypes.h" />
+    <ClInclude Include="Core\Common\Types\TheaterTypes.h" />
     <ClInclude Include="Core\Common\Types\TimelineTypes.h" />
     <ClInclude Include="Core\Common\Types\UITypes.h" />
     <ClInclude Include="Core\Common\Types\VideoTypes.h" />
@@ -198,8 +198,8 @@
     <ClInclude Include="Core\States\Domain\Theater\TheaterState.h" />
     <ClInclude Include="Core\States\Domain\Timeline\TimelineState.h" />
     <ClInclude Include="Core\States\Infrastructure\Capture\AudioState.h" />
+    <ClInclude Include="Core\States\Infrastructure\Capture\DownloadState.h" />
     <ClInclude Include="Core\States\Infrastructure\Capture\FFmpegState.h" />
-    <ClInclude Include="Core\States\Infrastructure\Capture\MuxerState.h" />
     <ClInclude Include="Core\States\Infrastructure\Capture\VideoState.h" />
     <ClInclude Include="Core\States\Infrastructure\CoreInfrastructureState.h" />
     <ClInclude Include="Core\States\Infrastructure\Engine\InputState.h" />
@@ -298,8 +298,8 @@
     <ClCompile Include="Core\States\Domain\Theater\TheaterState.cpp" />
     <ClCompile Include="Core\States\Domain\Timeline\TimelineState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\Capture\AudioState.cpp" />
+    <ClCompile Include="Core\States\Infrastructure\Capture\DownloadState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\Capture\FFmpegState.cpp" />
-    <ClCompile Include="Core\States\Infrastructure\Capture\MuxerState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\Capture\VideoState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\CoreInfrastructureState.cpp" />
     <ClCompile Include="Core\States\Infrastructure\Engine\InputState.cpp" />

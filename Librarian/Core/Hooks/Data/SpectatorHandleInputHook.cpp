@@ -24,18 +24,16 @@
 //    change is detected, it resolves the player's name for logging and 
 //    synchronizes the Director's focus target.
 void __fastcall SpectatorHandleInputHook::HookedSpectatorHandleInput(
-	uint64_t* pReplayModule, 
+	ReplayModule* pReplayModule, 
 	uint32_t rdx_param) 
 {
 	m_OriginalFunction(pReplayModule, rdx_param);
 
-	if (pReplayModule != nullptr)
-	{		
-		g_pState->Domain->Theater->SetReplayModule(reinterpret_cast<uintptr_t>(pReplayModule));
-		g_pState->Domain->Theater->SetCameraMode(*reinterpret_cast<uint8_t*>(g_pState->Domain->Theater->GetReplayModule() + 0x190));
-		g_pSystem->Domain->Theater->TryGetSpectatedPlayerIndex(g_pState->Domain->Theater->GetReplayModule());
+	if (pReplayModule != nullptr) 
+	{	
+		g_pState->Domain->Theater->UpdateReplayModule(pReplayModule);
 
-		uint8_t followedPlayerIdx = g_pState->Domain->Theater->GetSpectatedPlayerIndex();
+		uint8_t followedPlayerIdx = (uint8_t)pReplayModule->FollowedPlayerIndex;
 		if (followedPlayerIdx < 16)
 		{
 			static uint8_t lastID = 255;
@@ -54,6 +52,7 @@ void __fastcall SpectatorHandleInputHook::HookedSpectatorHandleInput(
 		}
 	}
 }
+
 
 void SpectatorHandleInputHook::Install()
 {

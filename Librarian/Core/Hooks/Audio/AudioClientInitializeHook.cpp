@@ -22,7 +22,9 @@ HRESULT __stdcall AudioClientInitializeHook::HookedAudioClientInitialize(
 	const WAVEFORMATEX* pFormat,
 	LPCGUID AudioSessionGuid)
 {
-	if (pFormat != nullptr && pFormat->nChannels == 8 && g_pState->Domain->Theater->IsTheaterMode())
+	if (pFormat != nullptr &&
+		(pFormat->nChannels == 8 || pFormat->nChannels == 2 || pFormat->nChannels == 6) &&
+		g_pState->Domain->Theater->IsTheaterMode())
 	{
 		g_pState->Infrastructure->Audio->RegisterAudioInstance(
 			pThis, 

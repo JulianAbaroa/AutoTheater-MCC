@@ -7,13 +7,13 @@
 #include <atomic>
 #include <mutex>
 
-struct ReplayState
+class ReplayState
 {
 public:
 	bool ShouldRefreshReplayList() const;
-	std::vector<SavedReplay> GetSavedReplaysCacheCopy() const;
-
 	void SetRefreshReplayList(bool value);
+
+	std::vector<SavedReplay> GetSavedReplaysCacheCopy() const;
 	void SetSavedReplaysCache(std::vector<SavedReplay> cache);
 
 private:

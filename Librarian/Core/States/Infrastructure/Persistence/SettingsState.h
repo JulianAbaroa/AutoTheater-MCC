@@ -3,9 +3,10 @@
 #include "Core/Common/Types/AppTypes.h"
 #include <string>
 #include <atomic>
+#include <vector>
 #include <mutex>
 
-struct SettingsState
+class SettingsState
 {
 public:
 	bool ShouldUseAppData() const;
@@ -13,6 +14,7 @@ public:
 	bool MustResetMenu() const;
 	bool ShouldFreezeMouse() const;
 	bool ShouldUseManualInput() const;
+	bool ShouldOpenUIOnStart() const;
 	float GetMenuAlpha() const;
 	bool GetTimelineAutoScroll() const;
 	bool GetTheaterAutoScroll() const;
@@ -25,6 +27,7 @@ public:
 	void SetForceMenuReset(bool value);
 	void SetFreezeMouse(bool value);
 	void SetUseManualInput(bool value);
+	void SetOpenUIOnStart(bool value);
 	void SetMenuAlpha(float value);
 	void SetTimelineAutoScroll(bool value);
 	void SetTheaterAutoScroll(bool value);
@@ -34,17 +37,17 @@ public:
 
 	std::string GetBaseDirectory() const;
 	std::string GetAppDataDirectory() const;
-	std::string GetMovieTempDirectory() const;
+	std::vector<std::string> GetMovieTempDirectories() const;
 	std::string GetLoggerPath() const;
 
 	void SetBaseDirectory(const std::string& directory);
 	void SetAppDataDirectory(const std::string& directory);
-	void SetMovieTempDirectory(const std::string& directory);
+	void AddMovieTempDirectory(const std::string& directory);
 	void SetLoggerPath(const std::string& directory);
 
 	void ClearAppDataDirectory();
 	bool IsAppDataDirectoryEmpty() const;
-	bool IsMovieTempDirectoryEmpty() const;
+	bool IsMovieTempDirectoriesEmpty() const;
 
 private:
 	std::atomic<bool> m_UseAppData{ false };
@@ -52,6 +55,7 @@ private:
 	std::atomic<bool> m_MustResetMenu{ false };
 	std::atomic<bool> m_ShouldFreezeMouse{ true };
 	std::atomic<bool> m_ShouldUseManualInput{ false };
+	std::atomic<bool> m_ShouldOpenUIOnStart{ true };
 	std::atomic<float> m_MenuAlpha{ 1.0f };
 	std::atomic<bool> m_TimelineAutoScroll{ true };
 	std::atomic<bool> m_TheaterAutoScroll{ true };
@@ -61,7 +65,7 @@ private:
 
 	std::string m_BaseDirectory{};
 	std::string m_AppDataDirectory{};
-	std::string m_MovieTempDirectory{};
+	std::vector<std::string> m_MovieTempDirectories{};
 	std::string m_LoggerPath{};
 	mutable std::mutex m_Mutex;
 };

@@ -17,6 +17,9 @@ std::unique_ptr<AppCore> g_App = nullptr;
 
 AppCore::AppCore()
 {
+    // Note: The initialization order here is critical 
+    // for dependencies between subsystems.
+
     State = std::make_unique<CoreState>();
     g_pState = State.get();
 

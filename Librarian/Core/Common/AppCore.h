@@ -8,6 +8,7 @@ struct CoreHook;
 struct CoreThread;
 struct CoreUI;
 
+// AutoTheater orchestrator class.
 class AppCore
 {
 public:

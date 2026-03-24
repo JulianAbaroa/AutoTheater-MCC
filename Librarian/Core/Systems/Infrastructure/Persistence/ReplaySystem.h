@@ -26,7 +26,9 @@ public:
 	TheaterReplay ScanReplay(const std::filesystem::path& filePath);
 	void DeleteInGameReplay(const std::filesystem::path& replayPath);
 
+	size_t GetInGameReplaysCount() const;
+
 private:
 	float GetLastTimestampFromFile(const std::string& timelinePath);
-	void HotreloadReplays();
+	void HotreloadReplays(const std::filesystem::path& targetDir);
 };

@@ -34,7 +34,6 @@ void UpdateTelemetryTimerHook::HookedUpdateTelemetryTimer(uint64_t timerContext,
 
 			g_pState->Domain->Theater->SetTimePtr(reinterpret_cast<float*>(finalAddr));
 			g_pSystem->Debug->Log("[UpdateTelemetryTimer] INFO: ReplayTime pointer found and stored.");
-			g_pSystem->Debug->Log("[UpdateTelemetryTimer] TEMPORAL: ReplayTime pointer: 0x%llX", finalAddr);
 		}
 		else
 		{

@@ -12,22 +12,14 @@ class TimelineSystem
 public:
 	void ProcessEngineEvent(float timestamp, std::wstring& templateStr, EventData* rawData);
 
-	// Returns the highest Timestamp among all the events captured.
-	float GetLatestTimestamp() const;
-
 	bool HasReachedLastEvent() const;
 	void SetLastEventReached(bool value);
 
-	size_t GetLoggedEventsCount() const;
-	void SetLoggedEventsCount(size_t value);
-
 private:
-	std::atomic<bool> m_LastEventReached{ false };
-	std::atomic<size_t> m_LoggedEventsCount{ 0 };
-
-	std::deque<GameEvent> m_DeduplicationHistory;
-	const size_t MAX_HISTORY = 10;
-
 	std::vector<PlayerInfo> ExtractPlayers(EventData* rawData);
 	bool IsDuplicate(const GameEvent& newEvent);
+
+	std::atomic<bool> m_LastEventReached{ false };
+	std::deque<GameEvent> m_DeduplicationHistory{};
+	const size_t m_MaxHistory = 10;
 };

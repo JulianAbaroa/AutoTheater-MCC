@@ -25,7 +25,8 @@ void DirectorThread::Run()
         if (g_pState->Infrastructure->Lifecycle->GetCurrentPhase() == Phase::Director)
         {
             if (!g_pState->Domain->Director->IsInitialized() && 
-                g_pState->Domain->Director->AreHooksReady())
+                g_pState->Domain->Director->AreHooksReady() &&
+                !g_pState->Domain->Director->IsSkipped())
             {
                 g_pSystem->Domain->Director->Initialize();
             }
@@ -39,10 +40,6 @@ void DirectorThread::Run()
             }
         
             g_pSystem->Infrastructure->Thread->WaitOrExit(16ms);
-        }
-        else 
-        {
-            g_pState->Domain->Director->SetHooksReady(false);
         }
     }
 

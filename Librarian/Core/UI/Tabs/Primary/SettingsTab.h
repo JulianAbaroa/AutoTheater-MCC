@@ -1,11 +1,15 @@
 #pragma once
 
+#include "External/imgui/imgui.h"
 #include <atomic>
+#include <string>
 
 class SettingsTab
 {
 public:
 	void Draw();
+
+	void DrawPathField(const char* label, const std::string& path, float widthOffset = 10.0f);
 
 private:
 	void DrawUserPreferences();
@@ -14,11 +18,12 @@ private:
 	void DrawSystemDirectories();
 
 	void DrawHotkeyRow(const char* label, const char* keys, const char* tooltip);
-	void DrawPathField(const char* label, const std::string& path);
 
 	void DrawPersistencePopups();
 	void DrawConfirmDisableAppData();
 	void DrawDeleteAllAppData();
+
+	std::string GetFriendlyGameName(const std::string& path);
 
 	ImGuiTableFlags m_TableFlags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_NoBordersInBody;
 

@@ -1,85 +1,48 @@
 #include "pch.h"
 #include "Core/States/Domain/Theater/TheaterState.h"
 
-bool TheaterState::IsTheaterMode() const
+bool TheaterState::IsTheaterMode() const { return m_IsTheaterMode.load(); }
+float* TheaterState::GetTimePtr() const { return m_pReplayTime.load(); }
+float* TheaterState::GetTimeScalePtr() const { return m_pReplayTimeScale.load(); }
+
+void TheaterState::SetTheaterMode(bool theaterMode) { m_IsTheaterMode.store(theaterMode); }
+void TheaterState::SetTimePtr(float* pTime) { m_pReplayTime.store(pTime); }
+void TheaterState::SetTimeScalePtr(float* pTimeScale) { m_pReplayTimeScale.store(pTimeScale); }
+
+POVMode TheaterState::GetPOVMode() const { return m_POVMode; }
+UIMode TheaterState::GetUIMode() const { return m_UIMode; }
+CameraMode TheaterState::GetCameraMode() const { return m_CameraMode; }
+
+void TheaterState::SetPOVMode(POVMode value) { m_POVMode = value; }
+void TheaterState::SetUIMode(UIMode value) { m_UIMode = value; }
+void TheaterState::SetCameraMode(CameraMode value) { m_CameraMode = value; }
+
+void TheaterState::UpdateReplayModule(ReplayModule* pModule)
 {
-	return m_IsTheaterMode.load();
+	if (pModule != nullptr)
+	{
+		std::lock_guard<std::mutex> lock(m_ReplayMutex);
+		m_CachedReplayModule = *pModule;
+	}
 }
 
-uintptr_t TheaterState::GetReplayModule() const
+ReplayModule TheaterState::GetModuleSnapshot() const
 {
-	return m_pReplayModule.load();
-}
-
-bool TheaterState::IsThirdPersonForced() const
-{
-	return m_ThirdPersonForced.load();
-}
-
-uint8_t TheaterState::GetSpectatedPlayerIndex() const
-{
-	return m_SpectatedPlayerIndex.load();
-}
-
-uint8_t TheaterState::GetCameraMode() const
-{
-	return m_CameraMode.load();
-}
-
-float* TheaterState::GetTimePtr() const
-{
-	return m_pReplayTime.load();
-}
-
-float* TheaterState::GetTimeScalePtr() const
-{ 
-	return m_pReplayTimeScale.load(); 
+	std::lock_guard<std::mutex> lock(m_ReplayMutex);
+	return m_CachedReplayModule;
 }
 
 
-void TheaterState::SetTheaterMode(bool theaterMode)
-{
-	m_IsTheaterMode.store(theaterMode);
-}
-
-void TheaterState::SetReplayModule(uintptr_t replayModule)
-{
-	m_pReplayModule.store(replayModule);
-}
-
-void TheaterState::SetThirdPersonForced(bool attachToPOV)
-{
-	m_ThirdPersonForced.store(attachToPOV);
-}
-
-void TheaterState::SetSpectatedPlayerIndex(uint8_t playerIdx)
-{
-	m_SpectatedPlayerIndex.store(playerIdx);
-}
-
-void TheaterState::SetCameraMode(uint8_t cameraAttached)
-{
-	m_CameraMode.store(cameraAttached);
-}
-
-void TheaterState::SetTimePtr(float* pTime)
-{
-	m_pReplayTime.store(pTime);
-}
-
-void TheaterState::SetTimeScalePtr(float* pTimeScale) 
-{ 
-	m_pReplayTimeScale.store(pTimeScale); 
-}
-
-
-void TheaterState::ForEachPlayer(std::function<void(const PlayerInfo&)> callback)
+std::optional<PlayerInfo> TheaterState::GetPlayerBySlot(uint8_t slotIndex) const
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
-	for (const auto& player : m_PlayerList)
+
+	if (slotIndex < m_PlayerList.size())
 	{
-		callback(player);
+		return m_PlayerList[slotIndex];
 	}
+
+	return std::nullopt;
 }
 
 void TheaterState::SetPlayerList(const std::vector<PlayerInfo>& newList)
@@ -88,10 +51,13 @@ void TheaterState::SetPlayerList(const std::vector<PlayerInfo>& newList)
 	m_PlayerList = newList;
 }
 
-std::vector<PlayerInfo> TheaterState::GetPlayerListCopy() const
+void TheaterState::ForEachPlayer(std::function<void(const PlayerInfo&)> callback)
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
-	return m_PlayerList;
+	for (const auto& player : m_PlayerList)
+	{
+		callback(player);
+	}
 }
 
 void TheaterState::ResetPlayerList()

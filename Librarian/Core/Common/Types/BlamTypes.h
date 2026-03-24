@@ -114,4 +114,78 @@ struct EventData
 	std::byte _pad4[2];
 };
 
+struct ReplayModule
+{
+	void* VTable1;						// 0x00
+	void* VTable2;						// 0x08
+
+	uint32_t hFollowedBiped;			// 0x10
+	std::byte _pad1[12];
+
+	uint32_t hFirstPerson;				// 0x20
+	std::byte _pad2[12];
+
+	std::byte _pad3[16];
+	std::byte _pad4[16];
+	std::byte _pad5[16];
+
+	std::byte _pad6[8];
+	uint32_t hFollowedBiped2;			// 0x68
+	std::byte _pad7[4];
+
+	std::byte _pad8[16];
+	std::byte _pad9[16];
+	std::byte _pad10[16];
+
+	uint32_t hFirstPerson2;				// 0xA0
+	float CameraForward[3];				// 0xA4
+
+	float CameraUp[3];					// 0xB0
+	std::byte _pad11[4];
+
+	std::byte _pad12[16];
+	std::byte _pad13[16];
+	std::byte _pad14[16];
+	std::byte _pad15[16];
+
+	float FollowedBipedPos[3];			// 0x100
+	std::byte _pad16[4];
+
+	uint32_t hFollowedBiped3;			// 0x110
+	std::byte _pad17[4];
+	std::byte IsTrackingValid;			// 0x118
+	std::byte _pad18[3 + 4];
+
+	float BipedPosY;					// 0x124
+	float BipedPosX;					// 0x128
+	std::byte _pad19[4];
+	std::byte _pad20[4];
+
+	std::byte _pad21[16];
+	std::byte _pad22[16];
+	std::byte _pad23[16];
+	std::byte _pad24[16];
+	std::byte _pad25[16];
+
+	std::byte _pad26[4];
+	std::byte FollowedPlayerIndex;		// 0x184
+	std::byte _pad27;
+	uint16_t FollowedPlayerSlotID;		// 0x186
+	uint32_t hUnknown;					// 0x18A
+	std::byte _pad28[4];
+
+	std::byte POVMode;					// 0x192
+	std::byte _pad29[3];
+	std::byte UIMode;					// 0x196
+	std::byte _pad30[3];
+	std::byte CameraMode;				// 0x19A
+	std::byte _pad31[3 + 4];
+
+	std::byte _pad32[16];
+	std::byte _pad33[16];
+	std::byte _pad34[16];
+	std::byte _pad35[16];
+	std::byte _pad36[16];
+};
+
 #pragma pack(pop)

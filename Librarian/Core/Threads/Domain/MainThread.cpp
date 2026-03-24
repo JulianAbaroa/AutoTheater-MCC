@@ -105,7 +105,6 @@ void MainThread::UpdateToPhase(Phase targetPhase)
     {
         g_pSystem->Domain->Timeline->SetLastEventReached(true);
     }
-    g_pSystem->Domain->Timeline->SetLoggedEventsCount(0);
 
     // Reset theater
     g_pState->Domain->Theater->ResetPlayerList();
@@ -118,7 +117,7 @@ void MainThread::UpdateToPhase(Phase targetPhase)
     g_pState->Domain->Director->ClearScript();
 
     // Reset input
-    g_pState->Infrastructure->Input->Reset();
+    g_pState->Infrastructure->Input->Cleanup();
 
     // Update phase
     g_pState->Infrastructure->Lifecycle->SetCurrentPhase(targetPhase);
@@ -132,9 +131,6 @@ void MainThread::InitializeAutoTheater()
         this->Shutdown();
         return;
     }
-
-    g_pState->Infrastructure->Lifecycle->SetCurrentPhase(g_pState->Infrastructure->Settings->GetPreferredPhase());
-    g_pSystem->Domain->EventRegistry->LoadEventRegistry();
 }
 
 void MainThread::UninstallLifecycleHooks()

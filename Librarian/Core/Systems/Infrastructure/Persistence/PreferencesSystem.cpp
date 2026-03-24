@@ -5,9 +5,12 @@
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/States/Infrastructure/Capture/FFmpegState.h"
+#include "Core/States/Infrastructure/Capture/AudioState.h"
 #include "Core/States/Infrastructure/Engine/LifecycleState.h"
 #include "Core/States/Infrastructure/Engine/RenderState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Domain/CoreDomainSystem.h"
+#include "Core/Systems/Domain/Director/EventRegistrySystem.h"
 #include "Core/Systems/Infrastructure/Persistence/PreferencesSystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
 #include <fstream>
@@ -50,6 +53,9 @@ void PreferencesSystem::LoadPreferences()
 		this->ParseLine(line);
 	}
 
+	g_pSystem->Domain->EventRegistry->LoadEventRegistry();
+	g_pState->Infrastructure->Lifecycle->SetCurrentPhase(g_pState->Infrastructure->Settings->GetPreferredPhase());
+
 	g_pSystem->Debug->Log("[PreferencesSystem] INFO: User preferences loaded successfully.");
 }
 
@@ -87,6 +93,7 @@ void PreferencesSystem::SaveFFmpegState(std::ofstream& file)
 	file << std::defaultfloat;
 
 	file << "FFmpeg_ShouldRecordUI=" << (g_pState->Infrastructure->FFmpeg->ShouldRecordUI() ? "1" : "0") << "\n";
+	file << "FFmpeg_IsMuted=" << (g_pState->Infrastructure->Audio->IsMuted() ? "1" : "0") << "\n";
 	file << "FFmpeg_OutputPath=" << g_pState->Infrastructure->FFmpeg->GetOutputPath() << "\n";
 	file << "FFmpeg_StopOnLastEvent=" << g_pState->Infrastructure->FFmpeg->StopOnLastEvent() << "\n";
 
@@ -112,7 +119,8 @@ void PreferencesSystem::SaveSettingsState(std::ofstream& file)
 {
 	file << "Settings_ShouldFreezeMouse=" << (g_pState->Infrastructure->Settings->ShouldFreezeMouse() ? "1" : "0") << "\n";
 	file << "Settings_ReplaySpeedModifierKeys=" << (g_pState->Infrastructure->Settings->ShouldUseManualInput() ? "1" : "0") << "\n";
-	
+	file << "Settings_ShouldOpenUIOnStart=" << (g_pState->Infrastructure->Settings->ShouldOpenUIOnStart() ? "1" : "0") << "\n";
+
 	file << std::fixed << std::setprecision(2);
 	file << "Settings_MenuAlpha=" << g_pState->Infrastructure->Settings->GetMenuAlpha() << "\n";
 	file << "Settings_UIScale=" << g_pState->Infrastructure->Render->GetUIScale() << "\n";
@@ -127,7 +135,9 @@ void PreferencesSystem::SaveUI(std::ofstream& file)
 	file << "UI_TheaterAutoScroll=" << (g_pState->Infrastructure->Settings->GetTheaterAutoScroll() ? "1" : "0") << "\n";
 	file << "UI_DirectorAutoScroll=" << (g_pState->Infrastructure->Settings->GetDirectorAutoScroll() ? "1" : "0") << "\n";
 	file << "UI_LogsAutoScroll=" << (g_pState->Infrastructure->Settings->GetLogsAutoScroll() ? "1" : "0") << "\n";
-	file << "UI_LockThirdPersonPOV=" << (g_pState->Domain->Theater->IsThirdPersonForced() ? "1" : "0") << "\n";
+	file << "UI_SelectedPOVMode=" << static_cast<int>(g_pState->Domain->Theater->GetPOVMode()) << "\n";
+	file << "UI_SelectedUIMode=" << static_cast<int>(g_pState->Domain->Theater->GetUIMode()) << "\n";
+	file << "UI_SelectedCameraMode=" << static_cast<int>(g_pState->Domain->Theater->GetCameraMode()) << "\n";
 }
 
 void PreferencesSystem::LoadFFmpegState(std::string& key, std::string& value)
@@ -163,6 +173,10 @@ void PreferencesSystem::LoadFFmpegState(std::string& key, std::string& value)
 	else if (key == "FFmpeg_ShouldRecordUI")
 	{
 		g_pState->Infrastructure->FFmpeg->SetRecordUI(value == "1" || value == "true");
+	}
+	else if (key == "FFmpeg_IsMuted")
+	{
+		g_pState->Infrastructure->Audio->SetMuted(value == "1" || value == "true");
 	}
 	else if (key == "FFmpeg_OutputPath")
 	{
@@ -233,6 +247,10 @@ void PreferencesSystem::LoadSettingsState(std::string& key, std::string& value)
 	{
 		g_pState->Infrastructure->Settings->SetUseManualInput(value == "1" || value == "true");
 	}
+	else if (key == "Settings_ShouldOpenUIOnStart")
+	{
+		g_pState->Infrastructure->Settings->SetOpenUIOnStart(value == "1" || value == "true");
+	}
 	else if (key == "Settings_MenuAlpha")
 	{
 		try
@@ -295,8 +313,49 @@ void PreferencesSystem::LoadUI(std::string& key, std::string& value)
 	{
 		g_pState->Infrastructure->Settings->SetLogsAutoScroll(value == "1" || value == "true");
 	}
-	else if (key == "UI_LockThirdPersonPOV")
+	else if (key == "UI_SelectedPOVMode")
 	{
-		g_pState->Domain->Theater->SetThirdPersonForced(value == "1" || value == "true");
+		try {
+			int modeInt = std::stoi(value);
+			if (modeInt >= -1 && modeInt <= 3) {
+				g_pState->Domain->Theater->SetPOVMode(static_cast<POVMode>(modeInt));
+			}
+			else {
+				g_pState->Domain->Theater->SetPOVMode(POVMode::Unselected);
+			}
+		}
+		catch (...) {
+			g_pState->Domain->Theater->SetPOVMode(POVMode::Unselected);
+		}
+	}
+	else if (key == "UI_SelectedUIMode")
+	{
+		try {
+			int modeInt = std::stoi(value);
+			if (modeInt >= -1 && modeInt <= 2) {
+				g_pState->Domain->Theater->SetUIMode(static_cast<UIMode>(modeInt));
+			}
+			else {
+				g_pState->Domain->Theater->SetUIMode(UIMode::Unselected);
+			}
+		}
+		catch (...) {
+			g_pState->Domain->Theater->SetUIMode(UIMode::Unselected);
+		}
+	}
+	else if (key == "UI_SelectedCameraMode")
+	{
+		try {
+			int modeInt = std::stoi(value);
+			if (modeInt >= -1 && modeInt <= 1) {
+				g_pState->Domain->Theater->SetCameraMode(static_cast<CameraMode>(modeInt));
+			}
+			else {
+				g_pState->Domain->Theater->SetCameraMode(CameraMode::Unselected);
+			}
+		}
+		catch (...) {
+			g_pState->Domain->Theater->SetCameraMode(CameraMode::Unselected);
+		}
 	}
 }

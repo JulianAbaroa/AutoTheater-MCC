@@ -35,13 +35,6 @@ std::deque<FrameData> VideoSystem::ExtractQueue()
 	return localQueue;
 }
 
-size_t VideoSystem::GetQueueSize()
-{
-    std::lock_guard<std::mutex> lock(m_QueueMutex);
-    if (m_FrameQueue.empty()) return 0;
-    return m_FrameQueue.size();
-}
-
 void VideoSystem::ClearQueue()
 {
     std::lock_guard<std::mutex> lock(m_QueueMutex);
@@ -150,5 +143,5 @@ void VideoSystem::Cleanup()
 
     g_pState->Infrastructure->Video->Cleanup();
 
-    g_pSystem->Debug->Log("[VideoSystem] INFO: Video cleanup completed.");
+    g_pSystem->Debug->Log("[VideoSystem] INFO: Cleanup completed.");
 }

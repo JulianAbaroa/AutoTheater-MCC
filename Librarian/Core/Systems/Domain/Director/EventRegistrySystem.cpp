@@ -19,61 +19,52 @@ EventRegistrySystem::EventRegistrySystem()
 
 void EventRegistrySystem::SaveEventRegistry()
 {
-	std::string path = g_pState->Infrastructure->Settings->GetAppDataDirectory() + "\\event_weights.cfg";;
-	auto eventRegistryCopy = g_pState->Domain->EventRegistry->GetEventRegistryCopy();
-
-	std::ofstream file(path);
+	std::string path = g_pState->Infrastructure->Settings->GetAppDataDirectory() + "\\event_weights.cfg";
+	
+	std::ofstream file(path, std::ios::binary);
 	if (!file.is_open()) return;
-
+	
 	file << "# AutoTheater Event Weights\n";
-	for (const auto& [name, info] : eventRegistryCopy)
-	{
+
+	g_pState->Domain->EventRegistry->ForEachEvent([&](const std::wstring& name, const EventInfo& info) {
 		file << g_pSystem->Infrastructure->Format->WStringToString(name) << "=" << info.Weight << "\n";
-	}
+	});
 
 	file.close();
-
-	g_pSystem->Debug->Log("[EventRegistryTab] INFO: Event registry saved.");
+	g_pSystem->Debug->Log("[EventRegistrySystem] INFO: Event registry saved.");
 }
 
 void EventRegistrySystem::LoadEventRegistry()
 {
 	std::string path = g_pState->Infrastructure->Settings->GetAppDataDirectory() + "\\event_weights.cfg";
-	auto eventRegistryCopy = g_pState->Domain->EventRegistry->GetEventRegistryCopy();;
-
 	std::ifstream file(path);
 	if (!file.is_open()) return;
 
 	std::string line;
 	while (std::getline(file, line))
 	{
-		if (line.empty() || line[0] == '#') continue;
+		if (!line.empty() && line.back() == '\r') line.pop_back();
+		size_t delimiterPos = line.find('=');
+		if (delimiterPos == std::string::npos) continue;
 
-		size_t delimiterPos = line.find_last_of('=');
-		if (delimiterPos != std::string::npos)
-		{
-			std::string nameStr = line.substr(0, delimiterPos);
-			std::string weightStr = line.substr(delimiterPos + 1);
+		std::string nameStr = line.substr(0, delimiterPos);
+		std::string weightStr = line.substr(delimiterPos + 1);
+		std::wstring eventName = g_pSystem->Infrastructure->Format->StringToWString(nameStr);
 
-			std::wstring eventName = g_pSystem->Infrastructure->Format->StringToWString(nameStr);
-
-			if (eventRegistryCopy.count(eventName))
+		try {
+			int weight = std::stoi(weightStr);
+			if (g_pState->Domain->EventRegistry->IsEventRegistered(eventName))
 			{
-				try {
-					eventRegistryCopy[eventName].Weight = std::stoi(weightStr);
-				}
-				catch (...) { }
+				EventType type = g_pState->Domain->EventRegistry->GetEventType(eventName);
+				g_pState->Domain->EventRegistry->UpdateWeightsByType(type, weight);
 			}
 		}
+		catch (...) {}
 	}
 
 	file.close();
-
-	g_pState->Domain->EventRegistry->SetEventRegistry(eventRegistryCopy);
-
-	g_pSystem->Debug->Log("[MainThread] INFO: Event registry loaded.");
+	g_pSystem->Debug->Log("[EventRegistrySystem] INFO: Event registry loaded.");
 }
-
 
 void EventRegistrySystem::InitializeDefaultRegistry()
 {

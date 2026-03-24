@@ -10,7 +10,6 @@
 #include "Core/Systems/Infrastructure/Persistence/PreferencesSystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/UI/Tabs/Primary/SettingsTab.h"
-#include "External/imgui/imgui.h"
 
 void SettingsTab::Draw()
 {
@@ -107,8 +106,54 @@ void SettingsTab::DrawUserPreferences()
 
 	ImGui::Spacing();
 
+	bool blockMouse = g_pState->Infrastructure->Settings->ShouldFreezeMouse();
+	if (ImGui::Checkbox("Freeze Mouse Input", &blockMouse))
+	{
+		g_pState->Infrastructure->Settings->SetFreezeMouse(blockMouse);
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Blocks game camera movement while the menu is open.");
+	}
+
+	ImGui::Spacing();
+
+	bool useManualInput = g_pState->Infrastructure->Settings->ShouldUseManualInput();
+	if (ImGui::Checkbox("Replay speed modifier keys", &useManualInput))
+	{
+		g_pState->Infrastructure->Settings->SetUseManualInput(useManualInput);
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Allows to use number keys (3-0) to change the replay speed.");
+	}
+
+	ImGui::Spacing();
+
+	bool usePreferences = g_pState->Infrastructure->Settings->ShouldUseAppData();
+	if (!usePreferences) ImGui::BeginDisabled();
+
+	bool openUIOnStart = g_pState->Infrastructure->Settings->ShouldOpenUIOnStart();
+	if (ImGui::Checkbox("Open UI on MCC start", &openUIOnStart))
+	{
+		g_pState->Infrastructure->Settings->SetOpenUIOnStart(openUIOnStart);
+	}
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+	{
+		if (usePreferences)
+		{
+			ImGui::SetTooltip("Defines if AutoTheater control panel is opened on MCC start.");
+		}
+		else
+		{
+			ImGui::SetTooltip("This feature uses Local Storage, go to Data Persistence to enable it.");
+		}
+	}
+
+	ImGui::Spacing();
+
 	ImGui::AlignTextToFramePadding();
-	ImGui::Text("Preferred Phase:");
+	ImGui::Text("Preferred Phase");
 	ImGui::SameLine(ImGui::GetContentRegionAvail().x - 205.0f);
 	ImGui::SetNextItemWidth(205.0f);
 
@@ -132,34 +177,19 @@ void SettingsTab::DrawUserPreferences()
 		ImGui::EndCombo();
 	}
 
-	if (ImGui::IsItemHovered())
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 	{
-		ImGui::SetTooltip("The phase that will be automatically selected when the application starts.");
+		if (usePreferences)
+		{
+			ImGui::SetTooltip("The phase that will be automatically selected when MCC launcher starts.");
+		}
+		else
+		{
+			ImGui::SetTooltip("This feature needs to Local Storage Use, go to Data Persistence to enable it.");
+		}
 	}
 
-	ImGui::Spacing();
-
-	bool blockMouse = g_pState->Infrastructure->Settings->ShouldFreezeMouse();
-	if (ImGui::Checkbox("Freeze Mouse Input", &blockMouse))
-	{
-		g_pState->Infrastructure->Settings->SetFreezeMouse(blockMouse);
-	}
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Blocks game camera movement while the menu is open.");
-	}
-
-	ImGui::Spacing();
-
-	bool useManualInput = g_pState->Infrastructure->Settings->ShouldUseManualInput();
-	if (ImGui::Checkbox("Replay speed modifier keys", &useManualInput))
-	{
-		g_pState->Infrastructure->Settings->SetUseManualInput(useManualInput);
-	}
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Allows to use number keys (3-0) to change the replay speed.");
-	}
+	if (!usePreferences) ImGui::EndDisabled();
 
 	ImGui::Spacing();
 	ImGui::Unindent(10.0f);
@@ -301,7 +331,13 @@ void SettingsTab::DrawSystemDirectories()
 	this->DrawPathField("Base Installation", g_pState->Infrastructure->Settings->GetBaseDirectory());
 	this->DrawPathField("Log File Output", g_pState->Infrastructure->Settings->GetLoggerPath());
 	this->DrawPathField("Storage Folder", g_pState->Infrastructure->Settings->GetAppDataDirectory());
-	this->DrawPathField("MCC Temporary Movies", g_pState->Infrastructure->Settings->GetMovieTempDirectory());
+
+	auto replayDirectories = g_pState->Infrastructure->Settings->GetMovieTempDirectories();
+	for (const auto& path : replayDirectories)
+	{
+		std::string label = GetFriendlyGameName(path) + " Replays";
+		this->DrawPathField(label.c_str(), path);
+	}
 
 	ImGui::Spacing();
 	ImGui::Unindent(10.0f);
@@ -338,22 +374,22 @@ void SettingsTab::DrawHotkeyRow(const char* label, const char* keys, const char*
 	ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "%s", keys);
 }
 
-void SettingsTab::DrawPathField(const char* label, const std::string& path)
+void SettingsTab::DrawPathField(const char* label, const std::string& path, float widthOffset)
 {
-	ImGui::BeginGroup();
 	ImGui::TextDisabled("%s", label);
 
-	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
+	ImGui::BeginGroup();
 
-	ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 10.0f);
+	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
+	ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - widthOffset);
 
 	ImGui::InputText(("##" + std::string(label)).c_str(), (char*)path.c_str(), path.size(), ImGuiInputTextFlags_ReadOnly);
+
 	ImGui::PopStyleColor();
 
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Right-click to copy path to clipboard.");
-
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
 		{
 			ImGui::SetClipboardText(path.c_str());
@@ -368,24 +404,16 @@ void SettingsTab::DrawPathField(const char* label, const std::string& path)
 		if (elapsed < m_AnimationDuration)
 		{
 			float alpha = 1.0f - (elapsed / m_AnimationDuration);
-			
 			ImGui::GetWindowDrawList()->AddRectFilled(
-				ImGui::GetItemRectMin(),
-				ImGui::GetItemRectMax(),
-				ImColor(1.0f, 1.0f, 1.0f, alpha * 0.4f), 
-				ImGui::GetStyle().FrameRounding
+				ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
+				ImColor(1.0f, 1.0f, 1.0f, alpha * 0.4f), ImGui::GetStyle().FrameRounding
 			);
 		}
-		else
-		{
-			m_AnimatePathLabel = "";
-		}
+		else { m_AnimatePathLabel = ""; }
 	}
 
 	ImGui::EndGroup();
-	ImGui::Spacing();
 }
-
 
 void SettingsTab::DrawPersistencePopups()
 {
@@ -468,4 +496,15 @@ void SettingsTab::DrawDeleteAllAppData()
 	{
 		ImGui::CloseCurrentPopup();
 	}
+}
+
+
+std::string SettingsTab::GetFriendlyGameName(const std::string& path)
+{
+	if (path.find("Halo2A") != std::string::npos) return "Halo 2: Anniversary";
+	if (path.find("Halo3ODST") != std::string::npos) return "Halo 3 ODST";
+	if (path.find("Halo3") != std::string::npos) return "Halo 3";
+	if (path.find("Halo4") != std::string::npos) return "Halo 4";
+	if (path.find("HaloReach") != std::string::npos) return "Halo: Reach";
+	return "Unknown Game";
 }

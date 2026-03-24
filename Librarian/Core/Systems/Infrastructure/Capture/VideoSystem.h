@@ -13,7 +13,6 @@ public:
 	void PushFrame(const uint8_t* pData, UINT width, UINT height, UINT rowPitch, double engineTime);
 	
 	std::deque<FrameData> ExtractQueue();
-	size_t GetQueueSize();
 	void ClearQueue();
 
 	void PreallocatePool(UINT width, UINT height);

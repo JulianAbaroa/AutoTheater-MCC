@@ -3,7 +3,7 @@
 #include <d3d11.h>
 #include <atomic>
 
-struct RenderState
+class RenderState
 {
 public:
 	ID3D11Device* GetDevice() const;
@@ -16,29 +16,23 @@ public:
 	void SetHWND(HWND hwnd);
 	void SetRTV(ID3D11RenderTargetView* rtv);
 
-	bool IsReady() const;
 	void CleanupRTV();
 	void FullCleanup();
 
-	bool IsImGuiInitialized();
-	void SetImGuiInitialized(bool initialized);
-
+	bool IsImGuiInitialized() const;
 	bool IsResizing() const;
-	void SetResizing(bool state);
-
-	int GetWidth();
-	void SetWidth(int width);
-
-	int GetHeight();
-	void SetHeight(int height);
-
+	int GetWidth() const;
+	int GetHeight() const;
 	int GetFramerate() const;
-	void SetFramerate(int framerate);
-
 	float GetUIScale() const;
-	void SetUIScale(float scale);
-
 	bool ShouldRebuildFonts() const;
+
+	void SetImGuiInitialized(bool initialized);
+	void SetResizing(bool state);
+	void SetWidth(int width);
+	void SetHeight(int height);
+	void SetFramerate(int framerate);
+	void SetUIScale(float scale);
 	void ResetFontRebuild();
 
 private:
@@ -49,11 +43,9 @@ private:
 
 	std::atomic<bool> m_IsImGuiInitialized{ false };
 	std::atomic<bool> m_IsResizing{ false };
-
 	std::atomic<int> m_Width{ 0 };
 	std::atomic<int> m_Height{ 0 };
 	std::atomic<int> m_Framerate{ 0 };
-
 	std::atomic<float> m_UIScale{ 1.0f };
 	std::atomic<bool> m_NeedFontRebuild{ false };
 };

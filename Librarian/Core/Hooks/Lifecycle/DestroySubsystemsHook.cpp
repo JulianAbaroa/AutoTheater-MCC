@@ -1,4 +1,6 @@
 #include "pch.h"
+#include "Core/UI/CoreUI.h"
+#include "Core/UI/Tabs/Primary/DirectorTab.h"
 #include "Core/Hooks/CoreHook.h"
 #include "Core/Hooks/Data/CoreDataHook.h"
 #include "Core/Hooks/Data/BlamOpenFileHook.h"
@@ -18,6 +20,8 @@
 #include "Core/States/Infrastructure/Capture/FFmpegState.h"
 #include "Core/States/Infrastructure/Engine/LifecycleState.h"
 #include "Core/Systems/CoreSystem.h"
+#include "Core/Systems/Domain/CoreDomainSystem.h"
+#include "Core/Systems/Domain/Director/DirectorSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
 #include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
@@ -56,6 +60,9 @@ void __fastcall DestroySubsystemsHook::HookedDestroySubsystems(void)
 	g_pSystem->Infrastructure->Video->Cleanup();
 
 	g_pHook->Memory->TargetFramerate->Reset();
+
+	g_pSystem->Domain->Director->Cleanup();
+	g_pUI->Director->ResetCachedScript();
 
 	g_pState->Infrastructure->Lifecycle->SetEngineStatus({ EngineStatus::Destroyed });
 

@@ -11,11 +11,23 @@
 #include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
 #include "Core/UI/Tabs/Primary/TheaterTab.h"
 #include "External/imgui/imgui_internal.h"
-#include "External/imgui/imgui.h"
 
 void TheaterTab::Draw()
 {
-	this->DrawTheaterStatus();
+	if (m_PlayerListDirty.load())
+	{
+		m_CachedPlayerList.clear();
+
+		g_pState->Domain->Theater->ForEachPlayer([&](const PlayerInfo& player) {
+			m_CachedPlayerList.push_back(player);
+		});
+
+		m_PlayerListDirty.store(false);
+	}
+
+	auto replayModule = g_pState->Domain->Theater->GetModuleSnapshot();
+
+	this->DrawTheaterStatus(replayModule);
 
 	ImGui::Separator();
 
@@ -41,7 +53,7 @@ void TheaterTab::Draw()
 			ImGui::TableSetupColumn("Last Known World Position (X, Y, Z)", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort);
 			ImGui::TableHeadersRow();
 
-			uint8_t followedIdx = g_pState->Domain->Theater->GetSpectatedPlayerIndex();
+			uint8_t followedIdx = (uint8_t)replayModule.FollowedPlayerIndex;
 
 			g_pState->Domain->Theater->ForEachPlayer([&](const PlayerInfo& player)
 			{
@@ -52,9 +64,10 @@ void TheaterTab::Draw()
 			
 				if (isFollowed)
 				{
-					ImGui::TableSetBgColor(
-						ImGuiTableBgTarget_RowBg0,
-						ImGui::GetColorU32(tabActiveColor));
+					ImColor targetColor = ImGui::GetColorU32(tabActiveColor);
+					targetColor.Value.w = 0.5f;
+
+					ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, targetColor);
 
 					if (autoScroll) ImGui::SetScrollHereY(0.5f);
 				}
@@ -83,27 +96,19 @@ void TheaterTab::Draw()
 	ImGui::EndChild();
 }
 
-void TheaterTab::DrawTheaterStatus()
+
+void TheaterTab::SetPlayerListDirty()
+{
+	m_PlayerListDirty.store(true);
+}
+
+
+void TheaterTab::DrawTheaterStatus(ReplayModule replayModule)
 {
 	bool active = g_pState->Domain->Theater->IsTheaterMode();
 	ImGui::AlignTextToFramePadding();
 	if (active) ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "THEATER ACTIVE");
 	else		ImGui::TextDisabled("THEATER INACTIVE");
-
-	ImGui::SameLine();
-	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-	ImGui::SameLine();
-
-	bool attachToPOV = g_pState->Domain->Theater->IsThirdPersonForced();
-	if (ImGui::Checkbox("Lock Third-Person POV (Director Phase)", &attachToPOV))
-	{
-		g_pState->Domain->Theater->SetThirdPersonForced(attachToPOV);
-	}
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Synchronizes both camera position AND rotation (view direction) with the followed player.");
-	}
 }
 
 void TheaterTab::DrawPlaybackControls(bool& autoScroll)
@@ -127,15 +132,29 @@ void TheaterTab::DrawPlaybackControls(bool& autoScroll)
 		ImGui::TextDisabled("(Real: %.2fx)", realScale);
 		ImGui::SameLine();
 
-		ImGui::PushItemWidth(200.0f);
-		float tempSpeed = *pScale;
-		if (ImGui::SliderFloat("##Speed", &tempSpeed, 0.0f, 16.0f, "Target: %.2fx"))
+		static float tempSpeed = *pScale;
+
+		if (!ImGui::IsAnyItemActive()) tempSpeed = *pScale;
+
+		ImGui::PushItemWidth(150.0f);
+		if (ImGui::SliderFloat("##SliderSpeed", &tempSpeed, 0.0f, 16.0f, ""))
 		{
-			g_pSystem->Domain->Theater->SetReplaySpeed(std::clamp(tempSpeed, 0.0f, 24.0f));
+			g_pSystem->Domain->Theater->SetReplaySpeed(tempSpeed);
 		}
 		ImGui::PopItemWidth();
 
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Ctrl + Click to type a custom value (Max: 24x).");
+		ImGui::SameLine();
+
+		ImGui::PushItemWidth(70.0f);
+		if (ImGui::InputFloat("##InputSpeed", &tempSpeed, 0.0f, 0.0f, "%.3fx", ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			float finalValue = std::clamp(tempSpeed, 0.0f, 24.0f);
+			g_pSystem->Domain->Theater->SetReplaySpeed(finalValue);
+			tempSpeed = finalValue;
+		}
+		ImGui::PopItemWidth();
+
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Type value and press ENTER");
 
 		if (*pScale > 1.0f && realScale < (*pScale * 0.85f))
 		{

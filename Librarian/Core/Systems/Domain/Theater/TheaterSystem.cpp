@@ -15,28 +15,12 @@
 #include "Core/Systems/Interface/DebugSystem.h"
 #include <algorithm>
 
-void TheaterSystem::Update()
-{
-	if (!g_pState->Domain->Theater->IsTheaterMode()) return;
-
-	this->UpdateRealTimeScale();
-
-	if (g_pState->Domain->Theater->GetReplayModule())
-	{
-		TryGetSpectatedPlayerIndex(g_pState->Domain->Theater->GetReplayModule());
-	}
-}
-
-
 void TheaterSystem::InitializeReplaySpeed()
 {
 	if (m_IsReplaySpeedInitialized.load()) return;
 
 	float* pTimeScale = g_pState->Domain->Theater->GetTimeScalePtr();
-	if (!pTimeScale)
-	{
-		g_pSystem->Domain->Theater->SetReplaySpeed(1.0f);
-	}
+	if (!pTimeScale) g_pSystem->Domain->Theater->SetReplaySpeed(1.0f);
 }
 
 void TheaterSystem::SetReplaySpeed(float speed)
@@ -94,26 +78,6 @@ void TheaterSystem::RefreshPlayerList()
 	}
 
 	g_pState->Domain->Theater->SetPlayerList(nextPlayerList);
-}
-
-bool TheaterSystem::TryGetSpectatedPlayerIndex(uint64_t pReplayModule)
-{
-	__try
-	{
-		uint8_t currentPlayer = *(uint8_t*)(pReplayModule + 0x184);
-
-		if (currentPlayer >= 0 && currentPlayer < 16)
-		{
-			g_pState->Domain->Theater->SetSpectatedPlayerIndex(currentPlayer);
-			return true;
-		}
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		return false;
-	}
-
-	return false;
 }
 
 bool TheaterSystem::TryGetPlayerName(uint8_t slotID, wchar_t* outName, size_t maxChars) 

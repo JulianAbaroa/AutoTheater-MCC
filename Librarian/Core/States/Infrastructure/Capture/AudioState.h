@@ -6,29 +6,30 @@
 #include <mutex>
 #include <map>
 
-struct AudioState
+class AudioState
 {
 public:
-	bool IsRecording() const;
-	void SetRecording(bool value);
+    bool IsRecording() const;
+    bool IsMuted() const;
+    AudioFormat GetAudioInstance(void* instance) const;
+    std::map<void*, AudioFormat> GetAllAudioInstances() const;
 
-	BYTE* GetBufferForInstance(void* instanece);
-	void SetBufferForInstance(void* instance, BYTE* buffer);
+    void SetRecording(bool value);
+    void SetMuted(bool value);
 
-	void* GetMasterInstance() const;
-	void SetMasterInstance(void* newInstance);
+    BYTE* GetBufferForInstance(void* instance);
+    void SetBufferForInstance(void* instance, BYTE* buffer);
 
-	void RegisterAudioInstance(void* instance, WORD channels, DWORD samplesPerSec, WORD bytesPerFrame);
-	AudioFormat GetAudioInstance(void* instance);
-	std::map<void*, AudioFormat> GetAudioInstances();
-	
-	void Cleanup();
+    void RegisterAudioInstance(void* instance, WORD channels, DWORD samplesPerSec, WORD bytesPerFrame);
+    void UnregisterAudioInstance(void* instance);
+
+    void Cleanup();
 
 private:
-	std::atomic<bool> m_IsRecording{ false };
-	std::atomic<void*> m_MasterInstance{ nullptr };
+    std::atomic<bool> m_IsRecording{ false };
+    std::atomic<bool> m_IsMuted{ false };
 
-	std::map<void*, AudioFormat> m_AudioInstances{};
-	std::unordered_map<void*, BYTE*> m_InstanceBuffers{};
-	mutable std::mutex m_Mutex;
+    std::map<void*, AudioFormat> m_AudioInstances{};
+    std::unordered_map<void*, BYTE*> m_InstanceBuffers{};
+    mutable std::mutex m_Mutex;
 };

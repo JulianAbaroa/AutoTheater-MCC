@@ -1,11 +1,12 @@
 #pragma once
 
-#include <string>
-#include <queue>
-#include <mutex>
 #include <condition_variable>
+#include <string>
 #include <thread>
+#include <vector>
 #include <atomic>
+#include <mutex>
+#include <queue>
 
 class GallerySystem {
 public:

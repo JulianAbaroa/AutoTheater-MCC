@@ -21,6 +21,7 @@ struct ReplayMetadata
 {
 	std::string Author;
 	std::string Info;
+	std::string Game{};
 };
 
 // Core replay data and file system references.

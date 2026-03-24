@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Core/Common/Types/TimelineTypes.h"
+#include "External/imgui/imgui.h"
 #include <atomic>
+#include <vector>
 
 class TimelineTab
 {
@@ -15,4 +17,7 @@ private:
 	ImGuiTableFlags m_TableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
 		ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit |
 		ImGuiTableFlags_RowBg;
+
+	std::vector<GameEvent> m_CachedTimeline{};
+	size_t m_LastKnownSize = 0;
 };

@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-struct VideoState
+class VideoState
 {
 public:
     bool IsRecording() const;

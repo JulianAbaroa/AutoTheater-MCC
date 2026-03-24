@@ -55,3 +55,19 @@ void EventRegistryState::UpdateWeightsByType(EventType type, int newWeight)
 		}
 	}
 }
+
+
+int EventRegistryState::GetEventWeight(const GameEvent& event)
+{
+	std::lock_guard<std::mutex> lock(m_Mutex);
+
+	for (const auto& entry : m_EventRegistry)
+	{
+		if (entry.second.Type == event.Type)
+		{
+			return entry.second.Weight;
+		}
+	}
+
+	return 0;
+}

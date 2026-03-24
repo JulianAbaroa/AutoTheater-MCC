@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Common/Types/BlamTypes.h"
 #include <cstdint>
 #include <atomic>
 
@@ -10,9 +11,9 @@ public:
 	void Uninstall();
 
 private:
-	static void __fastcall HookedSpectatorHandleInput(uint64_t* pReplayModule, uint32_t rdx_param);
+	static void __fastcall HookedSpectatorHandleInput(ReplayModule* pReplayModule, uint32_t rdx_param);
 
-	typedef void(__fastcall* SpectatorHandleInput_t)(uint64_t* pReplayModule, uint32_t frameDelta);
+	typedef void(__fastcall* SpectatorHandleInput_t)(ReplayModule* pReplayModule, uint32_t frameDelta);
 
 	static inline SpectatorHandleInput_t m_OriginalFunction = nullptr;
 	std::atomic<void*> m_FunctionAddress{ nullptr };

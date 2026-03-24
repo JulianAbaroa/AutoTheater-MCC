@@ -18,8 +18,17 @@ void SettingsSystem::InitializePaths(char* buffer)
 	if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppDataLow, 0, NULL, &localLowPath)))
 	{
 		std::filesystem::path base(localLowPath);
+		std::filesystem::path userContent = base / "MCC" / "Temporary" / "UserContent";
 
-		g_pState->Infrastructure->Settings->SetMovieTempDirectory((base / "MCC/Temporary/UserContent/HaloReach/Movie").string());
+		std::vector<std::string> games = { "Halo2A", "Halo3", "Halo3ODST", "Halo4", "HaloReach" };
+
+		for (const auto& game : games)
+		{
+			std::filesystem::path moviePath = userContent / game / "Movie";
+
+			g_pState->Infrastructure->Settings->AddMovieTempDirectory(moviePath.string());
+		}
+
 		CoTaskMemFree(localLowPath);
 	}
 

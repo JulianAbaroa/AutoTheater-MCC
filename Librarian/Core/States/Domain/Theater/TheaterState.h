@@ -1,38 +1,38 @@
 #pragma once
 
 #include "Core/Common/Types/TimelineTypes.h"
+#include "Core/Common/Types/TheaterTypes.h"
 #include <functional>
+#include <optional>
 #include <vector>
 #include <atomic>
 #include <mutex>
 
-// TODO: Reverse Engineer the ReplayModule to create a C++ struct.
-
-struct TheaterState
+class TheaterState
 {
 public:
-	// Getters
 	bool IsTheaterMode() const;
-	uintptr_t GetReplayModule() const;
-	bool IsThirdPersonForced() const;
-	uint8_t GetSpectatedPlayerIndex() const;
-	uint8_t GetCameraMode() const;
+	void SetTheaterMode(bool theaterMode);
+
+	POVMode GetPOVMode() const;
+	UIMode GetUIMode() const;
+	CameraMode GetCameraMode() const;
+
+	void SetPOVMode(POVMode value);
+	void SetUIMode(UIMode value);
+	void SetCameraMode(CameraMode value);
+
 	float* GetTimePtr() const;
 	float* GetTimeScalePtr() const;
-
-	// Setters
-	void SetTheaterMode(bool theaterMode);
-	void SetReplayModule(uintptr_t replayModule);
-	void SetThirdPersonForced(bool attachToPOV);
-	void SetSpectatedPlayerIndex(uint8_t playerIdx);
-	void SetCameraMode(uint8_t cameraAttached);
 	void SetTimePtr(float* pTime);
 	void SetTimeScalePtr(float* pTimeScale);
 
-	// PlayerList-related
-	void ForEachPlayer(std::function<void(const PlayerInfo&)> callback);
+	ReplayModule GetModuleSnapshot() const;
+	void UpdateReplayModule(ReplayModule* pModule);
+
+	std::optional<PlayerInfo> GetPlayerBySlot(uint8_t slotIndex) const;
 	void SetPlayerList(const std::vector<PlayerInfo>& newList);
-	std::vector<PlayerInfo> GetPlayerListCopy() const;
+	void ForEachPlayer(std::function<void(const PlayerInfo&)> callback);
 	void ResetPlayerList();
 
 private:
@@ -41,10 +41,15 @@ private:
 	mutable std::mutex m_Mutex;
 
 	std::atomic<bool> m_IsTheaterMode{ false };
-	std::atomic<uintptr_t> m_pReplayModule{ 0 };
-	std::atomic<bool> m_ThirdPersonForced{ false };
-	std::atomic<uint8_t> m_SpectatedPlayerIndex{ 255 };
-	std::atomic<uint8_t> m_CameraMode{ 0xFF };
+
+	// UI defined values.
+	POVMode m_POVMode{ POVMode::Unselected };
+	UIMode m_UIMode{ UIMode::Unselected };
+	CameraMode m_CameraMode{ CameraMode::Unselected };
+
 	std::atomic<float*> m_pReplayTime{ nullptr };
 	std::atomic<float*> m_pReplayTimeScale{ nullptr };
+
+	ReplayModule m_CachedReplayModule{};
+	mutable std::mutex m_ReplayMutex;
 };

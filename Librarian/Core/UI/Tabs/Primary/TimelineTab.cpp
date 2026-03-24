@@ -15,6 +15,13 @@
 
 void TimelineTab::Draw()
 {
+	size_t currentSize = g_pState->Domain->Timeline->GetTimelineSize();
+	if (currentSize != m_LastKnownSize)
+	{
+		m_CachedTimeline = g_pState->Domain->Timeline->GetTimelineCopy();
+		m_LastKnownSize = currentSize;
+	}
+
 	bool autoScroll = g_pState->Infrastructure->Settings->GetTimelineAutoScroll();
 	this->DrawTimelineControls(autoScroll);
 
@@ -38,16 +45,14 @@ void TimelineTab::Draw()
 			ImGui::TableSetupColumn("Involved Players", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort);
 			ImGui::TableHeadersRow();
 
-			const auto& timelineCopy = g_pState->Domain->Timeline->GetTimelineCopy();
-			
 			ImGuiListClipper clipper;
-			clipper.Begin(static_cast<int>(timelineCopy.size()));
+			clipper.Begin(static_cast<int>(m_CachedTimeline.size()));
 			
 			while (clipper.Step())
 			{
 				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 				{
-					const auto& gameEvent = timelineCopy[i];
+					const auto& gameEvent = m_CachedTimeline[i];
 					ImGui::TableNextRow();
 			
 					// Column: Timestamp
@@ -142,16 +147,9 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 	ImGui::SameLine();
 
 	size_t timelineSize = g_pState->Domain->Timeline->GetTimelineSize();
-	if (timelineSize <= 0) ImGui::BeginDisabled();
 	if (ImGui::Button("Clear Timeline"))
 	{
 		g_pState->Domain->Timeline->ClearTimeline();
-	}
-	if (timelineSize <= 0) ImGui::EndDisabled();
-
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) && timelineSize <= 0)
-	{
-		ImGui::SetTooltip("Cannot clear a timeline that's already empty.");
 	}
 
 	ImGui::SameLine();
@@ -160,14 +158,6 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Total number of events currently stored in memory.");
-	}
-
-	ImGui::SameLine();
-	ImGui::TextDisabled("| Processed: %zu", g_pSystem->Domain->Timeline->GetLoggedEventsCount());
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Number of events successfully written to the disk/logs.");
 	}
 }
 

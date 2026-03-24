@@ -47,7 +47,7 @@ void ReplayManagerTab::DrawLibrary()
     int visibleCount = this->GetVisibleLibraryCount(savedReplaysCopy, searchStr);
     ImGui::AlignTextToFramePadding();
 
-    if (savedReplaysCopy.empty()) ImGui::TextDisabled("Library is empty...");
+    if (savedReplaysCopy.empty()) ImGui::TextDisabled("Library is empty.");
     else ImGui::TextDisabled("Showing %d saved replays", visibleCount);
 
     float buttonWidth = ImGui::CalcTextSize("Refresh List").x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -100,6 +100,7 @@ bool ReplayManagerTab::MatchesLibraryFilter(const SavedReplay& replay, const std
 
     return
         ToLower(replay.DisplayName).find(filter) != std::string::npos ||
+        ToLower(replay.TheaterReplay.ReplayMetadata.Game).find(filter) != std::string::npos ||
         ToLower(replay.TheaterReplay.ReplayMetadata.Author).find(filter) != std::string::npos ||
         ToLower(replay.TheaterReplay.ReplayMetadata.Info).find(filter) != std::string::npos;
 }
@@ -159,13 +160,26 @@ void ReplayManagerTab::DrawLibraryReplayRow(int index, SavedReplay& replay, cons
             if (m_EditingIndex == index) this->DrawRenameInput(index, replay);
             else ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "%s", replay.DisplayName.c_str());
 
-            ImGui::TextDisabled("Author: %s", replay.TheaterReplay.ReplayMetadata.Author.c_str());
+            ImGui::TextDisabled("Game: %s | Author: %s", 
+                replay.TheaterReplay.ReplayMetadata.Game.c_str(),
+                replay.TheaterReplay.ReplayMetadata.Author.c_str());
             ImGui::TextWrapped("%s", replay.TheaterReplay.ReplayMetadata.Info.empty() ? "No info" : replay.TheaterReplay.ReplayMetadata.Info.c_str());
 
             ImGui::TableSetColumnIndex(1);
+            size_t replaysCount = g_pSystem->Infrastructure->Replay->GetInGameReplaysCount();
+            if (replaysCount >= 12) ImGui::BeginDisabled();
             if (ImGui::Button("Restore to Game", ImVec2(-FLT_MIN, 0)))
             {
                 g_pSystem->Infrastructure->Replay->RestoreReplay(replay);
+            }
+            if (replaysCount >= 12)
+            {
+                ImGui::EndDisabled();
+
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                {
+                    ImGui::SetTooltip("The in-game replay library is full. Delete a replay to make space.");
+                }
             }
 
             if (!replay.HasTimeline) ImGui::BeginDisabled();
@@ -259,9 +273,17 @@ void ReplayManagerTab::DrawInGameReplays()
 void ReplayManagerTab::RefreshInGameCache()
 {
     if (!m_NeedsInGameRefresh) return;
+    m_CachedInGameReplays.clear();
 
-    std::filesystem::path tempDir = g_pState->Infrastructure->Settings->GetMovieTempDirectory();
-    m_CachedInGameReplays = g_pSystem->Infrastructure->Replay->GetTheaterReplays(tempDir);
+    auto dirs = g_pState->Infrastructure->Settings->GetMovieTempDirectories();
+
+    for (const auto& dirStr : dirs)
+    {
+        std::filesystem::path tempDir(dirStr);
+        auto replays = g_pSystem->Infrastructure->Replay->GetTheaterReplays(tempDir);
+
+        m_CachedInGameReplays.insert(m_CachedInGameReplays.end(), replays.begin(), replays.end());
+    }
 
     std::erase_if(m_CachedInGameReplays, [](const TheaterReplay& r) {
         return r.MovFileName == ".hotreload_trigger.mov";

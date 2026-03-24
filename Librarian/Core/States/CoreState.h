@@ -4,8 +4,9 @@
 
 struct CoreDomainState;
 struct CoreInfrastructureState;
-struct DebugState;
+class DebugState;
 
+// Main container for the application's states.
 struct CoreState
 {
 	CoreState();

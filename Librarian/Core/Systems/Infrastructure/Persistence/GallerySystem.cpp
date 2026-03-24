@@ -2,6 +2,7 @@
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Capture/FFmpegState.h"
+#include "Core/States/Infrastructure/Capture/DownloadState.h"
 #include "Core/States/Infrastructure/Persistence/GalleryState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
@@ -78,7 +79,7 @@ void GallerySystem::ProcessVideoMetadata(int videoIndex)
 	VideoData video = g_pState->Infrastructure->Gallery->GetVideo(videoIndex);
 	if (video.FullPath.empty()) return;
 
-	std::filesystem::path ffmpegPath = g_pState->Infrastructure->FFmpeg->GetExecutablePath();
+	std::filesystem::path ffmpegPath = g_pState->Infrastructure->Download->GetExecutablePath();
 
 	std::string durCmd = "\"" + ffmpegPath.string() + "\" -i \"" + video.FullPath.string() + "\" 2>&1";
 	std::string infoOutput = ExecuteSilent(durCmd);
@@ -173,20 +174,21 @@ void GallerySystem::DeleteVideo(int videoIndex)
 	VideoData video = g_pState->Infrastructure->Gallery->GetVideo(videoIndex);
 	if (video.FullPath.empty()) return;
 
-	try
-	{
-		std::filesystem::path p(video.FullPath);
-		if (std::filesystem::exists(p))
-		{
-			std::filesystem::remove(p);
-		}
-	}
-	catch (const std::filesystem::filesystem_error&) 
-	{ 
-		return; 
-	}
-
 	g_pState->Infrastructure->Gallery->DeleteVideo(videoIndex);
+
+	std::thread([path = video.FullPath]()
+	{
+		try
+		{
+			std::filesystem::path p(path);
+			if (std::filesystem::exists(p))
+				std::filesystem::remove(p);
+		}
+		catch (const std::filesystem::filesystem_error&) 
+		{
+			// ...
+		}
+	}).detach();
 }
 
 void GallerySystem::RenameVideo(int videoIndex, const std::string& newName)
@@ -213,8 +215,6 @@ void GallerySystem::RenameVideo(int videoIndex, const std::string& newName)
 		std::filesystem::rename(oldPath, newPath);
 
 		g_pState->Infrastructure->Gallery->UpdateVideoName(videoIndex, finalName);
-
-		RefreshList(oldPath.parent_path().string());
 	}
 	catch (const std::filesystem::filesystem_error&) 
 	{ 

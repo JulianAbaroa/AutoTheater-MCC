@@ -42,14 +42,14 @@ struct DirectorCommand
 struct ActionSegment
 {
 	// Collection of EventTypes that occurred within this segment's duration.
-	std::vector<EventType> TotalEvents{};
+	std::vector<EventType> Events{};
 
 	// The name and ID of the player this segment focuses on.
 	std::string PlayerName{};
 	uint8_t PlayerID{};
 
 	// The aggregated weight of all events in this segment, determining its priority.
-	int TotalScore{};
+	int Score{};
 
 	// The calculated start and end times, including pre-roll and post-roll buffers.
 	float StartTime{};

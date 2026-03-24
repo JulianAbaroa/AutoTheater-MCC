@@ -122,6 +122,7 @@ void ReplaySystem::SaveMetadata(const std::string& hash, const std::string& defa
 		file << "Hash=" << localHash << "\n";
 		file << "Author=" << author << "\n";
 		file << "Info=" << info << "\n";
+		file << "Game=" << metadata.Game << "\n";
 		file.close();
 	}
 }
@@ -129,7 +130,7 @@ void ReplaySystem::SaveMetadata(const std::string& hash, const std::string& defa
 void ReplaySystem::RenameReplay(const std::string& hash, const std::string& newName)
 {
 	std::filesystem::path metaPath;
-	std::string author = "Unknown", info = "N/A";
+	std::string author = "Unknown", info = "N/A", game = "Unknown";
 	metaPath =
 		std::filesystem::path(g_pState->Infrastructure->Settings->GetAppDataDirectory()) / "Replays" / hash / "metadata.txt";
 
@@ -142,6 +143,7 @@ void ReplaySystem::RenameReplay(const std::string& hash, const std::string& newN
 		{
 			if (line.find("Author=") == 0) author = line.substr(7);
 			else if (line.find("Info=") == 0) info = line.substr(5);
+			else if (line.find("Game=") == 0) game = line.substr(5);
 		}
 	}
 
@@ -151,6 +153,7 @@ void ReplaySystem::RenameReplay(const std::string& hash, const std::string& newN
 		outFile << "Name=" << newName << "\n";
 		outFile << "Author=" << author << "\n";
 		outFile << "Info=" << info << "\n";
+		outFile << "Game=" << game << "\n";
 		outFile.close();
 
 		g_pState->Infrastructure->Replay->SetRefreshReplayList(true);
@@ -160,24 +163,40 @@ void ReplaySystem::RenameReplay(const std::string& hash, const std::string& newN
 
 void ReplaySystem::RestoreReplay(const SavedReplay& replay)
 {
-	if (g_pState->Infrastructure->Settings->IsMovieTempDirectoryEmpty()) return;
+	if (g_pState->Infrastructure->Settings->IsMovieTempDirectoriesEmpty()) return;
 
 	try
 	{
+		auto dirs = g_pState->Infrastructure->Settings->GetMovieTempDirectories();
+		std::string targetGame = replay.TheaterReplay.ReplayMetadata.Game;
+		std::filesystem::path destFolder = "";
+
+		for (const auto& dirStr : dirs)
+		{
+			if (dirStr.find(targetGame) != std::string::npos)
+			{
+				destFolder = std::filesystem::path(dirStr);
+				break;
+			}
+		}
+
+		if (destFolder.empty())
+		{
+			g_pSystem->Debug->Log("[ReplaySystem] ERROR: No temp folder found for game %s", targetGame.c_str());
+			return;
+		}
+
 		std::filesystem::path src = replay.TheaterReplay.FullPath / replay.TheaterReplay.MovFileName;
-		std::filesystem::path dest = std::filesystem::path(g_pState->Infrastructure->Settings->GetMovieTempDirectory()) / replay.TheaterReplay.MovFileName;
+		std::filesystem::path dest = destFolder / replay.TheaterReplay.MovFileName;
 
 		if (std::filesystem::exists(dest))
 		{
 			g_pSystem->Debug->Log("[ReplaySystem] WARNING: File already exists in MCC folder, overwriting.");
 		}
 
-		std::filesystem::copy_file(
-			src, dest,
-			std::filesystem::copy_options::overwrite_existing
-		);
+		std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
 
-		g_pSystem->Debug->Log("[ReplaySystem] INFO: Replay sent to MCC Temp folder, you can now open it in-game.");
+		g_pSystem->Debug->Log("[ReplaySystem] INFO: Replay sent to %s Temp folder.", targetGame.c_str());
 	}
 	catch (const std::exception& e)
 	{
@@ -193,10 +212,12 @@ void ReplaySystem::SaveTimeline(const std::string& replayHash)
 	std::filesystem::path timelinePath =
 		std::filesystem::path(g_pState->Infrastructure->Settings->GetAppDataDirectory()) / "Replays" / replayHash / "events.timeline";
 
+	std::vector<GameEvent> timelineCopy = g_pState->Domain->Timeline->GetTimelineCopy();
+
 	if (std::filesystem::exists(timelinePath))
 	{
 		float existingLastTimestamp = this->GetLastTimestampFromFile(timelinePath.string());
-		float currentTimestamp = g_pSystem->Domain->Timeline->GetLatestTimestamp();
+		float currentTimestamp = timelineCopy.empty() ? 0.0f : timelineCopy.back().Timestamp;
 
 		if (currentTimestamp <= existingLastTimestamp)
 		{
@@ -213,8 +234,6 @@ void ReplaySystem::SaveTimeline(const std::string& replayHash)
 		file.write((char*)&len, sizeof(len));
 		file.write(s.c_str(), len);
 	};
-
-	std::vector<GameEvent> timelineCopy = g_pState->Domain->Timeline->GetTimelineCopy();;
 
 	size_t eventCount = timelineCopy.size();
 	float lastTimestamp = timelineCopy.empty() ? 0.0f : timelineCopy.back().Timestamp;
@@ -390,6 +409,7 @@ std::vector<SavedReplay> ReplaySystem::GetSavedReplays()
 					if (line.find("Name=") == 0) replay.DisplayName = line.substr(5);
 					else if (line.find("Author=") == 0) replay.TheaterReplay.ReplayMetadata.Author = line.substr(7);
 					else if (line.find("Info=") == 0) replay.TheaterReplay.ReplayMetadata.Info = line.substr(5);
+					else if (line.find("Game=") == 0) replay.TheaterReplay.ReplayMetadata.Game = line.substr(5);
 				}
 			}
 			else
@@ -483,6 +503,8 @@ TheaterReplay ReplaySystem::ScanReplay(const std::filesystem::path& filePath)
 	replay.FullPath = filePath;
 	replay.MovFileName = filePath.filename().string();
 
+	replay.ReplayMetadata.Game = filePath.parent_path().parent_path().filename().string();
+
 	std::ifstream file(filePath, std::ios::binary);
 	if (file.is_open())
 	{
@@ -490,13 +512,26 @@ TheaterReplay ReplaySystem::ScanReplay(const std::filesystem::path& filePath)
 		file.read(buffer, sizeof(buffer));
 		file.close();
 
-		char author[17] = { 0 };
-		memcpy(author, buffer + 0x88, 16);
+		std::string fileIdentifier(buffer + 0x0C);
+		bool isHalo3 = (fileIdentifier.find("halo 3") != std::string::npos);
 
-		wchar_t* wFullInfo = reinterpret_cast<wchar_t*>(buffer + 0x1C0);
+		if (isHalo3)
+		{
+			replay.ReplayMetadata.Author = "Unknown";
 
-		replay.ReplayMetadata.Author = std::string(author);
-		replay.ReplayMetadata.Info = g_pSystem->Infrastructure->Format->WStringToString(wFullInfo);
+			const char* fullInfoAscii = buffer + 0x68;
+			replay.ReplayMetadata.Info = std::string(fullInfoAscii);
+		}
+		else
+		{
+			char author[17] = { 0 };
+			memcpy(author, buffer + 0x88, 16);
+
+			wchar_t* wFullInfo = reinterpret_cast<wchar_t*>(buffer + 0x1C0);
+
+			replay.ReplayMetadata.Author = std::string(author);
+			replay.ReplayMetadata.Info = g_pSystem->Infrastructure->Format->WStringToString(wFullInfo);
+		}
 	}
 
 	return replay;
@@ -508,10 +543,13 @@ void ReplaySystem::DeleteInGameReplay(const std::filesystem::path& replayPath)
 	{
 		if (std::filesystem::exists(replayPath))
 		{
+			std::filesystem::path targetDir = replayPath.parent_path();
+
 			std::filesystem::remove(replayPath);
 			g_pSystem->Debug->Log("[ReplaySystem] INFO: Deleted in-game replay: %s",
 				replayPath.filename().string().c_str());
-			this->HotreloadReplays();
+
+			this->HotreloadReplays(targetDir);
 		}
 	}
 	catch (const std::exception& e)
@@ -536,15 +574,13 @@ float ReplaySystem::GetLastTimestampFromFile(const std::string& timelinePath)
 	return lastTimestamp;
 }
 
-void ReplaySystem::HotreloadReplays()
+void ReplaySystem::HotreloadReplays(const std::filesystem::path& targetDir)
 {
 	try
 	{
-		std::filesystem::path dir = std::filesystem::path(g_pState->Infrastructure->Settings->GetMovieTempDirectory());
-
-		if (std::filesystem::exists(dir))
+		if (std::filesystem::exists(targetDir) && std::filesystem::is_directory(targetDir))
 		{
-			std::filesystem::path tempFile = dir / ".hotreload_trigger.mov";
+			std::filesystem::path tempFile = targetDir / ".hotreload_trigger.mov";
 
 			if (std::filesystem::exists(tempFile))
 			{
@@ -554,11 +590,38 @@ void ReplaySystem::HotreloadReplays()
 			std::ofstream file(tempFile);
 			file.close();
 
-			g_pSystem->Debug->Log("[ReplaySystem] INFO: Replays hotreload executed.");
+			g_pSystem->Debug->Log("[ReplaySystem] INFO: Replays hotreload executed in %s.", targetDir.filename().string().c_str());
 		}
 	}
 	catch (const std::exception& e)
 	{
 		g_pSystem->Debug->Log("[ReplaySystem] ERROR: In hotreload replays. %s.", e.what());
 	}
+}
+
+size_t ReplaySystem::GetInGameReplaysCount() const
+{
+	size_t count = 0;
+	auto dirs = g_pState->Infrastructure->Settings->GetMovieTempDirectories();
+
+	for (const auto& dirStr : dirs)
+	{
+		std::filesystem::path dir(dirStr);
+
+		if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir))
+		{
+			for (const auto& entry : std::filesystem::directory_iterator(dir))
+			{
+				if (entry.is_regular_file() && entry.path().extension() == ".mov")
+				{
+					if (entry.path().filename().string() != ".hotreload_trigger.mov")
+					{
+						count++;
+					}
+				}
+			}
+		}
+	}
+
+	return count;
 }

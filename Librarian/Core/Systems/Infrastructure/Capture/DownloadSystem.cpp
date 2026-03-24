@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
-#include "Core/States/Infrastructure/Capture/FFmpegState.h"
+#include "Core/States/Infrastructure/Capture/DownloadState.h"
 #include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/Capture/DownloadSystem.h"
@@ -18,7 +18,7 @@ class DownloadSystem::DownloadProgress : public IBindStatusCallback
 public:
 	STDMETHOD(OnProgress)(ULONG ulProgress, ULONG ulProgressMax, ULONG ulStatusCode, LPCWSTR szStatusText)
 	{
-		if (!g_pState->Infrastructure->FFmpeg->IsDownloadInProgress())
+		if (!g_pState->Infrastructure->Download->IsDownloadInProgress())
 		{
 			return E_ABORT;
 		}
@@ -26,7 +26,7 @@ public:
 		if (ulProgressMax > 0)
 		{
 			float percent = (static_cast<float>(ulProgress) / ulProgressMax) * 100.0f;
-			g_pState->Infrastructure->FFmpeg->SetDownloadProgress(percent);
+			g_pState->Infrastructure->Download->SetDownloadProgress(percent);
 		}
 
 		return S_OK;
@@ -58,10 +58,10 @@ public:
 bool DownloadSystem::DownloadDependencies()
 {
 	if (!g_pState->Infrastructure->Settings->ShouldUseAppData()) return false;
-	if (g_pState->Infrastructure->FFmpeg->IsDownloadInProgress()) return false;
+	if (g_pState->Infrastructure->Download->IsDownloadInProgress()) return false;
 
-	g_pState->Infrastructure->FFmpeg->SetDownloadInProgress(true);
-	g_pState->Infrastructure->FFmpeg->SetDownloadProgress(0.0f);
+	g_pState->Infrastructure->Download->SetDownloadInProgress(true);
+	g_pState->Infrastructure->Download->SetDownloadProgress(0.0f);
 
 	std::thread([this]() {
 		std::string appData = g_pState->Infrastructure->Settings->GetAppDataDirectory();
@@ -69,7 +69,6 @@ bool DownloadSystem::DownloadDependencies()
 		CreateDirectoryA(ffmpegDir.c_str(), NULL);
 
 		std::string exePath = ffmpegDir + "\\ffmpeg.exe";
-		std::string zipPath = ffmpegDir + "\\libavformat.zip";
 
 		DownloadProgress progress;
 
@@ -82,14 +81,14 @@ bool DownloadSystem::DownloadDependencies()
 		{
 			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Failed to download ffmpeg.exe. HRESULT: 0x%X", hr);
 			DeleteFileA(exePath.c_str());
-			g_pState->Infrastructure->FFmpeg->SetFFmpegInstalled(false);
-			g_pState->Infrastructure->FFmpeg->SetDownloadInProgress(false);
+			g_pState->Infrastructure->Download->SetFFmpegInstalled(false);
+			g_pState->Infrastructure->Download->SetDownloadInProgress(false);
 			return;
 		}
 
-		g_pState->Infrastructure->FFmpeg->SetDownloadProgress(100.0f);
-		g_pState->Infrastructure->FFmpeg->SetDownloadInProgress(false);
-		g_pState->Infrastructure->FFmpeg->SetFFmpegInstalled(true);
+		g_pState->Infrastructure->Download->SetDownloadProgress(100.0f);
+		g_pState->Infrastructure->Download->SetDownloadInProgress(false);
+		g_pState->Infrastructure->Download->SetFFmpegInstalled(true);
 
 		g_pSystem->Debug->Log("[FFmpegSystem] INFO: ffmpeg.exe downloaded.");
 		}).detach();
@@ -116,13 +115,13 @@ bool DownloadSystem::UninstallDependencies()
 		return false;
 	}
 
-	g_pState->Infrastructure->FFmpeg->SetFFmpegInstalled(false);
+	g_pState->Infrastructure->Download->SetFFmpegInstalled(false);
 	g_pSystem->Debug->Log("[FFmpegSystem] INFO: Dependencies uninstalled successfully.");
 	return true;
 }
 
 void DownloadSystem::CancelDownload()
 {
-	g_pState->Infrastructure->FFmpeg->SetDownloadInProgress(false);
+	g_pState->Infrastructure->Download->SetDownloadInProgress(false);
 	g_pSystem->Debug->Log("[FFmpegSystem] WARNING: Download cancellation requested.");
 }

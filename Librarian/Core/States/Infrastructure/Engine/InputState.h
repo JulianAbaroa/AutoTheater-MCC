@@ -5,7 +5,7 @@
 #include <queue>
 #include <mutex>
 
-struct InputState
+class InputState
 {
 public:
 	InputRequest GetNextRequest() const;
@@ -16,7 +16,8 @@ public:
 
 	void EnqueueRequest(const InputRequest& request, bool uniqueRequest = false);
 	bool DequeueRequest(InputRequest& outRequest);
-	void Reset();
+
+	void Cleanup();
 
 private:
 	std::queue<InputRequest> m_Queue{};

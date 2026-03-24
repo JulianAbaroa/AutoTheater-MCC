@@ -7,7 +7,7 @@
 #include <deque>
 #include <mutex>
 
-struct DebugState
+class DebugState
 {
 public:
 	void PushBack(LogEntry entry);

@@ -64,21 +64,22 @@ void EventRegistryTab::DrawEventRow(EventInfo& item, const std::string& filter)
 	ImGui::PushID((int)item.Type + (int)item.Class * 1000);
 	ImGui::BeginGroup();
 
+	float sliderHeight = ImGui::GetFrameHeight();
+	float textHeight = ImGui::GetTextLineHeight();
+	float offsetY = (sliderHeight - textHeight) * 0.5f;
+
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + offsetY);
 	if (item.Weight > 50) ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), " %s", name.c_str());
 	else ImGui::Text(" %s", name.c_str());
-
 	if (ImGui::IsItemHovered()) this->DrawEventTooltip(item);
 
 	ImGui::SameLine(ImGui::GetContentRegionAvail().x - 220.0f);
 	ImGui::SetNextItemWidth(210.0f);
-
-	if (ImGui::SliderInt("##slider", &item.Weight, 0, 100, "Weight: %d"))
-	{
-		g_pState->Domain->EventRegistry->UpdateWeightsByType(item.Type, item.Weight);
-	}
+	ImGui::SliderInt("##slider", &item.Weight, 0, 100, "Weight: %d");
 
 	if (ImGui::IsItemDeactivatedAfterEdit())
 	{
+		g_pState->Domain->EventRegistry->UpdateWeightsByType(item.Type, item.Weight);
 		g_pSystem->Domain->EventRegistry->SaveEventRegistry();
 		m_NeedsRefresh.store(true);
 	}

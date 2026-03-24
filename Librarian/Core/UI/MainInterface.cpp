@@ -38,7 +38,7 @@ void MainInterface::Draw()
 	// Default window settings
 	ImGui::SetNextWindowSize(ImVec2(1000, 600), ImGuiCond_FirstUseEver);
 
-	bool open = true;
+	bool open = g_pState->Infrastructure->Settings->IsMenuVisible();
 	bool isVisible = ImGui::Begin("AutoTheater - Control Panel", &open, ImGuiWindowFlags_None);
 
 	if (!open)
@@ -54,6 +54,7 @@ void MainInterface::Draw()
 
 	ImGui::End();
 }
+
 
 void MainInterface::HandleWindowReset()
 {
@@ -209,7 +210,7 @@ void MainInterface::DrawTabs()
 
 	if (!ImGui::BeginTabBar("MainTabs")) return;
 
-	auto AddTab = [](const char* label, auto drawFn, bool forceOpen, const ImVec4* alertColor) {
+	auto AddTab = [](const char* label, auto drawFn, bool forceOpen, const ImVec4* alertColor, bool disabled = false) {
 		bool pushedColor = false;
 
 		if (alertColor != nullptr)
@@ -235,32 +236,40 @@ void MainInterface::DrawTabs()
 			pushedColor = true;
 		}
 
+		if (disabled) ImGui::BeginDisabled(true);
+
 		ImGuiTabItemFlags flags = forceOpen ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
 
-		if (ImGui::BeginTabItem(label, nullptr, flags))
-		{
+		if (ImGui::BeginTabItem(label, nullptr, flags)) {
 			drawFn();
 			ImGui::EndTabItem();
+		}
+
+		if (disabled) {
+			ImGui::EndDisabled();
+
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+				ImGui::SetTooltip("Local storage is required. Enable it in Settings -> Data Persistence.");
+			}
 		}
 
 		if (pushedColor) ImGui::PopStyleColor(3);
 	};
 
+	bool useAppData = g_pState->Infrastructure->Settings->ShouldUseAppData();
+
 	// Primary
 	AddTab("Timeline", []() { g_pUI->Timeline->Draw(); }, false, nullptr);
 	AddTab("Theater", []() { g_pUI->Theater->Draw();  }, false, nullptr);
 	AddTab("Director", []() { g_pUI->Director->Draw(); }, false, nullptr);
+
+	AddTab("Event Registry", []() { g_pUI->EventRegistry->Draw(); }, false, nullptr, !useAppData);
+
 	AddTab("Settings", []() { g_pUI->Settings->Draw(); }, firstLaunch, nullptr);
 
 	// Optional
-	bool useAppData = g_pState->Infrastructure->Settings->ShouldUseAppData();
-	if (!useAppData) ImGui::BeginDisabled();
-
-	AddTab("Replay Manager", []() { g_pUI->Replay->Draw();        }, false, nullptr);
-	AddTab("Event Registry", []() { g_pUI->EventRegistry->Draw(); }, false, nullptr);
-	AddTab("Capture", []() { g_pUI->Capture->Draw();       }, false, nullptr);
-
-	if (!useAppData) ImGui::EndDisabled();
+	AddTab("Replay Manager", []() { g_pUI->Replay->Draw(); }, false, nullptr, !useAppData);
+	AddTab("Capture", []() { g_pUI->Capture->Draw(); }, false, nullptr, !useAppData);
 
 	// Logs
 	const ImVec4* activeAlert = nullptr;

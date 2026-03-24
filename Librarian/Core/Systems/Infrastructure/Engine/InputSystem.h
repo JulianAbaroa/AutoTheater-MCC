@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Common/Types/InputTypes.h"
+#include "Core/Common/Types/BlamTypes.h"
 #include <functional>
 #include <chrono>
 #include <map>

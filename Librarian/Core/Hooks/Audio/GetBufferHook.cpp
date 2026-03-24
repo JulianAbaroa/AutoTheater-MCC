@@ -17,7 +17,7 @@
 HRESULT __stdcall GetBufferHook::HookedGetBuffer(IAudioRenderClient* pThis, UINT32 NumFramesRequested, BYTE** ppData)
 {
     HRESULT hr = m_OriginalFunction(pThis, NumFramesRequested, ppData);
-    if (!g_pState->Domain->Theater->IsTheaterMode() || !g_pState->Domain->Director->IsInitialized()) return hr;
+    if (!g_pState->Domain->Theater->IsTheaterMode()) return hr;
 
     if (hr == S_OK && ppData != nullptr)
     {

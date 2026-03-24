@@ -23,7 +23,7 @@ HRESULT __stdcall GetServiceHook::HookedGetService(IAudioClient* pThis, REFIID r
 		IAudioRenderClient* pRenderClient = (IAudioRenderClient*)*ppv;
 		AudioFormat format = g_pState->Infrastructure->Audio->GetAudioInstance(pThis);
 
-		if (format.Channels == 8)
+		if (format.Channels == 8 || format.Channels == 2 || format.Channels == 6)
 		{
 			g_pState->Infrastructure->Audio->RegisterAudioInstance(
 				pRenderClient,
