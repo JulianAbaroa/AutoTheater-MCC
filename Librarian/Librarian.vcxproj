@@ -238,6 +238,7 @@
     <ClInclude Include="Core\Threads\Domain\MainThread.h" />
     <ClInclude Include="Core\Threads\Infrastructure\CaptureThread.h" />
     <ClInclude Include="Core\Threads\Infrastructure\InputThread.h" />
+    <ClInclude Include="Core\Threads\Infrastructure\WriterThread.h" />
     <ClInclude Include="Core\UI\CoreUI.h" />
     <ClInclude Include="Core\UI\Tabs\Logs\LogsTab.h" />
     <ClInclude Include="Core\UI\Tabs\Optional\CaptureTab.h" />
@@ -338,6 +339,7 @@
     <ClCompile Include="Core\Threads\Domain\MainThread.cpp" />
     <ClCompile Include="Core\Threads\Infrastructure\CaptureThread.cpp" />
     <ClCompile Include="Core\Threads\Infrastructure\InputThread.cpp" />
+    <ClCompile Include="Core\Threads\Infrastructure\WriterThread.cpp" />
     <ClCompile Include="Core\UI\CoreUI.cpp" />
     <ClCompile Include="Core\UI\Tabs\Logs\LogsTab.cpp" />
     <ClCompile Include="Core\UI\Tabs\Optional\CaptureTab.cpp" />

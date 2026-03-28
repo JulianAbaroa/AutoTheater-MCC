@@ -63,8 +63,7 @@ void VideoSystem::PreallocatePool(UINT width, UINT height)
 {
     size_t newBufferSize = static_cast<size_t>(width) * height * 4;
     auto encoderConfig = g_pState->Infrastructure->FFmpeg->GetEncoderConfig();
-    int maxFrames = encoderConfig.MaxBufferedFrames;
-
+    int maxFrames = encoderConfig.MaxBufferedFrames + 1;
     {
         std::scoped_lock lock(m_PoolMutex, m_QueueMutex);
         if (newBufferSize == m_BufferSize && (int)m_FreeBuffers.size() >= 8)
@@ -76,37 +75,85 @@ void VideoSystem::PreallocatePool(UINT width, UINT height)
         m_BufferSize = newBufferSize;
         m_MaxPoolSize = maxFrames;
     }
-
     std::deque<std::vector<uint8_t>> initialBuffers;
     for (int i = 0; i < 8; i++)
     {
         std::vector<uint8_t> buf(newBufferSize, 0);
         initialBuffers.push_back(std::move(buf));
     }
-
     {
         std::scoped_lock lock(m_PoolMutex, m_QueueMutex);
         m_FreeBuffers = std::move(initialBuffers);
     }
-
     g_pSystem->Debug->Log("[VideoSystem] INFO: Pool initialized with 8 frames. Will grow up to %d. FrameSize: %zu MB",
         maxFrames, newBufferSize / (1024ULL * 1024));
 }
 
 void VideoSystem::ReturnBuffer(std::vector<uint8_t>&& buffer)
 {
-    std::lock_guard<std::mutex> lock(m_PoolMutex);
-
-    if (buffer.size() != m_BufferSize)
+    bool shouldGrow = false;
     {
-        return;
+        std::lock_guard<std::mutex> lock(m_PoolMutex);
+        if (buffer.size() != m_BufferSize)
+        {
+            m_PoolDiscarded++;
+            g_pSystem->Debug->Log("[VideoSystem] WARNING: ReturnBuffer MISMATCH. Got=%zu Expected=%zu Pool=%zu",
+                buffer.size(), m_BufferSize, m_FreeBuffers.size());
+            return;
+        }
+        if (m_FreeBuffers.size() < (size_t)m_MaxPoolSize)
+        {
+            m_FreeBuffers.push_back(std::move(buffer));
+            shouldGrow = m_FreeBuffers.size() < (size_t)m_MaxPoolSize;
+            m_PoolReturned++;
+        }
     }
-
-    if (m_FreeBuffers.size() < m_MaxPoolSize)
+    if (shouldGrow)
     {
-        m_FreeBuffers.push_back(std::move(buffer));
+        std::vector<uint8_t> newBuf(m_BufferSize, 0);
+        {
+            std::lock_guard<std::mutex> lock(m_PoolMutex);
+            if (newBuf.size() == m_BufferSize && m_FreeBuffers.size() < (size_t)m_MaxPoolSize)
+            {
+                m_FreeBuffers.push_back(std::move(newBuf));
+            }
+        }
     }
 }
+
+
+int VideoSystem::GetPoolSize() const
+{
+    std::lock_guard<std::mutex> lock(m_PoolMutex); 
+    return (int)m_FreeBuffers.size();
+}
+
+int VideoSystem::GetPoolMaxSize() const
+{
+    return m_MaxPoolSize;
+}
+
+size_t VideoSystem::GetBufferSize() const
+{
+    return m_BufferSize;
+}
+
+
+uint64_t VideoSystem::GetPoolTaken() const
+{
+    return m_PoolTaken.load();
+}
+
+uint64_t VideoSystem::GetPoolReturned() const
+{
+    return m_PoolReturned.load();
+}
+
+uint64_t VideoSystem::GetPoolDiscarded() const
+{
+    return m_PoolDiscarded.load();
+}
+
 
 void VideoSystem::PushFrame(const uint8_t* pData, UINT width, UINT height, UINT rowPitch, double engineTime)
 {
@@ -123,6 +170,12 @@ void VideoSystem::PushFrame(const uint8_t* pData, UINT width, UINT height, UINT 
         {
             bufferToUse = std::move(m_FreeBuffers.front());
             m_FreeBuffers.pop_front();
+            m_PoolTaken++;
+        }
+        else
+        {
+            g_pSystem->Debug->Log("[VideoSystem] WARNING: PushFrame POOL EMPTY. Allocating new buffer. Pool=%zu",
+                m_FreeBuffers.size());
         }
     }
 
@@ -147,7 +200,7 @@ void VideoSystem::PushFrame(const uint8_t* pData, UINT width, UINT height, UINT 
     {
         std::lock_guard<std::mutex> lock(m_QueueMutex);
 
-        if (m_FrameQueue.size() > m_MaxFrames)
+        if (m_FrameQueue.size() >= m_MaxFrames)
         {
             std::lock_guard<std::mutex> poolLock(m_PoolMutex);
             m_FreeBuffers.push_back(std::move(bufferToUse));

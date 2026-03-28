@@ -1127,6 +1127,43 @@ void CaptureTab::DrawTelemetryPopup()
         }
 
         ImGui::Spacing();
+        ImGui::TextDisabled("Memory Pool");
+        ImGui::Separator();
+
+        if (ImGui::BeginTable("##PoolTable", 2, ImGuiTableFlags_SizingStretchSame))
+        {
+            int poolCurrent = g_pSystem->Infrastructure->Video->GetPoolSize();
+            int poolMax = g_pSystem->Infrastructure->Video->GetPoolMaxSize() - 1;
+            size_t bufferSize = g_pSystem->Infrastructure->Video->GetBufferSize();
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::Text("Pool Buffers");
+            ImGui::TableSetColumnIndex(1);
+
+            float poolFill = (poolMax > 0) ? (float)poolCurrent / (float)poolMax : 0.0f;
+            ImVec4 poolColor = (poolFill < 0.1f) ? ImVec4(1.0f, 0.2f, 0.2f, 1.0f) :
+                (poolFill < 0.3f) ? ImVec4(1.0f, 0.6f, 0.0f, 1.0f) :
+                ImVec4(0.2f, 0.7f, 0.2f, 1.0f);
+
+            std::string poolText = std::to_string(poolCurrent) + " / " + std::to_string(poolMax);
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, poolColor);
+            ImGui::ProgressBar(poolFill, ImVec2(-FLT_MIN, 0), poolText.c_str());
+            ImGui::PopStyleColor();
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::Text("Frame Size");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%.1f MB", bufferSize / (1024.0f * 1024.0f));
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::Text("Total Pool RAM");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%.0f MB", (poolCurrent * bufferSize) / (1024.0f * 1024.0f));
+
+            ImGui::EndTable();
+        }
+
+        ImGui::Spacing();
         ImGui::TextDisabled("Write Latency");
         ImGui::Separator();
 

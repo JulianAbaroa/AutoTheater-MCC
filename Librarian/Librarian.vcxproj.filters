@@ -473,6 +473,9 @@
     <ClInclude Include="Core\Common\Types\TheaterTypes.h">
       <Filter>Core\Common\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Threads\Infrastructure\WriterThread.h">
+      <Filter>Core\Threads\Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\DllMain.cpp">
@@ -773,6 +776,9 @@
     </ClCompile>
     <ClCompile Include="Core\States\Infrastructure\Capture\DownloadState.cpp">
       <Filter>Core\States\Infrastructure\Capture</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Threads\Infrastructure\WriterThread.cpp">
+      <Filter>Core\Threads\Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

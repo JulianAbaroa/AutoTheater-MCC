@@ -17,4 +17,5 @@ private:
 	std::thread m_DirectorThread{};
 	std::thread m_InputThread{};
 	std::thread m_CaptureThread{};
+	std::thread m_WriterThread{};
 };

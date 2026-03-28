@@ -18,6 +18,14 @@ public:
 	void PreallocatePool(UINT width, UINT height);
 	void ReturnBuffer(std::vector<uint8_t>&& buffer);
 
+	int GetPoolSize() const;
+	int GetPoolMaxSize() const;
+	size_t GetBufferSize() const;
+
+	uint64_t GetPoolTaken() const;
+	uint64_t GetPoolReturned() const;
+	uint64_t GetPoolDiscarded() const;
+
 	void Cleanup();
 
 private:
@@ -25,11 +33,15 @@ private:
 	std::mutex m_QueueMutex;
 
 	std::deque<std::vector<uint8_t>> m_FreeBuffers;
-	std::mutex m_PoolMutex;
+	mutable std::mutex m_PoolMutex;
 
 	int m_MaxPoolSize = 120;
 	size_t m_BufferSize = 0;
 
 	size_t m_CachedBufferSize{};
-	int m_MaxFrames = 60;
+	int m_MaxFrames = 0;
+
+	std::atomic<uint64_t> m_PoolTaken{ 0 };
+	std::atomic<uint64_t> m_PoolReturned{ 0 };
+	std::atomic<uint64_t> m_PoolDiscarded{ 0 };
 };

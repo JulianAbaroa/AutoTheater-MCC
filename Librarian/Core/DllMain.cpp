@@ -16,6 +16,7 @@
 #include "Core/Threads/Domain/DirectorThread.h"
 #include "Core/Threads/Infrastructure/InputThread.h"
 #include "Core/Threads/Infrastructure/CaptureThread.h"
+#include "Core/Threads/Infrastructure/WriterThread.h"
 #include "External/minhook/include/MinHook.h"
 #include <fstream>
 #include <chrono>
@@ -90,6 +91,7 @@ DWORD WINAPI AppLoader::InitializeLibrarian(LPVOID lpParam)
     g_DllInstance.m_InputThread = std::thread(&InputThread::Run, g_pThread->Input.get());
     g_DllInstance.m_DirectorThread = std::thread(&DirectorThread::Run, g_pThread->Director.get());
     g_DllInstance.m_CaptureThread = std::thread(&CaptureThread::Run, g_pThread->Capture.get());
+    g_DllInstance.m_WriterThread = std::thread(&WriterThread::Run, g_pThread->Writer.get());
 
     g_pSystem->Debug->Log("[DllMain] INFO: AutoTheater Initialized.");
     return 0;
@@ -111,6 +113,7 @@ void AppLoader::DeinitializeLibrarian(LPVOID lpReserved)
         if (m_InputThread.joinable()) m_InputThread.detach();
         if (m_DirectorThread.joinable()) m_DirectorThread.detach();
         if (m_CaptureThread.joinable()) m_CaptureThread.detach();
+        if (m_WriterThread.joinable()) m_WriterThread.detach();
 
         g_App.reset();
 

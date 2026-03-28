@@ -6,6 +6,7 @@
 #include "Core/States/Infrastructure/Capture/FFmpegState.h"
 #include "Core/States/Infrastructure/Capture/DownloadState.h"
 #include "Core/States/Infrastructure/Capture/AudioState.h"
+#include "Core/States/Infrastructure/Capture/VideoState.h"
 #include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
@@ -21,9 +22,7 @@ bool FFmpegSystem::Start(const std::string& outputPath, int width, int height, f
 {
 	g_pSystem->Debug->Log("[FFmpegSystem] Starting recording.");
 
-	g_pSystem->Debug->Log("[FFmpegSystem] T0: Entering Start()");
 	g_pSystem->Infrastructure->Video->PreallocatePool(width, height);
-	g_pSystem->Debug->Log("[FFmpegSystem] T1: Pool ready, creating pipes");
 	
 	m_SessionID++;
 	m_VideoConnected.store(false);
@@ -31,7 +30,6 @@ bool FFmpegSystem::Start(const std::string& outputPath, int width, int height, f
 
 	std::string videoPipeName, audioPipeName;
 	if (!this->CreatePipes(videoPipeName, audioPipeName, width, height)) return false;
-	g_pSystem->Debug->Log("[FFmpegSystem] T2: Pipes created, launching FFmpeg");
 
 	auto waitForConnection = [this](HANDLE hPipe, std::atomic<bool>* flag, std::string name) {
 		OVERLAPPED ov = {};
@@ -77,7 +75,6 @@ bool FFmpegSystem::Start(const std::string& outputPath, int width, int height, f
 
 	std::string cmd = this->BuildFFmpegCommand(outputPath, width, height, fps, videoPipeName, audioPipeName);
 	if (!this->LaunchFFmpeg(cmd)) return false;
-	g_pSystem->Debug->Log("[FFmpegSystem] T3: FFmpeg launched, waiting for pipe connection");
 
 	auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
 	while (!m_VideoConnected.load())
@@ -103,7 +100,6 @@ bool FFmpegSystem::Start(const std::string& outputPath, int width, int height, f
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
-	g_pSystem->Debug->Log("[FFmpegSystem] T4: Pipe connected, recording active");
 	
 	g_pState->Infrastructure->FFmpeg->SetRecording(true);
 	g_pSystem->Debug->Log("[FFmpegSystem] INFO: Recording session %d started.", m_SessionID);
@@ -180,7 +176,7 @@ bool FFmpegSystem::WriteVideo(void* data, size_t size)
 	}
 
 	m_ConsecutiveWriteFailures++;
-	g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Video write failed (Timeout 5s). Failures: %d", m_ConsecutiveWriteFailures);
+	g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Video write failed. Failures: %d", m_ConsecutiveWriteFailures);
 
 	if (m_ConsecutiveWriteFailures >= m_MaxConsecutiveWriteFailures)
 	{
@@ -216,7 +212,7 @@ bool FFmpegSystem::WriteAudio(const void* data, size_t size)
 		}
 	}
 
-	if (this->WriteWithTimeout(hPipe, data, size, 3000, false))
+	if (this->WriteWithTimeout(hPipe, data, size, 5000, false))
 	{
 		m_LastAudioWriteTime = now;
 		return true;
@@ -285,7 +281,7 @@ bool FFmpegSystem::CreatePipes(std::string& videoPipeName, std::string& audioPip
 
 	DWORD frameSizesBytes = width * height * 4;
 	auto encoderConfig = g_pState->Infrastructure->FFmpeg->GetEncoderConfig();
-	DWORD videoBufferSize = frameSizesBytes * 16;
+	DWORD videoBufferSize = frameSizesBytes * encoderConfig.MaxBufferedFrames;
 	DWORD audioBufferSize = 64 * 1024 * 1024;
 
 	g_pSystem->Debug->Log("[FFmpegSystem] INFO: Requesting video pipe buffer: %lu MB (%lu frames x %lu MB/frame)",
@@ -307,8 +303,24 @@ bool FFmpegSystem::CreatePipes(std::string& videoPipeName, std::string& audioPip
 			return h;
 		}
 
-		g_pSystem->Debug->Log("[FFmpegSystem] INFO: Pipe '%s' created OK. Requested buffer: %lu MB",
-			name.c_str(), size / (1024 * 1024));
+		DWORD outBuf = 0, inBuf = 0, maxInst = 0;
+		if (GetNamedPipeInfo(h, NULL, &outBuf, &inBuf, &maxInst))
+		{
+			g_pSystem->Debug->Log("[FFmpegSystem] INFO: Pipe '%s' info: Requested %lu MB | ACTUAL %lu MB",
+				name.c_str(), size / (1024 * 1024), outBuf / (1024 * 1024));
+
+			if (outBuf < size)
+			{
+				g_pSystem->Debug->Log("[FFmpegSystem] WARNING: Windows CAPPED the pipe buffer! (Requested %lu bytes, got %lu)",
+					size, outBuf);
+			}
+		}
+		else
+		{
+			DWORD err = GetLastError();
+			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: GetNamedPipeInfo FAILED for '%s'. WinError: %lu",
+				name.c_str(), err);
+		}
 
 		return h;
 	};
