@@ -269,3 +269,17 @@ void TheaterSystem::SetAnchorReplayTime(float anchorReplayTime)
 {
 	m_AnchorReplayTime.store(anchorReplayTime);
 }
+
+
+void TheaterSystem::Cleanup()
+{
+	m_IsReplaySpeedInitialized.store(false);
+
+	m_RealTimeScale.store(1.0f);
+	m_AnchorSystemTime.store(0.0);
+	m_AnchorReplayTime.store(0.0f);
+
+	g_pState->Domain->Theater->Cleanup();
+
+	g_pSystem->Debug->Log("[TheaterSystem] INFO: Cleanup completed.");
+}

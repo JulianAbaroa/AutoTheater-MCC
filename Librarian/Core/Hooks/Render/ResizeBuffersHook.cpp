@@ -9,6 +9,8 @@
 #include "Core/Systems/Infrastructure/Persistence/GallerySystem.h"
 #include "Core/Systems/Infrastructure/Engine/RenderSystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
+#include "Core/Threads/CoreThread.h"
+#include "Core/Threads/Infrastructure/CaptureThread.h"
 #include "Core/Hooks/Render/ResizeBuffersHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -21,9 +23,8 @@ HRESULT __stdcall ResizeBuffersHook::HookedResizeBuffers(IDXGISwapChain* pSwapCh
 
 	if (g_pState->Infrastructure->FFmpeg->IsRecording())
 	{
+		g_pThread->Capture->StopRecording(true);
 		g_pSystem->Debug->Log("[ResizeBuffers] WARNING: Recording stopped due to resolution change.");
-		g_pSystem->Infrastructure->FFmpeg->Stop();
-		g_pSystem->Infrastructure->Gallery->RefreshList(g_pState->Infrastructure->FFmpeg->GetOutputPath());
 	}
 
 	UINT evenWidth = Width & ~1;

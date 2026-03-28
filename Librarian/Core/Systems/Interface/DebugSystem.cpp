@@ -63,10 +63,15 @@ std::string DebugSystem::GetTimestampString()
 {
     SYSTEMTIME st;
     GetLocalTime(&st);
-    char buf[64]{};
-    snprintf(buf, sizeof(buf), "%04u-%02u-%02u %02u:%02u:%02u ",
-        st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
-    return std::string(buf);
+
+    auto pad = [](int val) { return (val < 10 ? "0" : "") + std::to_string(val); };
+
+    return std::to_string(st.wYear) + "-" +
+        pad(st.wMonth) + "-" +
+        pad(st.wDay) + " " +
+        pad(st.wHour) + ":" +
+        pad(st.wMinute) + ":" +
+        pad(st.wSecond) + " ";
 }
 
 void DebugSystem::ParseEntryTags(LogEntry& entry, std::string& body)

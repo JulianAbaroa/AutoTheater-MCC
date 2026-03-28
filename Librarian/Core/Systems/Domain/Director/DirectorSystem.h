@@ -21,6 +21,8 @@ public:
 	void Cleanup();
 
 private:
+	void HandleEndOfScript(float currentTime);
+
 	void PrioritizeEvents(std::vector<GameEvent> timeline);
 	void RemoveDuplicates(std::vector<GameEvent> timeline);
 	bool HasTheSamePlayers(const std::vector<PlayerInfo>& listA, const std::vector<PlayerInfo>& listB);

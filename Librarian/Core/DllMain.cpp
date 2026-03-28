@@ -22,7 +22,7 @@
 #pragma comment(lib, "shlwapi.lib")
 
 // TODO: It crashes when alt+f4 on director mode.
-// TODO: Director lifecycle broken.
+// TODO: Add feedback to capture tab when recording is active.
 
 using namespace std::chrono_literals;
 

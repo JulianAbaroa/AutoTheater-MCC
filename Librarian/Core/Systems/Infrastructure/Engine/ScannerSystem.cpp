@@ -7,12 +7,6 @@
 
 uintptr_t ScannerSystem::FindPattern(const Signature& sig, const wchar_t* moduleName)
 {
-    if (sig.name != Signatures::TelemetryIdModifier.name &&
-        sig.name != Signatures::EngineInitialize.name)
-    {
-        g_pSystem->Debug->Log("[ScannerSystem] INFO: Scanning pattern '%s'", sig.name ? sig.name : "<null>");
-    }
-
     return FindPattern(sig.pattern, moduleName);
 }
 
@@ -20,15 +14,7 @@ uintptr_t ScannerSystem::FindPattern(const char* pattern, const wchar_t* moduleN
 {
     HMODULE hModule = GetModuleHandle(moduleName);
 
-    if (!hModule) 
-    {
-        if (pattern != Signatures::EngineInitialize.pattern)
-        {
-            g_pSystem->Debug->Log("[ScannerSystem] ERROR: Could not get handle for module.", hModule);
-        }
-
-        return 0;
-    }
+    if (!hModule) return 0;
 
     MODULEINFO modInfo;
     if (!GetModuleInformation(GetCurrentProcess(), hModule, &modInfo, sizeof(MODULEINFO))) 

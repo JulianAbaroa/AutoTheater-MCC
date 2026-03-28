@@ -61,17 +61,26 @@ void GallerySystem::LoadMetadataAsync(int videoIndex)
 	m_Condition.notify_one();
 }
 
-std::string GallerySystem::FormatDuration(float duration) 
+std::string GallerySystem::FormatDuration(float duration)
 {
 	if (duration <= 0.0f) return "Live / Recording...";
 
 	int totalSeconds = static_cast<int>(duration);
-	int minutes = totalSeconds / 60;
+	int hours = totalSeconds / 3600;
+	int minutes = (totalSeconds % 3600) / 60;
 	int seconds = totalSeconds % 60;
 
-	char buf[32];
-	sprintf_s(buf, "%02d:%02d", minutes, seconds);
-	return std::string(buf);
+	if (hours > 0) 
+	{
+		return std::to_string(hours) + ":" +
+			(minutes < 10 ? "0" : "") + std::to_string(minutes) + ":" +
+			(seconds < 10 ? "0" : "") + std::to_string(seconds);
+	}
+	else 
+	{
+		return (minutes < 10 ? "0" : "") + std::to_string(minutes) + ":" +
+			(seconds < 10 ? "0" : "") + std::to_string(seconds);
+	}
 }
 
 void GallerySystem::ProcessVideoMetadata(int videoIndex) 
@@ -225,21 +234,24 @@ void GallerySystem::RenameVideo(int videoIndex, const std::string& newName)
 
 std::string GallerySystem::FormatBytes(uint64_t bytes)
 {
-	const char* units[] = { "B", "KB", "MB", "GB" };
+	const char* units[] = { "B", "KB", "MB", "GB", "TB" };
 	int i = 0;
 	double dblBytes = static_cast<double>(bytes);
 
-	while (dblBytes >= 1024 && i < 3)
+	while (dblBytes >= 1024 && i < 4)
 	{
 		dblBytes /= 1024;
 		i++;
 	}
 
-	char buf[64];
-	sprintf_s(buf, "%.2f %s", dblBytes, units[i]);
-	return std::string(buf);
-}
+	std::string s = std::to_string(dblBytes);
+	size_t pos = s.find('.');
+	if (pos != std::string::npos && pos + 3 < s.length()) {
+		s = s.substr(0, pos + 3);
+	}
 
+	return s + " " + units[i];
+}
 
 size_t GallerySystem::GetPendingCount()
 {
@@ -269,14 +281,13 @@ std::string GallerySystem::ExecuteSilent(const std::string& command)
 	if (CreateProcessA(NULL, (LPSTR)command.c_str(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) 
 	{
 		CloseHandle(hStdOutWrite);
-		char buffer[4096];
+		std::vector<char> buffer(8192);
 		DWORD bytesRead;
 		std::string output;
 
-		while (ReadFile(hStdOutRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL) && bytesRead > 0) 
+		while (ReadFile(hStdOutRead, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, NULL) && bytesRead > 0)
 		{
-			buffer[bytesRead] = '\0';
-			output += buffer;
+			output.append(buffer.data(), bytesRead);
 		}
 
 		WaitForSingleObject(pi.hProcess, INFINITE);
@@ -314,11 +325,12 @@ std::vector<unsigned char> GallerySystem::ExecuteSilentBinary(const std::string&
 	{
 		CloseHandle(hStdOutWrite);
 
-		unsigned char buffer[4096];
+		std::vector<unsigned char> readBuf(65536);
 		DWORD bytesRead;
-		while (ReadFile(hStdOutRead, buffer, sizeof(buffer), &bytesRead, NULL) && bytesRead > 0)
+
+		while (ReadFile(hStdOutRead, readBuf.data(), static_cast<DWORD>(readBuf.size()), &bytesRead, NULL) && bytesRead > 0)
 		{
-			output.insert(output.end(), buffer, buffer + bytesRead);
+			output.insert(output.end(), readBuf.begin(), readBuf.begin() + bytesRead);
 		}
 
 		WaitForSingleObject(pi.hProcess, INFINITE);

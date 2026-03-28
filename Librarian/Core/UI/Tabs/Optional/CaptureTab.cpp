@@ -11,14 +11,18 @@
 #include "Core/States/Infrastructure/Capture/FFmpegState.h"
 #include "Core/States/Infrastructure/Capture/AudioState.h"
 #include "Core/States/Infrastructure/Capture/DownloadState.h"
+#include "Core/States/Infrastructure/Engine/RenderState.h"
 #include "Core/States/Infrastructure/Persistence/GalleryState.h"
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
+#include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
+#include "Core/Systems/Infrastructure/Capture/VideoSystem.h"
 #include "Core/Systems/Infrastructure/Capture/DownloadSystem.h"
 #include "Core/Systems/Infrastructure/Engine/DialogSystem.h"
 #include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/GallerySystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/UI/Tabs/Optional/CaptureTab.h"
 #include "External/imgui/imgui.h"
 
@@ -37,6 +41,7 @@ void CaptureTab::Draw()
 
     this->DrawRecordingSettingsPopup(isRecording);
     this->DrawPopups();
+    this->DrawTelemetryPopup();
 }
 
 void CaptureTab::DrawTopBar(bool isRecording)
@@ -105,7 +110,7 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
 
         if (ImGui::Button("Start Recording"))
         {
-            g_pState->Infrastructure->FFmpeg->SetStartRecording(true);
+            g_pThread->Capture->StartRecording();
         }
 
         if (!canRecord)
@@ -130,7 +135,7 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
             const char* btnLabel = !isCaptureActive ? "  ...  " : "Stop Recording";
             if (ImGui::Button(btnLabel))
             {
-                g_pState->Infrastructure->FFmpeg->SetStopRecording(true);
+                g_pThread->Capture->StopRecording();
                 m_StopRequestedTime = std::chrono::steady_clock::now();
             }
 
@@ -158,7 +163,8 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
 
                 if (ImGui::Button("Force Stop"))
                 {
-                    g_pSystem->Infrastructure->FFmpeg->ForceStop();
+                    g_pThread->Capture->StopRecording(true);
+                    g_pSystem->Debug->Log("[CaptureTab] INFO: Force stop request detected from UI.");
                 }
 
                 ImGui::PopStyleColor(2);
@@ -177,60 +183,15 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
         float recordingDuration = g_pSystem->Infrastructure->FFmpeg->GetRecordingDuration();
         ImGui::TextUnformatted(g_pSystem->Infrastructure->Format->ToTimestamp(recordingDuration).c_str());
 
-        ImGui::SameLine(0, 10.0f);
+        ImGui::SameLine(0, 15.0f);
 
-        float speed = g_pState->Infrastructure->FFmpeg->GetRecordingSpeed();
-        ImVec4 speedColor = (speed < 0.98f) ? 
-            ImVec4(1.0f, 0.4f, 0.4f, 1.0f) : 
-            ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-        ImGui::TextDisabled("Speed:");
-        ImGui::SameLine();
-        ImGui::TextColored(speedColor, "%.2fx", speed);
-
-        if (ImGui::IsItemHovered())
+        if (ImGui::Button("Telemetry"))
         {
-            ImGui::BeginTooltip();
-            ImGui::Text("Encoding Speed: %.2fx", speed);
-            ImGui::Separator();
-
-            ImGui::Text("Target: 1.00x (Real-time)");
-            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "CRITICAL: < 0.90x causes desync/fast-motion.");
-
-            ImGui::Spacing();
-            ImGui::TextDisabled("Fix: Lower resolution, framerate, or use a faster preset.");
-            ImGui::EndTooltip();
+            ImGui::OpenPopup("Telemetry");
         }
-
-        ImGui::SameLine();
-
-        ImGui::TextDisabled("Ratio:");
-        ImGui::SameLine();
-
-        static double smoothedRatio = 1.0;
-        double rawRatio = g_pThread->Capture->GetSyncRatio();
-
-        const double alpha = 0.05;
-        smoothedRatio = alpha * rawRatio + (1.0 - alpha) * smoothedRatio;
-
-        ImVec4 ratioColor = (smoothedRatio < 0.999)
-            ? ImVec4(1.0f, 0.4f, 0.4f, 1.0f)
-            : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-        ImGui::TextColored(ratioColor, "%.3f", smoothedRatio);
-
         if (ImGui::IsItemHovered())
         {
-            ImGui::BeginTooltip();
-            ImGui::Text("Sync Ratio (Video-Audio): %.3f", smoothedRatio);
-            ImGui::Separator();
-
-            ImGui::Text("Target: 1.000");
-            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "CRITICAL: < 0.999x causes video-audio desync.");
-
-            ImGui::Spacing();
-            ImGui::TextDisabled("Fix: Use higher video pipe buffer and higher buffer queue size (uses more RAM).");
-            ImGui::EndTooltip();
+            ImGui::SetTooltip("View real-time pipe latency, queue buffers, and FFmpeg health.");
         }
     }
 
@@ -253,13 +214,12 @@ void CaptureTab::DrawFFmpegControls(bool isRecoring, float totalWidth)
 
         float progress = g_pState->Infrastructure->Download->GetDownloadProgress() / 100.0f;
 
-        char buf[32]{};
-        sprintf_s(buf, "%.0f%%", progress * 100.0f);
+        std::string progressPercent = std::to_string(static_cast<int>(progress * 100.0f)) + "%";
 
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.2f, 0.6f, 1.0f, 1.0f));
 
         ImGui::SetNextItemWidth(barW);
-        ImGui::ProgressBar(progress, ImVec2(0, 0), buf);
+        ImGui::ProgressBar(progress, ImVec2(0, 0), progressPercent.c_str());
 
         ImGui::PopStyleColor();
         ImGui::SameLine();
@@ -617,50 +577,66 @@ void CaptureTab::DrawRecordingSettings(bool isRecording)
 
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Performance & Buffering");
 
-        if (ImGui::SliderInt("Buffer Queue Size", &encoderConfig.ThreadQueueSize, 64, 256))
+        if (ImGui::SliderInt("Audio Buffered Packets", &encoderConfig.MaxAudioBufferedPackets, 128, 2048))
         {
-            if (encoderConfig.ThreadQueueSize < 64) encoderConfig.ThreadQueueSize = 64;
-            else if (encoderConfig.ThreadQueueSize > 256) encoderConfig.ThreadQueueSize = 256;
+            encoderConfig.MaxAudioBufferedPackets = 
+                std::clamp(encoderConfig.MaxAudioBufferedPackets, 128, 2048);
+
             configChanged = true;
         }
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         {
             ImGui::BeginTooltip();
-            ImGui::Text("Sets the FFmpeg '-thread_queue_size' parameter.");
+            ImGui::Text("Sets the FFmpeg '-thread_queue_size' for the Audio stream.");
             ImGui::Spacing();
-            ImGui::BulletText("This defines how many incoming packets (video frames/audio blocks)"
-                " can be buffered from the pipes before they start dropping.");
+
+            ImGui::BulletText("Defines the maximum number of PCM audio packets stored in RAM\n"
+                "before FFmpeg starts dropping them.");
+
+            ImGui::BulletText("At 48kHz, 1024 packets provide a massive safety buffer\n"
+                "against encoding delays with minimal RAM impact.");
+
             ImGui::Spacing();
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Note: Higher values help with stuttering during CPU spikes"
-                " but will increase memory usage.");
+            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f),
+                "Tip: Increase this if you notice audio crackling or desync\n"
+                "during high CPU load or when recording at 4K.");
+
             ImGui::EndTooltip();
         }
 
-        if (ImGui::SliderInt("Video Pipe Buffer (MB)", &encoderConfig.VideoBufferPipeSize, 64, 1024, "%d MB"))
+        if (ImGui::SliderInt("Video Buffered Frames", &encoderConfig.MaxBufferedFrames, 60, 512))
         {
+            encoderConfig.MaxBufferedFrames = std::clamp(encoderConfig.MaxBufferedFrames, 60, 512);
             configChanged = true;
         }
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         {
             ImGui::BeginTooltip();
-            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 
-            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Video Pipe Memory Allocation");
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Video Frame Buffer Pool");
             ImGui::Separator();
 
-            ImGui::Text("Sets the RAM buffer size for the raw video data stream.");
+            ImGui::Text("Sets the number of raw frames kept in RAM as a safety cushion.");
 
             ImGui::Spacing();
-            ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "Recommendations:");
-            ImGui::BulletText("1080p: 128 MB - 256 MB is sufficient.");
-            ImGui::BulletText("4K / High FPS: 512 MB - 1024 MB recommended.");
+            ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "Buffer Capacity (at 60 FPS):");
+            ImGui::BulletText("60 Frames:  ~1.0 seconds of safety.");
+            ImGui::BulletText("120 Frames: ~2.0 second of safety.");
+            ImGui::BulletText("240 Frames: ~4.0 seconds of safety.");
 
             ImGui::Spacing();
-            ImGui::Text("A larger buffer prevents 'Broken Pipe' errors by providing a "
-                "larger memory cushion for raw frames before they reach the encoder.");
+            ImGui::Text("A larger pool prevents 'Pipe Timeout' errors by allowing the game "
+                "to keep capturing even if the disk or GPU encoder has a momentary spike.");
 
             ImGui::Separator();
-            ImGui::TextDisabled("Note: This memory is only allocated during active recording.");
+
+            int width = g_pState->Infrastructure->Render->GetWidth();
+            int height = g_pState->Infrastructure->Render->GetHeight();
+            float estRAM = (width * height * 4.0f * encoderConfig.MaxBufferedFrames) / (1024.0f * 1024.0f);
+
+            ImGui::TextDisabled("Estimated RAM Usage: %.0f MB at %dx%d", estRAM, width, height);
+            ImGui::TextDisabled("Note: Memory is pre-allocated when recording starts.");
 
             ImGui::PopTextWrapPos();
             ImGui::EndTooltip();
@@ -1055,5 +1031,126 @@ void CaptureTab::DrawDeleteVideoPopup()
     if (ImGui::Button("Cancel", ImVec2(buttonWidth, 0)))
     {
         ImGui::CloseCurrentPopup();
+    }
+}
+
+void CaptureTab::DrawTelemetryPopup()
+{
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(450, 300), ImVec2(800, 800));
+
+    bool open = true;
+    if (ImGui::BeginPopupModal("Telemetry", &open, ImGuiWindowFlags_NoSavedSettings))
+    {
+        if (!open) ImGui::CloseCurrentPopup();
+
+        g_pSystem->Infrastructure->FFmpeg->UpdateQueueTelemetry();
+
+        CaptureTelemetry telemetry = g_pSystem->Infrastructure->FFmpeg->GetTelemetry();
+
+        static double smoothedRatio = 1.0;
+        double rawRatio = g_pThread->Capture->GetSyncRatio();
+        smoothedRatio = 0.05 * rawRatio + 0.95 * smoothedRatio;
+
+        ImGui::TextDisabled("General");
+        ImGui::Separator();
+
+        if (ImGui::BeginTable("##EncoderTable", 2, ImGuiTableFlags_SizingStretchSame))
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::Text("Encoding Speed");
+            ImGui::TableSetColumnIndex(1);
+
+            ImVec4 speedCol = (telemetry.FFmpegSpeed < 0.98f) ? 
+                ImVec4(1, 0.2f, 0.2f, 1) : ImVec4(0, 1, 0, 1);
+
+            ImGui::TextColored(speedCol, "%.2fx", telemetry.FFmpegSpeed);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::Text("Sync Ratio");
+            ImGui::TableSetColumnIndex(1);
+
+            ImVec4 ratioCol = (smoothedRatio < 0.999) ? 
+                ImVec4(1, 0.2f, 0.2f, 1) : ImVec4(1, 1, 1, 1);
+
+            ImGui::TextColored(ratioCol, "%.3f", smoothedRatio);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::Text("Bitrate");
+            ImGui::TableSetColumnIndex(1); ImGui::Text("%.0f kbps", telemetry.CurrentBitrateKbps);
+
+            ImGui::EndTable();
+        }
+
+        ImGui::Spacing();
+        ImGui::TextDisabled("Video & Audio Buffers");
+        ImGui::Separator();
+
+        if (ImGui::BeginTable("##QueuesTable", 2, ImGuiTableFlags_SizingStretchSame))
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::Text("Pending Frames");
+            ImGui::TableSetColumnIndex(1);
+
+            float vMaxFrames = 64.0f;
+            float vFill = (std::min)((float)telemetry.VideoPendingQueueSize / vMaxFrames, 1.0f);
+
+            ImVec4 vColor = (vFill > 0.8f) ? ImVec4(1.0f, 0.2f, 0.2f, 1.0f) :
+                (vFill > 0.5f) ? ImVec4(1.0f, 0.6f, 0.0f, 1.0f) : ImVec4(0.2f, 0.7f, 0.2f, 1.0f);
+
+            std::string progressText = std::to_string(telemetry.VideoPendingQueueSize) +
+                (telemetry.VideoPendingQueueSize == 1 ? " frame" : " frames");
+
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, vColor);
+            ImGui::ProgressBar(vFill, ImVec2(-FLT_MIN, 0), progressText.c_str());
+            ImGui::PopStyleColor();
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0); ImGui::Text("Pending Chunks");
+            ImGui::TableSetColumnIndex(1);
+
+            float aMaxChunks = 500.0f;
+            float aFill = (std::min)((float)telemetry.AudioPendingQueueSize / aMaxChunks, 1.0f);
+
+            ImVec4 aColor = (aFill > 0.8f) ? ImVec4(1.0f, 0.2f, 0.2f, 1.0f) :
+                (aFill > 0.5f) ? ImVec4(1.0f, 0.6f, 0.0f, 1.0f) : ImVec4(0.2f, 0.7f, 0.2f, 1.0f);
+            
+            std::string audioStatus = std::to_string(telemetry.AudioPendingQueueSize) +
+                (telemetry.AudioPendingQueueSize == 1 ? " chunk" : " chunks");
+
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, aColor);
+            ImGui::ProgressBar(aFill, ImVec2(-FLT_MIN, 0), audioStatus.c_str());
+            ImGui::PopStyleColor();
+
+            ImGui::EndTable();
+        }
+
+        ImGui::Spacing();
+        ImGui::TextDisabled("Write Latency");
+        ImGui::Separator();
+
+        if (ImGui::BeginTable("##PipesTable", 2, ImGuiTableFlags_SizingStretchSame))
+        {
+            auto DrawLatencyRow = [](const char* label, float current, float peak, float warn, float crit) {
+                ImGui::TableNextRow();
+
+                ImGui::TableSetColumnIndex(0); ImGui::Text("%s", label);
+                ImGui::TableSetColumnIndex(1);
+
+                ImVec4 color = (current > crit) ? ImVec4(1, 0.2f, 0.2f, 1) : (current > warn) ? ImVec4(1, 1, 0, 1) : ImVec4(1, 1, 1, 1);
+
+                ImGui::TextColored(color, "%.1f ms", current);
+                ImGui::SameLine(); 
+                ImGui::TextDisabled("(Peak: %.1f ms)", peak);
+            };
+
+            DrawLatencyRow("Video", telemetry.LastVideoWriteLatencyMs, telemetry.MaxVideoWriteLatencyMs, 15.0f, 50.0f);
+            DrawLatencyRow("Audio", telemetry.LastAudioWriteLatencyMs, telemetry.MaxAudioWriteLatencyMs, 10.0f, 20.0f);
+
+            ImGui::EndTable();
+        }
+
+        ImGui::EndPopup();
     }
 }

@@ -19,10 +19,13 @@ public:
 	float GetRecordingDuration() const;
 	bool HasFatalError() const;
 
+	CaptureTelemetry GetTelemetry() const;
+	void UpdateQueueTelemetry();
+
 	void Cleanup();
 
 private:
-	bool CreatePipes(std::string& videoPipeName, std::string& audioPipeName);
+	bool CreatePipes(std::string& videoPipeName, std::string& audioPipeName, int width, int height);
 	std::string BuildFFmpegCommand(std::string outputPath, int width, int height, float fps, std::string videoPipeName, std::string audioPipeName);
 	std::string GenerateTimestampName();
 	bool LaunchFFmpeg(const std::string& cmd);
@@ -30,7 +33,7 @@ private:
 	void InternalStop(bool force);
 	bool VerifyExecutable(const std::string& path);
 
-	bool WriteWithTimeout(HANDLE hPipe, const void* data, size_t size, DWORD timeoutMs);
+	bool WriteWithTimeout(HANDLE hPipe, const void* data, size_t size, DWORD timeoutMs, bool isVideo);
 
 	void ReadLogsThread(HANDLE hPipe);
 	void TranslateAndLog(const std::string& logLine);
@@ -50,4 +53,7 @@ private:
 	int m_ConsecutiveWriteFailures = 0;
 	const int m_MaxConsecutiveWriteFailures = 5;
 	static constexpr double k_PipeDeadSec = 5.0;
+
+	CaptureTelemetry m_Telemetry;
+	mutable std::mutex m_TelemetryMutex;
 };

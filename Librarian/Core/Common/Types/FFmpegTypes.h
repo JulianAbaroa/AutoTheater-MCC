@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 // Resolution dimensions in pixels.
 struct ResolutionValues
 {
@@ -52,11 +54,34 @@ enum class EncoderType
 
 struct FFmpegEncoderConfig
 {
-	int ThreadQueueSize = 128;
 	int BitrateKbps = 80000;
-	int VideoBufferPipeSize = 256;
+	int MaxBufferedFrames = 60;
+	int MaxAudioBufferedPackets = 512;
 	VideoPreset VideoPreset = VideoPreset::P1;
 	ScalingFilter ScalingFilter = ScalingFilter::Bicubic;
 	OutputContainer OutputContainer = OutputContainer::MKV;
 	EncoderType EncoderType = EncoderType::CPU;
+};
+
+struct CaptureTelemetry
+{
+	// CaptureThread pendings.
+	size_t VideoPendingQueueSize = 0;
+	size_t AudioPendingQueueSize = 0;
+
+	// Windows (kernel) pendings.
+	DWORD VideoPipeBytesPending = 0;
+	DWORD AudioPipeBytesPending = 0;
+	DWORD VideoPipeBufferSize = 0;
+	DWORD AudioPipeBufferSize = 0;
+
+	// Latencies.
+	float LastVideoWriteLatencyMs = 0.0f;
+	float LastAudioWriteLatencyMs = 0.0f;
+	float MaxVideoWriteLatencyMs = 0.0f;
+	float MaxAudioWriteLatencyMs = 0.0f;
+
+	// FFmpeg states.
+	float FFmpegSpeed = 0.0f;
+	float CurrentBitrateKbps = 0.0f;
 };

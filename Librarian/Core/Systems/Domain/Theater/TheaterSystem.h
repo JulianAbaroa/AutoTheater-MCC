@@ -16,6 +16,8 @@ public:
     void UpdateRealTimeScale();
     float GetRealTimeScale() const;
 
+    void Cleanup();
+
 private:
     void LogTables(uintptr_t playerTable, uintptr_t objectTable);
     bool RawReadSinglePlayer(uintptr_t playerTable, uintptr_t objectTable, uint8_t index, PlayerInfo& outInfo);
@@ -30,6 +32,6 @@ private:
     std::atomic<bool> m_IsReplaySpeedInitialized{ false };
 
     std::atomic<float> m_RealTimeScale{ 1.0f };
-    std::atomic<double> m_AnchorSystemTime{ 0.0f };
+    std::atomic<double> m_AnchorSystemTime{ 0.0 };
     std::atomic<float> m_AnchorReplayTime{ 0.0f };
 };

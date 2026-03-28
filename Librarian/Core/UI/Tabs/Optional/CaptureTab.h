@@ -21,6 +21,7 @@ private:
 	void DrawPopups();
 	void DrawUninstallPopup();
 	void DrawDeleteVideoPopup();
+	void DrawTelemetryPopup();
 
 	std::atomic<bool> m_IsReadyTocapture{ false };
 	std::atomic<int> m_VideoIndexToDelete{ -1 };

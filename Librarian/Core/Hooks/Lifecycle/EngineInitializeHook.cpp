@@ -47,10 +47,10 @@ void __fastcall EngineInitializeHook::HookedEngineInitialize(void)
 	{
 		g_pSystem->Debug->Log("[EngineInitialize] INFO: Timeline phase active.");
 		
-		g_pHook->Data->ReplayInitializeState->Install();		// Gets the FLMH data
-		g_pHook->Data->UpdateTelemetryTimer->Install();			// Gets the current ReplayTime
-		g_pHook->Data->BuildGameEvent->Install();				// Gets the GameEvents
-		g_pHook->Data->SpectatorHandleInput->Install();			// Gets the ReplayModule
+		g_pHook->Data->ReplayInitializeState->Install();	// Gets the FLMH data
+		g_pHook->Data->UpdateTelemetryTimer->Install();		// Gets the current ReplayTime
+		g_pHook->Data->BuildGameEvent->Install();			// Gets the GameEvents
+		g_pHook->Data->SpectatorHandleInput->Install();		// Gets the ReplayModule
 
 		if (g_pState->Domain->Timeline->GetTimelineSize() > 0) g_pState->Domain->Timeline->ClearTimeline();
 	}

@@ -69,3 +69,15 @@ void TheaterState::ResetPlayerList()
 		player = PlayerInfo{};
 	}
 }
+
+
+void TheaterState::Cleanup()
+{
+	{
+		std::lock_guard<std::mutex> lock(m_Mutex);
+		m_PlayerList = {};
+	}
+
+	m_pReplayTime.store(nullptr);
+	m_pReplayTimeScale.store(nullptr);
+}

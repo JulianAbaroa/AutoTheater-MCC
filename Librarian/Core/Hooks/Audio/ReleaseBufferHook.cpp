@@ -19,7 +19,9 @@ HRESULT __stdcall ReleaseBufferHook::HookedReleaseBuffer(IAudioRenderClient* pTh
     {
         return m_OriginalFunction(pThis, NumFramesWritten, Flags);
     }
+
     BYTE* pBuffer = g_pState->Infrastructure->Audio->GetBufferForInstance(pThis);
+
     if (NumFramesWritten > 0 && pBuffer != nullptr)
     {
         AudioFormat format = g_pState->Infrastructure->Audio->GetAudioInstance(pThis);
@@ -30,6 +32,7 @@ HRESULT __stdcall ReleaseBufferHook::HookedReleaseBuffer(IAudioRenderClient* pTh
             g_pSystem->Infrastructure->Audio->WriteAudio(pThis, pBuffer, dataSize, isSilent);
         }
     }
+
     return m_OriginalFunction(pThis, NumFramesWritten, Flags);
 }
 

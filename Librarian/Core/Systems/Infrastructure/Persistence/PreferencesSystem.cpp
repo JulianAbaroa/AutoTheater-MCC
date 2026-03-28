@@ -101,9 +101,9 @@ void PreferencesSystem::SaveFFmpegState(std::ofstream& file)
 	file << "FFmpeg_StopDelayDuration=" << g_pState->Infrastructure->FFmpeg->GetStopDelayDuration() << "\n";
 	file << std::defaultfloat;
 
-	file << "FFmpeg_ThreadQueueSize=" << encoderOptions.ThreadQueueSize << "\n";
+	file << "FFmpeg_ThreadQueueSize=" << encoderOptions.MaxAudioBufferedPackets << "\n";
 	file << "FFmpeg_BitrateKbps=" << encoderOptions.BitrateKbps << "\n";
-	file << "FFmpeg_VideoBufferPipeSize=" << encoderOptions.VideoBufferPipeSize << "\n";
+	file << "FFmpeg_VideoBufferPipeSize=" << encoderOptions.MaxBufferedFrames << "\n";
 	file << "FFmpeg_VideoPreset=" << static_cast<int>(encoderOptions.VideoPreset) << "\n";
 	file << "FFmpeg_ScalingFilter=" << static_cast<int>(encoderOptions.ScalingFilter) << "\n";
 	file << "FFmpeg_OutputContainer=" << static_cast<int>(encoderOptions.OutputContainer) << "\n";
@@ -199,7 +199,7 @@ void PreferencesSystem::LoadFFmpegState(std::string& key, std::string& value)
 	}
 	else if (key == "FFmpeg_ThreadQueueSize")
 	{
-		encoderConfig.ThreadQueueSize = std::stoi(value);
+		encoderConfig.MaxAudioBufferedPackets = std::stoi(value);
 	}
 	else if (key == "FFmpeg_BitrateKbps")
 	{
@@ -207,7 +207,7 @@ void PreferencesSystem::LoadFFmpegState(std::string& key, std::string& value)
 	}
 	else if (key == "FFmpeg_VideoBufferPipeSize")
 	{
-		encoderConfig.VideoBufferPipeSize = std::stoi(value);
+		encoderConfig.MaxBufferedFrames = std::stoi(value);
 	}
 	else if (key == "FFmpeg_VideoPreset")
 	{

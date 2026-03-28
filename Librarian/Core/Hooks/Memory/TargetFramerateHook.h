@@ -7,7 +7,7 @@ class TargetFramerateHook
 {
 public:
 	int GetCurrentFramerateValue();
-	void Reset();
+	void Cleanup();
 
 private:
 	bool ResolveAddress();

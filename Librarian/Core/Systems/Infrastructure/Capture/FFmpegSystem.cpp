@@ -13,18 +13,25 @@
 #include "Core/Systems/Infrastructure/Capture/VideoSystem.h"
 #include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
+#include "Core/Threads/CoreThread.h"
+#include "Core/Threads/Infrastructure/CaptureThread.h"
 #include <filesystem>
 
 bool FFmpegSystem::Start(const std::string& outputPath, int width, int height, float fps)
 {
-	g_pSystem->Infrastructure->Video->PreallocatePool(width, height);
+	g_pSystem->Debug->Log("[FFmpegSystem] Starting recording.");
 
+	g_pSystem->Debug->Log("[FFmpegSystem] T0: Entering Start()");
+	g_pSystem->Infrastructure->Video->PreallocatePool(width, height);
+	g_pSystem->Debug->Log("[FFmpegSystem] T1: Pool ready, creating pipes");
+	
 	m_SessionID++;
 	m_VideoConnected.store(false);
 	m_AudioConnected.store(false);
 
 	std::string videoPipeName, audioPipeName;
-	if (!this->CreatePipes(videoPipeName, audioPipeName)) return false;
+	if (!this->CreatePipes(videoPipeName, audioPipeName, width, height)) return false;
+	g_pSystem->Debug->Log("[FFmpegSystem] T2: Pipes created, launching FFmpeg");
 
 	auto waitForConnection = [this](HANDLE hPipe, std::atomic<bool>* flag, std::string name) {
 		OVERLAPPED ov = {};
@@ -70,6 +77,7 @@ bool FFmpegSystem::Start(const std::string& outputPath, int width, int height, f
 
 	std::string cmd = this->BuildFFmpegCommand(outputPath, width, height, fps, videoPipeName, audioPipeName);
 	if (!this->LaunchFFmpeg(cmd)) return false;
+	g_pSystem->Debug->Log("[FFmpegSystem] T3: FFmpeg launched, waiting for pipe connection");
 
 	auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
 	while (!m_VideoConnected.load())
@@ -81,11 +89,22 @@ bool FFmpegSystem::Start(const std::string& outputPath, int width, int height, f
 			return false;
 		}
 
+		HANDLE hProc = g_pState->Infrastructure->FFmpeg->GetProcessHandle();
+		if (hProc != INVALID_HANDLE_VALUE)
+		{
+			DWORD exitCode;
+			if (GetExitCodeProcess(hProc, &exitCode) && exitCode != STILL_ACTIVE)
+			{
+				g_pSystem->Debug->Log("[FFmpegSystem] ERROR: FFmpeg process died before connecting (exit code %lu).", exitCode);
+				this->ForceStop();
+				return false;
+			}
+		}
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
+	g_pSystem->Debug->Log("[FFmpegSystem] T4: Pipe connected, recording active");
 	
-	auto now = std::chrono::steady_clock::now();
-	g_pState->Infrastructure->FFmpeg->SetStartRecordingTime(now);
 	g_pState->Infrastructure->FFmpeg->SetRecording(true);
 	g_pSystem->Debug->Log("[FFmpegSystem] INFO: Recording session %d started.", m_SessionID);
 	return true;
@@ -136,57 +155,36 @@ void FFmpegSystem::InitializeDependencies()
 bool FFmpegSystem::WriteVideo(void* data, size_t size)
 {
 	if (!g_pState->Infrastructure->FFmpeg->IsRecording()) return false;
+	if (m_FFmpegReportedError.load()) return false;
 
-	if (!m_AudioConnected.load())
-	{
-		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::steady_clock::now() - g_pState->Infrastructure->FFmpeg->GetStartRecordingTime()).count();
-		if (elapsed < 2000)
-		{
-			bool ok = this->WriteWithTimeout(
-				g_pState->Infrastructure->FFmpeg->GetVideoPipeHandle(), data, size, 50);
-			if (ok) m_LastVideoWriteTime = std::chrono::steady_clock::now();
-			return true;
-		}
-	}
+	HANDLE hPipe = g_pState->Infrastructure->FFmpeg->GetVideoPipeHandle();
+	if (hPipe == INVALID_HANDLE_VALUE) return false;
 
 	auto now = std::chrono::steady_clock::now();
-
 	if (m_LastVideoWriteTime.time_since_epoch().count() != 0)
 	{
-		double secSinceLastWrite = std::chrono::duration<double>(
-			now - m_LastVideoWriteTime).count();
-
+		double secSinceLastWrite = std::chrono::duration<double>(now - m_LastVideoWriteTime).count();
 		if (secSinceLastWrite >= k_PipeDeadSec)
 		{
-			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Video pipe unresponsive for %.1fs,"
-				" signaling fatal error.", secSinceLastWrite);
+			g_pSystem->Debug->Log("[FFmpegSystem] FATAL: Video pipe unresponsive for %.1fs", secSinceLastWrite);
 			m_FFmpegReportedError.store(true);
 			return false;
 		}
 	}
 
-	int retryCount = 0;
-	while (retryCount < 10)
+	if (this->WriteWithTimeout(hPipe, data, size, 5000, true))
 	{
-		if (this->WriteWithTimeout(
-			g_pState->Infrastructure->FFmpeg->GetVideoPipeHandle(), data, size, 50))
-		{
-			m_LastVideoWriteTime = std::chrono::steady_clock::now();
-			m_ConsecutiveWriteFailures = 0;
-			return true;
-		}
-		retryCount++;
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		m_LastVideoWriteTime = std::chrono::steady_clock::now();
+		m_ConsecutiveWriteFailures = 0;
+		return true;
 	}
 
-	g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Video write failed after 10 retries");
 	m_ConsecutiveWriteFailures++;
+	g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Video write failed (Timeout 5s). Failures: %d", m_ConsecutiveWriteFailures);
 
 	if (m_ConsecutiveWriteFailures >= m_MaxConsecutiveWriteFailures)
 	{
-		g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Pipe appears dead (%d consecutive failures),"
-			" signaling fatal error.", m_ConsecutiveWriteFailures);
+		g_pSystem->Debug->Log("[FFmpegSystem] FATAL: Giving up on video pipe.");
 		m_FFmpegReportedError.store(true);
 	}
 
@@ -196,42 +194,36 @@ bool FFmpegSystem::WriteVideo(void* data, size_t size)
 bool FFmpegSystem::WriteAudio(const void* data, size_t size)
 {
 	if (!g_pState->Infrastructure->FFmpeg->IsRecording()) return false;
+	if (m_FFmpegReportedError.load()) return false;
 
 	constexpr size_t frameSize = 8 * sizeof(float);
 	size = (size / frameSize) * frameSize;
 	if (size == 0) return true;
 
+	HANDLE hPipe = g_pState->Infrastructure->FFmpeg->GetAudioPipeHandle();
+	if (hPipe == INVALID_HANDLE_VALUE) return false;
+
 	auto now = std::chrono::steady_clock::now();
 
 	if (m_LastAudioWriteTime.time_since_epoch().count() != 0)
 	{
-		double secSinceLastWrite = std::chrono::duration<double>(
-			now - m_LastAudioWriteTime).count();
-
+		double secSinceLastWrite = std::chrono::duration<double>(now - m_LastAudioWriteTime).count();
 		if (secSinceLastWrite >= k_PipeDeadSec)
 		{
-			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Audio pipe unresponsive for %.1fs,"
-				" signaling fatal error.", secSinceLastWrite);
+			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Audio pipe unresponsive for %.1fs", secSinceLastWrite);
 			m_FFmpegReportedError.store(true);
 			return false;
 		}
 	}
 
-	m_LastAudioWriteTime = now;
-
-	int retryCount = 0;
-	while (retryCount < 5)
+	if (this->WriteWithTimeout(hPipe, data, size, 3000, false))
 	{
-		if (this->WriteWithTimeout(
-			g_pState->Infrastructure->FFmpeg->GetAudioPipeHandle(), data, size, 50))
-		{
-			return true;
-		}
-		retryCount++;
-		std::this_thread::sleep_for(std::chrono::milliseconds(2));
+		m_LastAudioWriteTime = now;
+		return true;
 	}
 
-	g_pSystem->Debug->Log("[FFmpegSystem] WARNING: Audio write failed, continuing");
+	g_pSystem->Debug->Log("[FFmpegSystem] WARNING: Audio write TIMEOUT (2s), sample block dropped.");
+
 	return true;
 }
 
@@ -251,6 +243,19 @@ float FFmpegSystem::GetRecordingDuration() const
 
 bool FFmpegSystem::HasFatalError() const { return m_FFmpegReportedError.load(); }
 
+
+CaptureTelemetry FFmpegSystem::GetTelemetry() const
+{
+	std::lock_guard<std::mutex> lock(m_TelemetryMutex);
+	return m_Telemetry;
+}
+
+void FFmpegSystem::UpdateQueueTelemetry()
+{
+	std::lock_guard<std::mutex> lock(m_TelemetryMutex);
+	m_Telemetry.AudioPendingQueueSize = g_pThread->Capture->GetPendingAudioSize();
+	m_Telemetry.VideoPendingQueueSize = g_pThread->Capture->GetPendingVideoSize();
+}
 
 void FFmpegSystem::Cleanup()
 {
@@ -272,17 +277,21 @@ void FFmpegSystem::Cleanup()
 }
 
 
-bool FFmpegSystem::CreatePipes(std::string& videoPipeName, std::string& audioPipeName)
+bool FFmpegSystem::CreatePipes(std::string& videoPipeName, std::string& audioPipeName, int width, int height)
 {
 	DWORD pid = GetCurrentProcessId();
-
 	videoPipeName = "\\\\.\\pipe\\at_v_" + std::to_string(pid) + std::to_string(m_SessionID);
 	audioPipeName = "\\\\.\\pipe\\at_a_" + std::to_string(pid) + std::to_string(m_SessionID);
 
+	DWORD frameSizesBytes = width * height * 4;
 	auto encoderConfig = g_pState->Infrastructure->FFmpeg->GetEncoderConfig();
-
-	DWORD videoBufferSize = encoderConfig.VideoBufferPipeSize * 1024 * 1024;
+	DWORD videoBufferSize = frameSizesBytes * 16;
 	DWORD audioBufferSize = 64 * 1024 * 1024;
+
+	g_pSystem->Debug->Log("[FFmpegSystem] INFO: Requesting video pipe buffer: %lu MB (%lu frames x %lu MB/frame)",
+		videoBufferSize / (1024 * 1024),
+		(DWORD)encoderConfig.MaxBufferedFrames,
+		frameSizesBytes / (1024 * 1024));
 
 	auto createPipe = [](const std::string& name, DWORD size) {
 		HANDLE h = CreateNamedPipeA(
@@ -293,11 +302,16 @@ bool FFmpegSystem::CreatePipes(std::string& videoPipeName, std::string& audioPip
 
 		if (h == INVALID_HANDLE_VALUE)
 		{
-			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Failed to create pipe %s", name);
+			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Failed to create pipe %s. WinError: %lu",
+				name.c_str(), GetLastError());
+			return h;
 		}
 
+		g_pSystem->Debug->Log("[FFmpegSystem] INFO: Pipe '%s' created OK. Requested buffer: %lu MB",
+			name.c_str(), size / (1024 * 1024));
+
 		return h;
-		};
+	};
 
 	HANDLE hVideo = createPipe(videoPipeName, videoBufferSize);
 	HANDLE hAudio = createPipe(audioPipeName, audioBufferSize);
@@ -309,7 +323,6 @@ bool FFmpegSystem::CreatePipes(std::string& videoPipeName, std::string& audioPip
 
 	g_pState->Infrastructure->FFmpeg->SetVideoPipeHandle(hVideo);
 	g_pState->Infrastructure->FFmpeg->SetAudioPipeHandle(hAudio);
-
 	return true;
 }
 
@@ -329,8 +342,8 @@ std::string FFmpegSystem::BuildFFmpegCommand(std::string outputPath, int width, 
 
 	int inW = width & ~1;
 	int inH = height & ~1;
-	int outW = g_pState->Infrastructure->FFmpeg->GetTargetWidth();
-	int outH = g_pState->Infrastructure->FFmpeg->GetTargetHeight();
+	int outW = g_pState->Infrastructure->FFmpeg->GetTargetWidth() & ~1;
+	int outH = g_pState->Infrastructure->FFmpeg->GetTargetHeight() & ~1;
 
 	std::string v_codec;
 	switch (encoderConfig.EncoderType)
@@ -338,167 +351,123 @@ std::string FFmpegSystem::BuildFFmpegCommand(std::string outputPath, int width, 
 	case EncoderType::NVENC: v_codec = "h264_nvenc"; break;
 	case EncoderType::AMF:   v_codec = "h264_amf";   break;
 	case EncoderType::QSV:   v_codec = "h264_qsv";   break;
-	case EncoderType::CPU:   v_codec = "libx264";    break;
 	default:                 v_codec = "libx264";
 	}
 
-	const char* filterStrings[] = { "bicubic", "lanczos", "bilinear", "spline" };
+	std::string cmd;
+	cmd.reserve(2048);
 
-	std::string command;
-	command.reserve(1024);
-	char buffer[1024]{};
+	cmd += "\"" + ffmpegExe + "\" -y -loglevel info ";
+	bool isScaling = (inW != outW || inH != outH);
 
-	command += "\"";
-	command += ffmpegExe;
-	command += "\" -y -loglevel info ";
+	cmd += "-f rawvideo -pix_fmt rgba -s " + std::to_string(inW) + "x" + std::to_string(inH);
+	cmd += " -r " + std::to_string(fps);
+	cmd += " -thread_queue_size " + std::to_string(encoderConfig.MaxBufferedFrames);
+	cmd += " -i \"" + videoPipeName + "\" ";
 
 	int audioChannels = 2;
 	auto instances = g_pState->Infrastructure->Audio->GetAllAudioInstances();
 	for (const auto& [ptr, fmt] : instances)
 	{
-		if (fmt.Channels > audioChannels)
-			audioChannels = fmt.Channels;
+		if (fmt.Channels > audioChannels) audioChannels = fmt.Channels;
 	}
 
-	// Video & Audio
-	const char* probeLimit = (inW > 1920) ? "64M" : "32M";
-	snprintf(buffer, sizeof(buffer),
-		"-f rawvideo -pix_fmt rgba -s %dx%d -r %.2f -probesize %s -formatprobesize 0 -analyzeduration 0 -thread_queue_size %d -i \"%s\" "
-		"-f f32le -ar 48000 -ac %d -probesize 32M -formatprobesize 0 -analyzeduration 0 -thread_queue_size %d -i \"%s\" ",
-		inW, inH, fps, probeLimit, encoderConfig.ThreadQueueSize, videoPipeName.c_str(),
-		audioChannels, encoderConfig.ThreadQueueSize, audioPipeName.c_str());
-	command += buffer;
+	cmd += "-f f32le -ar 48000 -ac " + std::to_string(audioChannels);
+	cmd += " -thread_queue_size " + std::to_string(encoderConfig.MaxAudioBufferedPackets);
+	cmd += " -i \"" + audioPipeName + "\" ";
+	const char* filterStrings[] = { "bicubic", "lanczos", "bilinear", "spline" };
 
-	// Scale
-	if (inW != outW || inH != outH)
+	if (isScaling)
 	{
-		snprintf(buffer, sizeof(buffer), "-vf \"scale=%d:%d:flags=%s,format=yuv420p\" ",
-			outW, outH, filterStrings[(int)encoderConfig.ScalingFilter]);
-		command += buffer;
+		cmd += "-vf \"scale=" + std::to_string(outW) + ":" + std::to_string(outH);
+		cmd += ":flags=" + std::string(filterStrings[(int)encoderConfig.ScalingFilter]) + ",format=yuv420p\" ";
 	}
 	else
 	{
-		command += "-vf \"format=yuv420p\" ";
+		cmd += "-vf \"format=yuv420p\" ";
 	}
 
-	snprintf(buffer, sizeof(buffer),
-		"-c:v %s -b:v %dK -maxrate %dK -bufsize %dK -fps_mode cfr ",
-		v_codec.c_str(), encoderConfig.BitrateKbps,
-		encoderConfig.BitrateKbps, encoderConfig.BitrateKbps * 2);
-	command += buffer;
+	cmd += "-c:v " + v_codec + " -profile:v main -pix_fmt yuv420p ";
+	cmd += "-b:v " + std::to_string(encoderConfig.BitrateKbps) + "K ";
+	cmd += "-maxrate " + std::to_string(encoderConfig.BitrateKbps) + "K ";
+	cmd += "-bufsize " + std::to_string(encoderConfig.BitrateKbps * 2) + "K -fps_mode cfr ";
 
 	if (encoderConfig.OutputContainer == OutputContainer::MP4)
 	{
-		command += "-movflags +faststart ";
+		cmd += "-movflags +frag_keyframe+empty_moov ";
+	}
+	else if (encoderConfig.OutputContainer == OutputContainer::MKV)
+	{
+		cmd += "-cluster_size_limit 2M -cluster_time_limit 1000 -reserve_index_space 1M ";
 	}
 
-	std::string audioFilter;
 	if (audioChannels == 8)
 	{
-		audioFilter = "-af \"pan=stereo|FL=FL+0.5*BL+0.5*SL|FR=FR+0.5*BR+0.5*SR\" ";
+		cmd += "-af \"pan=stereo|FL=FL+0.5*BL+0.5*SL|FR=FR+0.5*BR+0.5*SR\" ";
 	}
 	else if (audioChannels == 6)
 	{
-		audioFilter = "-af \"pan=stereo|FL=FL+0.3*FC+0.5*BL|FR=FR+0.3*FC+0.5*BR\" ";
+		cmd += "-af \"pan=stereo|FL=FL+0.3*FC+0.5*BL|FR=FR+0.3*FC+0.5*BR\" ";
 	}
-	else audioFilter = "";
 
-	command += audioFilter;
+	cmd += "-c:a aac -b:a 384k -map 0:v:0 -map 1:a:0 -f " + formatTag + " \"" + finalOutputFile + "\"";
 
-	command += "-c:a aac -b:a 384k -map 0:v:0 -map 1:a:0 ";
-
-	snprintf(buffer, sizeof(buffer), "-f %s \"%s\"", formatTag.c_str(), finalOutputFile.c_str());
-	command += buffer;
-
-	return command;
+	return cmd;
 }
 
 std::string FFmpegSystem::GenerateTimestampName()
 {
-	auto now = std::chrono::system_clock::now();
-	std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 
-	std::tm parts;
-	if (localtime_s(&parts, &now_c) != 0) return "0000-00-00_00-00-00";
+    std::tm parts;
+    if (localtime_s(&parts, &now_c) != 0) return "0000-00-00_00-00-00";
 
-	char buffer[64]{};
-	if (strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", &parts) > 0)
-	{
-		return std::string(buffer);
-	}
-
-	return "timestamp_error";
+    std::stringstream ss;
+    ss << std::put_time(&parts, "%Y-%m-%d_%H-%M-%S");
+    
+    std::string result = ss.str();
+    return result.empty() ? "timestamp_error" : result;
 }
 
 bool FFmpegSystem::LaunchFFmpeg(const std::string& cmd)
 {
-	SECURITY_ATTRIBUTES sa{};
-	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-	sa.bInheritHandle = TRUE;
-	sa.lpSecurityDescriptor = NULL;
+	SECURITY_ATTRIBUTES sa{ sizeof(sa), NULL, TRUE };
+	HANDLE hLogRead = NULL, hLogWrite = NULL;
 
-	HANDLE hRead = NULL;
-	HANDLE hWrite = NULL;
+	if (!CreatePipe(&hLogRead, &hLogWrite, &sa, 0)) return false;
 
-	if (!CreatePipe(&hRead, &hWrite, &sa, 0)) return false;
+	SetHandleInformation(hLogRead, HANDLE_FLAG_INHERIT, 0);
 
-	m_hLogRead.store(hRead);
-	m_hLogWrite.store(hWrite);
-
-	SetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
-
-	STARTUPINFOA si = { sizeof(STARTUPINFOA) };
+	STARTUPINFOA si = { sizeof(si) };
 	si.dwFlags = STARTF_USESTDHANDLES;
-	si.hStdError = hWrite;
-	si.hStdOutput = hWrite;
+	si.hStdError = hLogWrite;
+	si.hStdOutput = hLogWrite;
 	si.hStdInput = NULL;
 
 	PROCESS_INFORMATION pi = { 0 };
 
 	if (!CreateProcessA(NULL, (LPSTR)cmd.c_str(), NULL, NULL, TRUE,
-		CREATE_NO_WINDOW | HIGH_PRIORITY_CLASS | CREATE_SUSPENDED,
+		CREATE_NO_WINDOW | ABOVE_NORMAL_PRIORITY_CLASS,
 		NULL, NULL, &si, &pi))
 	{
-		CloseHandle(hRead);
-		CloseHandle(hWrite);
-		m_hLogRead.store(NULL);
-		m_hLogWrite.store(NULL);
+		CloseHandle(hLogRead);
+		CloseHandle(hLogWrite);
 		return false;
 	}
 
-	SetPriorityClass(pi.hProcess, HIGH_PRIORITY_CLASS);
-
-	struct {
-		DWORD Version;
-		DWORD ControlMask;
-		DWORD StateMask;
-	} powerThrottling = { 0 };
-
-	powerThrottling.Version = 1;
-	powerThrottling.ControlMask = 0x4;
-	powerThrottling.StateMask = 0;
-
-	SetProcessInformation(pi.hProcess, (PROCESS_INFORMATION_CLASS)0x4,
-		&powerThrottling, sizeof(powerThrottling));
-
-	SetThreadPriority(pi.hThread, THREAD_PRIORITY_HIGHEST);
-
-	DWORD_PTR processAffinity, systemAffinity;
-	if (GetProcessAffinityMask(GetCurrentProcess(), &processAffinity, &systemAffinity))
-	{
-		SetProcessAffinityMask(pi.hProcess, processAffinity);
-	}
-
-	ResumeThread(pi.hThread);
+	struct { DWORD Version; DWORD ControlMask; DWORD StateMask; } powerThrottling = { 1, 0x4, 0 };
+	SetProcessInformation(pi.hProcess, (PROCESS_INFORMATION_CLASS)0x4, &powerThrottling, sizeof(powerThrottling));
 
 	g_pState->Infrastructure->FFmpeg->SetProcessHandle(pi.hProcess);
+	m_hLogRead.store(hLogRead);
+
 	CloseHandle(pi.hThread);
-	CloseHandle(hWrite);
-	m_hLogWrite.store(NULL);
+	CloseHandle(hLogWrite);
 
-	g_pSystem->Debug->Log("[FFmpegSystem] INFO: FFmpeg launched.");
+	g_pSystem->Debug->Log("[FFmpegSystem] INFO: FFmpeg launched with PID %lu", pi.dwProcessId);
 
-	std::thread(&FFmpegSystem::ReadLogsThread, this, m_hLogRead.load()).detach();
+	std::thread(&FFmpegSystem::ReadLogsThread, this, hLogRead).detach();
 	return true;
 }
 
@@ -542,7 +511,7 @@ void FFmpegSystem::InternalStop(bool force)
 		}
 		else
 		{
-			if (WaitForSingleObject(hProc, 5000) == WAIT_TIMEOUT)
+			if (WaitForSingleObject(hProc, 30000) == WAIT_TIMEOUT)
 			{
 				TerminateProcess(hProc, 0);
 				g_pSystem->Debug->Log("[FFmpegSystem] WARNING: Process timed out and killed.");
@@ -557,8 +526,6 @@ void FFmpegSystem::InternalStop(bool force)
 		g_pState->Infrastructure->FFmpeg->SetProcessHandle(INVALID_HANDLE_VALUE);
 	}
 
-	g_pSystem->Infrastructure->Video->StopRecording();
-	g_pSystem->Infrastructure->Audio->StopRecording();
 	this->Cleanup();
 }
 
@@ -600,12 +567,9 @@ bool FFmpegSystem::VerifyExecutable(const std::string& path)
 }
 
 
-bool FFmpegSystem::WriteWithTimeout(HANDLE hPipe, const void* data, size_t size, DWORD timeoutMs)
+bool FFmpegSystem::WriteWithTimeout(HANDLE hPipe, const void* data, size_t size, DWORD timeoutMs, bool isVideo)
 {
-	if (hPipe == INVALID_HANDLE_VALUE)
-	{
-		return false;
-	}
+	if (hPipe == INVALID_HANDLE_VALUE) return false;
 
 	OVERLAPPED overlapped = {};
 	overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -613,8 +577,8 @@ bool FFmpegSystem::WriteWithTimeout(HANDLE hPipe, const void* data, size_t size,
 
 	const BYTE* ptr = reinterpret_cast<const BYTE*>(data);
 	size_t remaining = size;
+	auto startTime = std::chrono::high_resolution_clock::now();
 	bool finalSuccess = true;
-	DWORD lastError = 0;
 
 	while (remaining > 0)
 	{
@@ -623,53 +587,65 @@ bool FFmpegSystem::WriteWithTimeout(HANDLE hPipe, const void* data, size_t size,
 
 		if (!WriteFile(hPipe, ptr, toWrite, &written, &overlapped))
 		{
-			lastError = GetLastError();
+			DWORD lastError = GetLastError();
 
-			if (lastError == ERROR_IO_PENDING)
+			if (lastError == ERROR_PIPE_LISTENING || lastError == 536 || lastError == ERROR_NO_DATA)
+			{
+				finalSuccess = true;
+				break;
+			}
+			else if (lastError == ERROR_IO_PENDING)
 			{
 				DWORD waitResult = WaitForSingleObject(overlapped.hEvent, timeoutMs);
-
 				if (waitResult == WAIT_OBJECT_0)
 				{
 					if (!GetOverlappedResult(hPipe, &overlapped, &written, FALSE))
 					{
+						DWORD overErr = GetLastError();
+						if (overErr == ERROR_PIPE_LISTENING || overErr == 536 || overErr == ERROR_NO_DATA || overErr == ERROR_BROKEN_PIPE)
+						{
+							finalSuccess = true;
+							break;
+						}
+
+						g_pSystem->Debug->Log("[FFmpegSystem] ERROR: In GetOverlappedResult: %lu", overErr);
 						finalSuccess = false;
 						break;
 					}
 				}
 				else if (waitResult == WAIT_TIMEOUT)
 				{
+					g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Timeout, the disk/FFmpeg did not accept data in %lu ms. (IsVideo: %d)", timeoutMs, isVideo);
 					CancelIo(hPipe);
-					CloseHandle(overlapped.hEvent);
-					return false;
-				}
-				else
-				{
 					finalSuccess = false;
 					break;
 				}
 			}
-			else if (lastError == ERROR_NO_DATA || lastError == ERROR_PIPE_NOT_CONNECTED)
-			{
-				CloseHandle(overlapped.hEvent);
-				return false;
-			}
 			else
 			{
-				g_pSystem->Debug->Log("[FFmpegSystem] WARNING: Write error %lu, continuing", lastError);
+				g_pSystem->Debug->Log("[FFmpegSystem] ERROR: WriteFile failed. Error: %lu (IsVideo: %d)", lastError, isVideo);
 				finalSuccess = false;
 				break;
 			}
 		}
 
-		if (written == 0)
-		{
-			finalSuccess = false;
-			break;
-		}
-
 		ptr += written;
 		remaining -= written;
+	}
+
+	auto endTime = std::chrono::high_resolution_clock::now();
+	float latencyMs = std::chrono::duration<float, std::milli>(endTime - startTime).count();
+
+	{
+		std::lock_guard<std::mutex> lock(m_TelemetryMutex);
+		if (isVideo) {
+			m_Telemetry.LastVideoWriteLatencyMs = latencyMs;
+			if (latencyMs > m_Telemetry.MaxVideoWriteLatencyMs) m_Telemetry.MaxVideoWriteLatencyMs = latencyMs;
+		}
+		else {
+			m_Telemetry.LastAudioWriteLatencyMs = latencyMs;
+			if (latencyMs > m_Telemetry.MaxAudioWriteLatencyMs) m_Telemetry.MaxAudioWriteLatencyMs = latencyMs;
+		}
 	}
 
 	CloseHandle(overlapped.hEvent);
@@ -681,37 +657,36 @@ void FFmpegSystem::ReadLogsThread(HANDLE hPipe)
 {
 	if (hPipe == INVALID_HANDLE_VALUE || hPipe == NULL) return;
 
-	char buffer[4096]{};
+	std::vector<char> buffer(16384);
 	DWORD bytesRead;
 	std::string lineAccumulator;
 
-	while (ReadFile(hPipe, buffer, sizeof(buffer) - 1, &bytesRead, NULL) && bytesRead > 0)
+	while (ReadFile(hPipe, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, NULL) && bytesRead > 0)
 	{
-		buffer[bytesRead] = '\0';
-
 		for (DWORD i = 0; i < bytesRead; i++) {
-			if (static_cast<unsigned char>(buffer[i]) < 32 &&
-				buffer[i] != '\n' && buffer[i] != '\r' && buffer[i] != '\t') {
+			unsigned char c = static_cast<unsigned char>(buffer[i]);
+			if (c < 32 && c != '\n' && c != '\r' && c != '\t') {
 				buffer[i] = '?';
 			}
 		}
 
-		lineAccumulator += buffer;
+		lineAccumulator.append(buffer.data(), bytesRead);
 
 		size_t pos;
 		while ((pos = lineAccumulator.find_first_of("\n\r")) != std::string::npos)
 		{
-			std::string currentLine = lineAccumulator.substr(0, pos);
-
-			if (!currentLine.empty())
-			{
+			if (pos > 0) {
+				std::string currentLine = lineAccumulator.substr(0, pos);
 				TranslateAndLog(currentLine);
 			}
-
 			lineAccumulator.erase(0, pos + 1);
+
+			while (!lineAccumulator.empty() && (lineAccumulator[0] == '\n' || lineAccumulator[0] == '\r')) {
+				lineAccumulator.erase(0, 1);
+			}
 		}
 
-		if (lineAccumulator.length() > 8192) lineAccumulator.clear();
+		if (lineAccumulator.length() > static_cast<unsigned long long>(1024) * 64) lineAccumulator.clear();
 	}
 
 	g_pSystem->Debug->Log("[FFmpegSystem] INFO: FFmpeg log thread closed.");
@@ -719,36 +694,38 @@ void FFmpegSystem::ReadLogsThread(HANDLE hPipe)
 
 void FFmpegSystem::TranslateAndLog(const std::string& logLine)
 {
-	bool isProgressLine = (logLine.find("frame=") != std::string::npos);
-
 	size_t speedPos = logLine.find("speed=");
 	if (speedPos != std::string::npos)
 	{
 		try {
 			std::string speedStr = logLine.substr(speedPos + 6);
 			float s = std::stof(speedStr);
-			g_pState->Infrastructure->FFmpeg->SetRecordingSpeed(s);
+			std::lock_guard<std::mutex> lock(m_TelemetryMutex);
+			m_Telemetry.FFmpegSpeed = s;
 		}
-		catch (...) {  }
+		catch (...) { }
 	}
 
-	if (!isProgressLine)
+	size_t bitratePos = logLine.find("bitrate=");
+	if (bitratePos != std::string::npos)
+	{
+		try
+		{
+			std::string bitStr = logLine.substr(bitratePos + 8);
+			size_t kbitsPos = bitStr.find("kbits/s");
+			if (kbitsPos != std::string::npos)
+			{
+				bitStr = bitStr.substr(0, kbitsPos);
+
+				std::lock_guard<std::mutex> lock(m_TelemetryMutex);
+				m_Telemetry.CurrentBitrateKbps = std::stof(bitStr);
+			}
+		}
+		catch (...) { }
+	}
+
+	if (speedPos == std::string::npos || bitratePos == std::string::npos)
 	{
 		g_pSystem->Debug->Log("[FFmpeg] %s", logLine.c_str());
-	}
-
-	static const std::string_view criticalErrors[] = {
-		"Could not open encoder", "Task finished with error code",
-		"failed to open", "Error while opening encoder"
-	};
-
-	for (const auto& err : criticalErrors)
-	{
-		if (logLine.find(err) != std::string::npos)
-		{
-			m_FFmpegReportedError.store(true);
-			g_pSystem->Debug->Log("[FFmpeg] ERROR: %s", logLine.c_str());
-			break;
-		}
 	}
 }

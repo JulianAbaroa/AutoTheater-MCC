@@ -472,9 +472,9 @@ std::string ReplaySystem::CalculateFileHash(const std::string& sourceReplayPath)
 		hash *= 0x100000001b3;
 	}
 
-	char buffer[32]{};
-	snprintf(buffer, sizeof(buffer), "%016llx", hash);
-	return std::string(buffer);
+	std::stringstream ss;
+	ss << std::hex << std::setw(16) << std::setfill('0') << hash;
+	return ss.str();
 }
 
 std::vector<TheaterReplay> ReplaySystem::GetTheaterReplays(const std::filesystem::path& directoryPath)

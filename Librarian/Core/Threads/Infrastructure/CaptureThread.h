@@ -5,20 +5,24 @@
 #include <atomic>
 #include <chrono>
 #include <deque>
+#include <mutex>
 
 class CaptureThread
 {
 public:
 	void Run();
 
+	void StartRecording();
+	void StopRecording(bool force = false);
+
+	size_t GetPendingAudioSize();
+	size_t GetPendingVideoSize();
+
 	double GetSyncRatio() const;
 
 private:
 	void VerifyAndPrepareFFmpeg();
 	bool ReadyToCapture();
-	
-	void StartRecording();
-	void StopRecording();
 
 	bool VideoQueueOverflow(size_t pendingSize);
 
@@ -31,6 +35,11 @@ private:
 
 	std::atomic<bool> m_SyncTimeInitialized{ false };
 	std::atomic<bool> m_SyncInitialized{ false };
+	std::atomic<bool> m_StopByForce{ false };
+
+	std::deque<AudioChunk> m_PendingAudio{};
+	std::deque<FrameData> m_PendingVideo{};
+	std::mutex m_PendingMutex{};
 
 	std::chrono::steady_clock::time_point m_LastStatLog{};
 	uint64_t m_TotalVideoFramesWritten{ 0 };

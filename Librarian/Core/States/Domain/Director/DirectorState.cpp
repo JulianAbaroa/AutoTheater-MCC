@@ -36,9 +36,12 @@ void DirectorState::ClearScript()
 
 void DirectorState::Cleanup()
 {
-	std::lock_guard<std::mutex> lock(m_Mutex);
-	m_Script.clear();
+	{
+		std::lock_guard<std::mutex> lock(m_Mutex);
+		m_Script.clear();
+	}
 
 	m_Initialized.store(false);
 	m_Skipped.store(false);
+	m_HooksReady.store(false);
 }

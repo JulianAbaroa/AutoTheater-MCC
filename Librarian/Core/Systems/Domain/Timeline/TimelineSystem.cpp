@@ -7,10 +7,12 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Domain/CoreDomainSystem.h"
 #include "Core/Systems/Domain/Timeline/TimelineSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 
 void TimelineSystem::ProcessEngineEvent(float timestamp, std::wstring& templateStr, EventData* rawData)
 {
-	if (g_pSystem->Domain->Timeline->HasReachedLastEvent()) return;
+	if (g_pSystem->Domain->Timeline->HasReachedLastEvent() ||
+		m_LastEventTimestamp > timestamp) return;
 
 	EventType type = g_pState->Domain->EventRegistry->GetEventType(templateStr);
 	std::vector<PlayerInfo> players = ExtractPlayers(rawData);
@@ -27,6 +29,8 @@ void TimelineSystem::ProcessEngineEvent(float timestamp, std::wstring& templateS
 	if (this->IsDuplicate(event)) return;
 
 	g_pState->Domain->Timeline->AddGameEvent(event);
+
+	m_LastEventTimestamp = timestamp;
 
 	if (event.Type == EventType::Wins) g_pSystem->Domain->Timeline->SetLastEventReached(true);
 }
@@ -116,4 +120,14 @@ bool TimelineSystem::HasReachedLastEvent() const
 void TimelineSystem::SetLastEventReached(bool value)
 {
 	m_LastEventReached.store(value);
+}
+
+
+void TimelineSystem::Cleanup()
+{
+	m_LastEventTimestamp = -1.0f;
+	m_LastEventReached.store(false);
+	m_DeduplicationHistory = {};
+
+	g_pSystem->Debug->Log("[TimelineSystem] INFO: Cleanup completed.");
 }

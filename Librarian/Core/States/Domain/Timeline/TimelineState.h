@@ -24,6 +24,4 @@ private:
 	std::vector<GameEvent> m_Events{};
 	std::string m_AssociatedReplayHash{};
 	mutable std::mutex m_Mutex;
-
-	std::atomic<bool> m_IsLoggingActive{ false };
 };

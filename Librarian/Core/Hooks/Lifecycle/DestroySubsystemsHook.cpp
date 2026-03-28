@@ -13,8 +13,6 @@
 #include "Core/Hooks/Memory/CoreMemoryHook.h"
 #include "Core/Hooks/Memory/TargetFramerateHook.h"
 #include "Core/States/CoreState.h"
-#include "Core/States/Domain/CoreDomainState.h"
-#include "Core/States/Domain/Theater/TheaterState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Capture/AudioState.h"
 #include "Core/States/Infrastructure/Capture/FFmpegState.h"
@@ -22,12 +20,16 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Domain/CoreDomainSystem.h"
 #include "Core/Systems/Domain/Director/DirectorSystem.h"
+#include "Core/Systems/Domain/Timeline/TimelineSystem.h"
+#include "Core/Systems/Domain/Theater/TheaterSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
 #include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
 #include "Core/Systems/Infrastructure/Capture/VideoSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
+#include "Core/Threads/CoreThread.h"
+#include "Core/Threads/Infrastructure/CaptureThread.h"
 #include "Core/Hooks/Lifecycle/DestroySubsystemsHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -43,31 +45,37 @@
 //    systems (Director/Timeline) to stop processing immediately.
 void __fastcall DestroySubsystemsHook::HookedDestroySubsystems(void)
 {
-	g_pHook->Data->BuildGameEvent->Uninstall();	
-	g_pHook->Data->UpdateTelemetryTimer->Uninstall();
-	g_pHook->Data->SpectatorHandleInput->Uninstall();
-	g_pHook->Data->ReplayInitializeState->Uninstall();
-	g_pHook->Input->GetButtonState->Uninstall();
+	// Kill any recording in progress.
+	if (g_pState->Infrastructure->FFmpeg->IsRecording())
+	{
+		g_pThread->Capture->StopRecording(true);
+		g_pSystem->Debug->Log("[DestroySubsystemsHook] WARNING: Recording detected, forcing stop.");
+	}
+
+	// Cleaning hooks.
 	g_pHook->Data->BlamOpenFile->Uninstall();
-
-	g_pState->Domain->Theater->SetTimePtr(nullptr);
-	g_pState->Domain->Theater->SetTimeScalePtr(nullptr);
-
-	if (g_pState->Infrastructure->FFmpeg->IsRecording()) g_pSystem->Infrastructure->FFmpeg->ForceStop();
+	g_pHook->Data->ReplayInitializeState->Uninstall();
+	g_pHook->Data->UpdateTelemetryTimer->Uninstall();
+	g_pHook->Data->BuildGameEvent->Uninstall();	
+	g_pHook->Data->SpectatorHandleInput->Uninstall();
+	g_pHook->Input->GetButtonState->Uninstall();
 	
+	g_pHook->Memory->TargetFramerate->Cleanup();
+
+	// Cleaning systems -> states.
+	g_pSystem->Domain->Director->Cleanup();
+	g_pSystem->Domain->Timeline->Cleanup();
+	g_pSystem->Domain->Theater->Cleanup();
+
 	g_pSystem->Infrastructure->FFmpeg->Cleanup();
 	g_pSystem->Infrastructure->Audio->Cleanup();
 	g_pSystem->Infrastructure->Video->Cleanup();
 
-	g_pHook->Memory->TargetFramerate->Reset();
-
-	g_pSystem->Domain->Director->Cleanup();
+	// Cleaning UI.
 	g_pUI->Director->ResetCachedScript();
 
 	g_pState->Infrastructure->Lifecycle->SetEngineStatus({ EngineStatus::Destroyed });
-
 	m_OriginalFunction();
-
 	g_pSystem->Debug->Log("[DestroySubsystems] INFO: Game engine destroyed.");
 }
 

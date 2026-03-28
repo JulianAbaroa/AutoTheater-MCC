@@ -2,25 +2,31 @@
 #include "Core/Systems/Infrastructure/Engine/FormatSystem.h"
 #include <unordered_map>
 
-std::string FormatSystem::ToTimestamp(float totalSeconds) 
+std::string FormatSystem::ToTimestamp(float totalSeconds)
 {
     if (totalSeconds < 0) totalSeconds = 0;
 
-    int hours = static_cast<int>(totalSeconds) / 3600;
-    int minutes = (static_cast<int>(totalSeconds) % 3600) / 60;
-    int seconds = static_cast<int>(totalSeconds) % 60;
-    int milliseconds = static_cast<int>((totalSeconds - static_cast<int>(totalSeconds)) * 100);
+    int totalInt = static_cast<int>(totalSeconds);
+    int hours = totalInt / 3600;
+    int minutes = (totalInt % 3600) / 60;
+    int seconds = totalInt % 60;
+    int milliseconds = static_cast<int>((totalSeconds - totalInt) * 100);
 
-    char buffer[32];
-    if (hours > 0) 
+    auto pad = [](int val) { return (val < 10 ? "0" : "") + std::to_string(val); };
+
+    std::string result;
+    result.reserve(16);
+
+    if (hours > 0)
     {
-        snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d.%02d", hours, minutes, seconds, milliseconds);
+        result += pad(hours) + ":" + pad(minutes) + ":" + pad(seconds) + "." + pad(milliseconds);
     }
-    else 
+    else
     {
-        snprintf(buffer, sizeof(buffer), "%02d:%02d.%02d", minutes, seconds, milliseconds);
+        result += pad(minutes) + ":" + pad(seconds) + "." + pad(milliseconds);
     }
-    return std::string(buffer);
+
+    return result;
 }
 
 

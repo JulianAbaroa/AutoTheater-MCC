@@ -5,14 +5,12 @@ bool FFmpegState::RecordingStarted() const { return m_StartRecording.load(); }
 bool FFmpegState::RecordingStopped() const { return m_StopRecording.load(); }
 bool FFmpegState::IsRecording() const { return m_IsRecording.load(); }
 bool FFmpegState::IsCaptureActive() const { return m_IsCaptureActive.load(); }
-float FFmpegState::GetRecordingSpeed() const { return m_RecordingSpeed.load(); }
 FFmpegState::TimePoint FFmpegState::GetStartRecordingTime() const { return m_StartRecordingTime.load(); }
 
 void FFmpegState::SetStartRecording(bool value) { m_StartRecording.store(value); }
 void FFmpegState::SetStopRecording(bool value) { m_StopRecording.store(value); }
 void FFmpegState::SetRecording(bool value) { m_IsRecording.store(value); }
 void FFmpegState::SetCaptureActive(bool value) { m_IsCaptureActive.store(value); }
-void FFmpegState::SetRecordingSpeed(float value) { m_RecordingSpeed.store(value); }
 void FFmpegState::SetStartRecordingTime(FFmpegState::TimePoint value) { m_StartRecordingTime.store(value); }
 
 
@@ -69,7 +67,6 @@ void FFmpegState::Cleanup()
 	m_StopRecording.store(false);
 	m_IsRecording.store(false);
 	m_IsCaptureActive.store(false);
-	m_RecordingSpeed.store(0.0f);
 	m_StartRecordingTime.store({});
 
 	m_hVideoPipe.store(INVALID_HANDLE_VALUE);

@@ -19,6 +19,8 @@
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
+#include "Core/Threads/CoreThread.h"
+#include "Core/Threads/Infrastructure/CaptureThread.h"
 #include <algorithm>
 #include <chrono>
 
@@ -34,9 +36,6 @@ void DirectorSystem::Initialize()
 		return;
 	}
 
-	// Cleaning.
-	this->Cleanup();
-
 	// Prepare for the script creation.
 	this->PrioritizeEvents(timelineCopy);
 	this->RemoveDuplicates(timelineCopy);
@@ -50,100 +49,77 @@ void DirectorSystem::Initialize()
 
 void DirectorSystem::Update()
 {
-	// Conditions to execute the update.
 	float* timePtr = g_pState->Domain->Theater->GetTimePtr();
 	auto currentPhase = g_pState->Infrastructure->Lifecycle->GetCurrentPhase();
 	if (!timePtr || currentPhase != Phase::Director) return;
 
-	ReplayModule replayModule= g_pState->Domain->Theater->GetModuleSnapshot();
-
-	this->ForceSpectatorModes(replayModule);
-
-	// Script: Get a copy.
 	if (!m_ScriptCached)
 	{
 		m_CachedScript = g_pState->Domain->Director->GetScriptCopy();
 		m_ScriptCached = true;
 	}
-	
+
 	if (m_CachedScript.empty()) return;
 
-	// Script: Warmup time.
 	float currentTime = this->SafeGetCurrentTime();
+	ReplayModule replayModule = g_pState->Domain->Theater->GetModuleSnapshot();
+	this->ForceSpectatorModes(replayModule);
+
 	if (*timePtr < m_DirectorWarmupTime) return;
 
-	// Script: Handle command rewind.
-	if (currentTime < this->GetLastReplayTime())
+	float lastTime = this->GetLastReplayTime();
+	float timeDelta = currentTime - lastTime;
+
+	if (timeDelta < 0.0f || timeDelta > 1.0f)
 	{
 		auto it = std::lower_bound(
 			m_CachedScript.begin(), m_CachedScript.end(), currentTime,
 			[](const DirectorCommand& cmd, float timeVal) {
 				return cmd.Timestamp < timeVal;
-		});
+			});
 
-		this->SetCurrentCommandIndex(std::distance(m_CachedScript.begin(), it));
+		size_t newIndex = std::distance(m_CachedScript.begin(), it);
+		this->SetCurrentCommandIndex(newIndex);
 
-		g_pSystem->Debug->Log("[DirectorSystem] INFO: Rewind detected at %.2fs. Resetting script to index %d",
-			currentTime, this->GetCurrentCommandIndex());
+		const char* jumpType = (timeDelta < 0.0f) ? "Rewind" : "Fast-Forward";
+		g_pSystem->Debug->Log("[DirectorSystem] INFO: %s detected (%.2fs -> %.2fs). Resyncing index to %zu",
+			jumpType, lastTime, currentTime, newIndex);
+
+		m_StopDelayStartTime = 0.0f;
 	}
 
 	this->SetLastReplayTime(currentTime);
 
-	// Script: Handle stop recording.
 	size_t currentIndex = this->GetCurrentCommandIndex();
-	if (currentIndex >= m_CachedScript.size())
+	size_t scriptSize = m_CachedScript.size();
+
+	if (currentIndex >= scriptSize)
 	{
-		bool isRecording = g_pState->Infrastructure->FFmpeg->IsRecording();
-		bool stopOnLastEvent = g_pState->Infrastructure->FFmpeg->StopOnLastEvent();
-		if (isRecording && stopOnLastEvent)
-		{
-			float stopDelayDuration = g_pState->Infrastructure->FFmpeg->GetStopDelayDuration();
-
-			if (m_StopDelayStartTime == 0.0f)
-			{
-				m_StopDelayStartTime = currentTime;
-				g_pSystem->Debug->Log("[DirectorSystem] INFO: Script finished," 
-					" waiting %.2f seconds before stop.", stopDelayDuration);
-			}
-
-			if (currentTime - m_StopDelayStartTime >= stopDelayDuration)
-			{
-				g_pSystem->Debug->Log("[DirectorSystem] WARNING: Delay finished,"
-					" stopping recording.");
-
-				g_pState->Infrastructure->FFmpeg->SetStopRecording(true);
-				m_StopDelayStartTime = 0.0f;
-			}
-		}
-
+		this->HandleEndOfScript(currentTime);
 		return;
 	}
 
-	// Script: Process command.
-	DirectorCommand& command = m_CachedScript[this->GetCurrentCommandIndex()];
+	DirectorCommand& command = m_CachedScript[currentIndex];
+
 	if (currentTime >= command.Timestamp)
 	{
 		if (command.Type == CommandType::Cut)
 		{
-
 			uint8_t playerIndex = (uint8_t)replayModule.FollowedPlayerIndex;
 			if (command.TargetPlayerIdx != playerIndex)
 			{
-				g_pSystem->Debug->Log("[DirectorSystem] INFO: Execute: Cut to %d Reason [%s]", 
-					command.TargetPlayerIdx, command.Reason.c_str());
+				float deadline = (currentIndex + 1 < scriptSize)
+					? m_CachedScript[currentIndex + 1].Timestamp
+					: currentTime + 5.0f;
 
-				size_t nextCommandIndex = this->GetCurrentCommandIndex() + 1;
-				DirectorCommand nextCommand = m_CachedScript[nextCommandIndex];
-				float deadline = currentTime + nextCommand.Timestamp;
-				GoToPlayer(command.TargetPlayerIdx, deadline);
+				g_pSystem->Debug->Log("[DirectorSystem] INFO: Execute Cut to %d", command.TargetPlayerIdx);
+				this->GoToPlayer(command.TargetPlayerIdx, deadline);
 			}
 		}
 		else if (command.Type == CommandType::SetSpeed)
 		{
-			g_pSystem->Debug->Log("[DirectorSystem] INFO: Speed set to [%.2fx]", 
-				command.SpeedValue);
-
 			g_pSystem->Domain->Theater->SetReplaySpeed(command.SpeedValue);
+			g_pSystem->Debug->Log("[DirectorSystem] INFO: Speed -> %.2fx", command.SpeedValue);
 		}
 
 		this->IncrementCurrentCommandIndex();
@@ -160,14 +136,45 @@ void DirectorSystem::SetCurrentCommandIndex(size_t cmdIndex) { m_CurrentCommandI
 
 void DirectorSystem::Cleanup()
 {
-	m_StopDelayStartTime.store(0.0f);
+	m_CachedScript = {};
+	m_ScriptCached = false;
+
 	m_CurrentCommandIndex.store(0);
 	m_LastReplayTime.store(0.0f);
-	m_ScriptCached = false;
+	m_StopDelayStartTime.store(0.0f);
+
+	m_LastInputTime = {};
 
 	g_pState->Domain->Director->Cleanup();
 
 	g_pSystem->Debug->Log("[DirectorSystem] INFO: Cleanup completed.");
+}
+
+
+void DirectorSystem::HandleEndOfScript(float currentTime)
+{
+	bool isRecording = g_pState->Infrastructure->FFmpeg->IsRecording();
+	bool stopOnLastEvent = g_pState->Infrastructure->FFmpeg->StopOnLastEvent();
+
+	if (isRecording && stopOnLastEvent)
+	{
+		float stopDelayDuration = g_pState->Infrastructure->FFmpeg->GetStopDelayDuration();
+
+		if (m_StopDelayStartTime == 0.0f)
+		{
+			m_StopDelayStartTime = currentTime;
+			g_pSystem->Debug->Log("[DirectorSystem] INFO: Script finished. Waiting %.2fs buffer.", stopDelayDuration);
+		}
+
+		if (currentTime - m_StopDelayStartTime >= stopDelayDuration)
+		{
+			g_pSystem->Debug->Log("[DirectorSystem] WARNING: Final delay reached. Stopping FFmpeg.");
+
+			g_pThread->Capture->StopRecording();
+
+			m_StopDelayStartTime = 0.0f;
+		}
+	}
 }
 
 
@@ -306,10 +313,8 @@ void DirectorSystem::GenerateScript(std::vector<GameEvent> timeline)
 		cutCmd.TargetPlayerIdx = segment.PlayerID;
 		cutCmd.TargetPlayerName = segment.PlayerName;
 
-		char buffer[128]{};
-		snprintf(buffer, sizeof(buffer), "Score: %d Events: %zu", 
-			segment.Score, segment.Events.size());
-		cutCmd.Reason = buffer;
+		cutCmd.Reason = "Score: " + std::to_string(segment.Score) +
+			" Events: " + std::to_string(segment.Events.size());
 
 		lastSegmentEnd = segment.EndTime;
 
@@ -487,10 +492,20 @@ void DirectorSystem::GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 {
 	if (targetIdx >= 16) return;
 
-	g_pSystem->Debug->Log("[DirectorSystem] INFO: Starting navigation to: %d", targetIdx);
+	float safeDeadline = nextCommandTimestamp;
+	float currentTime = *g_pState->Domain->Theater->GetTimePtr();
+	if (safeDeadline > currentTime + 30.0f) safeDeadline = currentTime + 5.0f;
 
-	while (true)
+	g_pSystem->Debug->Log("[DirectorSystem] INFO: Navigating to: %d (Deadline: %.2f)", 
+		targetIdx, safeDeadline);
+
+	int maxAttempts = 32;
+	int attempts = 0;
+
+	while (attempts < maxAttempts)
 	{
+		attempts++;
+
 		auto currentModule = g_pState->Domain->Theater->GetModuleSnapshot();
 		uint8_t currentIndex = std::to_integer<uint8_t>(currentModule.FollowedPlayerIndex);
 
@@ -526,7 +541,14 @@ void DirectorSystem::GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 		}
 	}
 
-	g_pSystem->Debug->Log("[DirectorSystem] INFO: Navigation successful.");
+	if (attempts >= maxAttempts) 
+	{
+		g_pSystem->Debug->Log("[DirectorSystem] WARNING: Max navigation attempts reached.");
+	}
+	else 
+	{
+		g_pSystem->Debug->Log("[DirectorSystem] INFO: Navigation successful.");
+	}
 }
 
 

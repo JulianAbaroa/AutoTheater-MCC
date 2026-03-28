@@ -15,6 +15,7 @@ public:
 
     void Update();
     void WriteAudio(void* instance, BYTE* pData, size_t size, bool isSilent);
+    void FlushPendingSamples();
 
     std::deque<AudioChunk> ExtractQueue();
     void ClearQueue();

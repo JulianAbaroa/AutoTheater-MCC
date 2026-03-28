@@ -2,6 +2,7 @@
 #include "Core/Systems/CoreSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ScannerSystem.h"
+#include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Hooks/Memory/TargetFramerateHook.h"
 
 int TargetFramerateHook::GetCurrentFramerateValue()
@@ -44,7 +45,9 @@ bool TargetFramerateHook::ResolveAddress()
     return false;
 }
 
-void TargetFramerateHook::Reset()
+void TargetFramerateHook::Cleanup()
 {
     m_pTargetFramerateAddr.store(nullptr);
+
+    g_pSystem->Debug->Log("[TargetFramerateHook] INFO: Cleanup completed.");
 }

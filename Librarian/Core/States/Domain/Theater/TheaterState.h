@@ -35,6 +35,8 @@ public:
 	void ForEachPlayer(std::function<void(const PlayerInfo&)> callback);
 	void ResetPlayerList();
 
+	void Cleanup();
+
 private:
 	// Stores the player list of the last game event captured.
 	std::vector<PlayerInfo> m_PlayerList{ 16 };

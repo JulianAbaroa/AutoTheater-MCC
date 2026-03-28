@@ -240,6 +240,15 @@ void AudioSystem::WriteAudio(void* instance, BYTE* pData, size_t size, bool isSi
     }
 }
 
+void AudioSystem::FlushPendingSamples()
+{
+    std::lock_guard<std::mutex> lock(m_InstancesMutex);
+    for (auto& inst : m_ActiveInstances)
+    {
+        inst.PendingSamples.clear();
+    }
+}
+
 
 std::deque<AudioChunk> AudioSystem::ExtractQueue()
 {
@@ -310,6 +319,8 @@ void AudioSystem::Mix()
     std::lock_guard<std::mutex> lock(m_InstancesMutex);
 
     double realIntervalSec = m_PendingMixInterval;
+    double maxInterval = std::chrono::duration<double>(m_MixInterval).count() * 2.0;
+    if (realIntervalSec > maxInterval) realIntervalSec = maxInterval;
     if (realIntervalSec <= 0.0) return;
 
     bool isMuted = g_pState->Infrastructure->Audio->IsMuted();

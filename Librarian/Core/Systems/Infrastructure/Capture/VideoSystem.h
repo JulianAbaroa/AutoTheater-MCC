@@ -14,7 +14,7 @@ public:
 	
 	std::deque<FrameData> ExtractQueue();
 	void ClearQueue();
-
+	
 	void PreallocatePool(UINT width, UINT height);
 	void ReturnBuffer(std::vector<uint8_t>&& buffer);
 
@@ -27,6 +27,9 @@ private:
 	std::deque<std::vector<uint8_t>> m_FreeBuffers;
 	std::mutex m_PoolMutex;
 
-	const size_t m_MaxPoolSize = 64;
+	int m_MaxPoolSize = 120;
 	size_t m_BufferSize = 0;
+
+	size_t m_CachedBufferSize{};
+	int m_MaxFrames = 60;
 };

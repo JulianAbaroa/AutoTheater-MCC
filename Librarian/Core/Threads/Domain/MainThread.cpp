@@ -27,6 +27,7 @@
 #include "Core/Systems/Domain/Director/DirectorSystem.h"
 #include "Core/Systems/Domain/Director/EventRegistrySystem.h"
 #include "Core/Systems/Domain/Timeline/TimelineSystem.h"
+#include "Core/Systems/Domain/Theater/TheaterSystem.h"
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Engine/ThreadSystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
@@ -92,32 +93,26 @@ void MainThread::Run()
 
 void MainThread::UpdateToPhase(Phase targetPhase)
 {
-    if (targetPhase == g_pState->Infrastructure->Lifecycle->GetCurrentPhase()) return;
+    auto currentPhase = g_pState->Infrastructure->Lifecycle->GetCurrentPhase();
+    if (targetPhase == currentPhase) return;
 
-    // Reset timeline
+    // Cleaning systems -> states.
+    g_pSystem->Domain->Director->Cleanup();
+    g_pSystem->Domain->Timeline->Cleanup();
+    g_pSystem->Domain->Theater->Cleanup();
+
+    // Clear input state.
+    g_pState->Infrastructure->Input->Cleanup();
+
     if (targetPhase == Phase::Timeline)
     {
         g_pSystem->Domain->Timeline->SetLastEventReached(false);
-
         g_pState->Domain->Timeline->ClearTimeline();
     }
     else if (targetPhase == Phase::Director)
     {
         g_pSystem->Domain->Timeline->SetLastEventReached(true);
     }
-
-    // Reset theater
-    g_pState->Domain->Theater->ResetPlayerList();
-
-    // Reset director
-    g_pState->Domain->Director->SetInitialized(false);
-    g_pState->Domain->Director->SetHooksReady(false);
-    g_pSystem->Domain->Director->SetCurrentCommandIndex(0);
-    g_pSystem->Domain->Director->SetLastReplayTime(0.0f);
-    g_pState->Domain->Director->ClearScript();
-
-    // Reset input
-    g_pState->Infrastructure->Input->Cleanup();
 
     // Update phase
     g_pState->Infrastructure->Lifecycle->SetCurrentPhase(targetPhase);
