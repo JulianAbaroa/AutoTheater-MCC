@@ -22,7 +22,9 @@
 #include "Core/Systems/Infrastructure/Capture/SyncSystem.h"
 #include "Core/Systems/Infrastructure/Persistence/GallerySystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
+#include "Core/Threads/CoreThread.h"
 #include "Core/Threads/Infrastructure/CaptureThread.h"
+#include "Core/Threads/Infrastructure/WriterThread.h"
 
 using namespace std::chrono_literals;
 
@@ -31,6 +33,8 @@ void CaptureThread::Run()
     g_pSystem->Debug->Log("[CaptureThread] INFO: Started.");
 
     g_pSystem->Infrastructure->Gallery->RefreshList(g_pState->Infrastructure->FFmpeg->GetOutputPath());
+
+    m_LastStatLog = std::chrono::steady_clock::now();
 
     while (g_pState->Infrastructure->Lifecycle->IsRunning())
     {
@@ -137,6 +141,24 @@ void CaptureThread::Run()
             }
             else
             {
+                auto nowPool = std::chrono::steady_clock::now();
+                if (std::chrono::duration<double>(nowPool - m_LastStatLog).count() >= 5.0)
+                {
+                    uint64_t taken = g_pSystem->Infrastructure->Video->GetPoolTaken();
+                    uint64_t returned = g_pSystem->Infrastructure->Video->GetPoolReturned();
+                    uint64_t discarded = g_pSystem->Infrastructure->Video->GetPoolDiscarded();
+
+                    g_pSystem->Debug->Log("[CaptureThread] DEBUG: Pool=%d/%d Taken=%llu Returned=%llu Discarded=%llu Balance=%lld PendingVideo=%zu PendingAudio=%zu",
+                        g_pSystem->Infrastructure->Video->GetPoolSize(),
+                        g_pSystem->Infrastructure->Video->GetPoolMaxSize(),
+                        taken, returned, discarded,
+                        (int64_t)taken - (int64_t)returned - (int64_t)discarded,
+                        m_PendingVideo.size(),
+                        m_PendingAudio.size());
+
+                    m_LastStatLog = nowPool;
+                }
+
                 this->ProcessSynchronizedStreams(m_PendingAudio, m_PendingVideo, false);
 
                 auto wait = g_pSystem->Infrastructure->Sync->TimeUntilNextFrame();
@@ -204,6 +226,10 @@ void CaptureThread::StartRecording()
 
     if (isStarted)
     {
+        auto config = g_pState->Infrastructure->FFmpeg->GetEncoderConfig();
+        m_MaxFrames = config.MaxBufferedFrames / 2;
+        m_WriterMaxFrames = config.MaxBufferedFrames / 4;
+        g_pThread->Writer->StartRecording();
         g_pSystem->Infrastructure->Video->StartRecording();
         g_pSystem->Infrastructure->Audio->StartRecording();
         g_pSystem->Debug->Log("[CaptureThread] INFO: Recording started.");
@@ -219,6 +245,7 @@ void CaptureThread::StopRecording(bool force)
     m_PendingAudio = {};
     m_PendingVideo = {};
     m_StopByForce.store(force);
+    g_pThread->Writer->StopRecording();
     g_pState->Infrastructure->Audio->SetRecording(false);
     g_pState->Infrastructure->Video->SetRecording(false);
     g_pState->Infrastructure->FFmpeg->SetStopRecording(true);
@@ -241,8 +268,7 @@ size_t CaptureThread::GetPendingVideoSize()
 
 bool CaptureThread::VideoQueueOverflow(size_t pendingSize)
 {
-    auto ffmpegConfig = g_pState->Infrastructure->FFmpeg->GetEncoderConfig();
-    if (pendingSize <= ffmpegConfig.MaxBufferedFrames) return false;
+    if (pendingSize <= m_MaxFrames) return false;
 
     if (!m_SyncInitialized)
     {
@@ -295,8 +321,9 @@ void CaptureThread::ProcessSynchronizedStreams(
     bool forceDrain)
 {
     int processedInThisCycle = 0;
+    int itemsThisCycle = (std::max)(60, (int)(m_PendingVideo.size() + m_PendingAudio.size()));
 
-    while ((!audioQueue.empty() || !videoQueue.empty()) && processedInThisCycle < m_MaxItemsPerCycle)
+    while ((!audioQueue.empty() || !videoQueue.empty()) && processedInThisCycle < itemsThisCycle)
     {
         processedInThisCycle++;
 
@@ -304,65 +331,71 @@ void CaptureThread::ProcessSynchronizedStreams(
             videoQueue.empty() ? nullptr : &videoQueue.front(),
             audioQueue.empty() ? nullptr : &audioQueue.front());
 
-        if (decision == SyncDecision::None) break;
+        if (decision == SyncDecision::None)
+            break;
 
-        switch (decision) 
+        switch (decision)
         {
-        case SyncDecision::WriteAudio: 
+        case SyncDecision::WriteAudio:
         {
             AudioChunk chunk = std::move(audioQueue.front());
             audioQueue.pop_front();
 
             double durationSec = chunk.DurationSec;
 
-            if (g_pSystem->Infrastructure->FFmpeg->WriteAudio(chunk.Data.data(), chunk.Data.size()))
-            {
-                g_pSystem->Infrastructure->Sync->OnAudioWritten(durationSec);
-                m_TotalAudioSamplesWritten++;
-                m_TotalAudioDuration += durationSec;
-            }
+            g_pThread->Writer->EnqueueAudio(std::move(chunk.Data));
 
+            g_pSystem->Infrastructure->Sync->OnAudioWritten(durationSec);
+            m_TotalAudioSamplesWritten++;
+            m_TotalAudioDuration += durationSec;
             break;
         }
 
-        case SyncDecision::WriteVideo: 
+        case SyncDecision::WriteVideo:
         {
             FrameData frame = std::move(videoQueue.front());
             videoQueue.pop_front();
 
-            if (frame.Buffer.empty()) 
+            if (frame.Buffer.empty())
             {
                 g_pSystem->Infrastructure->Video->ReturnBuffer(std::move(frame.Buffer));
                 break;
             }
 
+            if (!m_LastFrameBuffer.empty())
+            {
+                m_LastFrameBuffer.clear();
+            }
             m_LastFrameBuffer = frame.Buffer;
 
-            if (g_pSystem->Infrastructure->FFmpeg->WriteVideo(frame.Buffer.data(), frame.Buffer.size())) 
+            if (g_pThread->Writer->GetPendingSize() >= m_WriterMaxFrames)
             {
+                g_pThread->Writer->DropOldestVideo();
+            }
+            else
+            {
+                g_pThread->Writer->EnqueueVideo(std::move(frame.Buffer), true);
+            }
+
+            g_pSystem->Infrastructure->Sync->OnVideoWritten();
+            m_TotalVideoFramesWritten++;
+            break;
+        }
+
+        case SyncDecision::RepeatVideo:
+        {
+            if (!m_LastFrameBuffer.empty())
+            {
+                std::vector<uint8_t> repeatCopy = m_LastFrameBuffer;
+                g_pThread->Writer->EnqueueVideo(std::move(repeatCopy), false);
+
                 g_pSystem->Infrastructure->Sync->OnVideoWritten();
                 m_TotalVideoFramesWritten++;
             }
-
-            g_pSystem->Infrastructure->Video->ReturnBuffer(std::move(frame.Buffer));
             break;
         }
 
-        case SyncDecision::RepeatVideo: 
-        {
-            if (!m_LastFrameBuffer.empty()) 
-            {
-                if (g_pSystem->Infrastructure->FFmpeg->WriteVideo(m_LastFrameBuffer.data(), m_LastFrameBuffer.size())) 
-                {
-                    g_pSystem->Infrastructure->Sync->OnVideoWritten();
-                    m_TotalVideoFramesWritten++;
-                }
-            }
-
-            break;
-        }
-
-        case SyncDecision::DropVideo: 
+        case SyncDecision::DropVideo:
         {
             FrameData frame = std::move(videoQueue.front());
             videoQueue.pop_front();
@@ -380,29 +413,21 @@ void CaptureThread::ProcessSynchronizedStreams(
     {
         while (!videoQueue.empty())
         {
-            if (g_pSystem->Infrastructure->FFmpeg->HasFatalError())
-            {
-                while (!videoQueue.empty())
-                {
-                    g_pSystem->Infrastructure->Video->ReturnBuffer(
-                        std::move(videoQueue.front().Buffer));
-                    videoQueue.pop_front();
-                }
-                break;
-            }
-
             FrameData frame = std::move(videoQueue.front());
-
             videoQueue.pop_front();
 
-            g_pSystem->Infrastructure->FFmpeg->WriteVideo(
-                frame.Buffer.data(), frame.Buffer.size());
-
-            g_pSystem->Infrastructure->Video->ReturnBuffer(
-                std::move(frame.Buffer));
+            if (!frame.Buffer.empty())
+            {
+                g_pThread->Writer->EnqueueVideo(std::move(frame.Buffer), true);
+            }
         }
 
-        audioQueue.clear();
+        while (!audioQueue.empty())
+        {
+            AudioChunk chunk = std::move(audioQueue.front());
+            audioQueue.pop_front();
+            g_pThread->Writer->EnqueueAudio(std::move(chunk.Data));
+        }
     }
 }
 

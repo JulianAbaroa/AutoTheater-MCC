@@ -47,5 +47,6 @@ private:
 	double m_TotalAudioDuration = 0.0;
 	std::atomic<double> m_SyncRatio{ 0.0 };
 
-	const int m_MaxItemsPerCycle = 150;
+	int m_MaxFrames = 0;
+	int m_WriterMaxFrames = 0;
 };
