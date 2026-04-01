@@ -240,18 +240,26 @@ void MainInterface::DrawTabs()
 
 		ImGuiTabItemFlags flags = forceOpen ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
 
-		if (ImGui::BeginTabItem(label, nullptr, flags)) {
+		bool isOpen = ImGui::BeginTabItem(label, nullptr, flags);
+
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		{
+			if (disabled)
+			{
+				ImGui::SetTooltip("Local storage is required. Enable it in Settings -> Data Persistence.");
+			}
+			else if (strcmp(label, "Capture") == 0)
+			{
+				ImGui::SetTooltip("EXPERIMENTAL");
+			}
+		}
+
+		if (isOpen) {
 			drawFn();
 			ImGui::EndTabItem();
 		}
 
-		if (disabled) {
-			ImGui::EndDisabled();
-
-			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-				ImGui::SetTooltip("Local storage is required. Enable it in Settings -> Data Persistence.");
-			}
-		}
+		if (disabled) ImGui::EndDisabled();
 
 		if (pushedColor) ImGui::PopStyleColor(3);
 	};

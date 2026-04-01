@@ -461,7 +461,7 @@ void AudioSystem::Mix()
 
     if (m_SilenceFallbackAccumSec < 0.1)
     {
-        g_pSystem->Debug->Log("[AudioSystem] WARNING: No active instance with signal,"
+        g_pSystem->Debug->Log("[AudioSystem] INFO: No active instance with signal,"
             " emitting silence fallback (limit=%.0fs).", k_MaxSilenceFallbackSec);
     }
 

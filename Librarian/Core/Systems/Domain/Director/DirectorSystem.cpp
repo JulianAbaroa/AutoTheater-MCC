@@ -58,7 +58,6 @@ void DirectorSystem::Update()
 		m_CachedScript = g_pState->Domain->Director->GetScriptCopy();
 		m_ScriptCached = true;
 	}
-
 	if (m_CachedScript.empty()) return;
 
 	float currentTime = this->SafeGetCurrentTime();
@@ -70,20 +69,34 @@ void DirectorSystem::Update()
 	float lastTime = this->GetLastReplayTime();
 	float timeDelta = currentTime - lastTime;
 
-	if (timeDelta < 0.0f || timeDelta > 1.0f)
+	float replaySpeed = *g_pState->Domain->Theater->GetTimeScalePtr();
+	float maxExpectedDelta = (std::max)(replaySpeed * 2.0f, 5.0f);
+	bool isJump = (timeDelta < 0.0f || timeDelta > maxExpectedDelta);
+
+	if (isJump)
 	{
 		auto it = std::lower_bound(
 			m_CachedScript.begin(), m_CachedScript.end(), currentTime,
 			[](const DirectorCommand& cmd, float timeVal) {
 				return cmd.Timestamp < timeVal;
 			});
-
 		size_t newIndex = std::distance(m_CachedScript.begin(), it);
 		this->SetCurrentCommandIndex(newIndex);
 
 		const char* jumpType = (timeDelta < 0.0f) ? "Rewind" : "Fast-Forward";
 		g_pSystem->Debug->Log("[DirectorSystem] INFO: %s detected (%.2fs -> %.2fs). Resyncing index to %zu",
 			jumpType, lastTime, currentTime, newIndex);
+
+		for (int i = (int)newIndex - 1; i >= 0; i--)
+		{
+			if (m_CachedScript[i].Type == CommandType::SetSpeed)
+			{
+				g_pSystem->Domain->Theater->SetReplaySpeed(m_CachedScript[i].SpeedValue);
+				g_pSystem->Debug->Log("[DirectorSystem] INFO: Resync applied last SetSpeed: %.2fx",
+					m_CachedScript[i].SpeedValue);
+				break;
+			}
+		}
 
 		m_StopDelayStartTime = 0.0f;
 	}
@@ -100,7 +113,6 @@ void DirectorSystem::Update()
 	}
 
 	DirectorCommand& command = m_CachedScript[currentIndex];
-
 	if (currentTime >= command.Timestamp)
 	{
 		if (command.Type == CommandType::Cut)
@@ -114,15 +126,24 @@ void DirectorSystem::Update()
 
 				g_pSystem->Debug->Log("[DirectorSystem] INFO: Execute Cut to %d", command.TargetPlayerIdx);
 				this->GoToPlayer(command.TargetPlayerIdx, deadline);
+
+				auto postNavModule = g_pState->Domain->Theater->GetModuleSnapshot();
+				uint8_t postNavIndex = (uint8_t)postNavModule.FollowedPlayerIndex;
+				if (postNavIndex != command.TargetPlayerIdx)
+				{
+					g_pSystem->Debug->Log("[DirectorSystem] WARNING: Cut failed (at %d, expected %d), retrying next Update().",
+						postNavIndex, command.TargetPlayerIdx);
+					return;
+				}
 			}
+			this->IncrementCurrentCommandIndex();
 		}
 		else if (command.Type == CommandType::SetSpeed)
 		{
 			g_pSystem->Domain->Theater->SetReplaySpeed(command.SpeedValue);
 			g_pSystem->Debug->Log("[DirectorSystem] INFO: Speed -> %.2fx", command.SpeedValue);
+			this->IncrementCurrentCommandIndex();
 		}
-
-		this->IncrementCurrentCommandIndex();
 	}
 }
 
@@ -492,63 +513,55 @@ void DirectorSystem::GoToPlayer(uint8_t targetIdx, float nextCommandTimestamp)
 {
 	if (targetIdx >= 16) return;
 
-	float safeDeadline = nextCommandTimestamp;
-	float currentTime = *g_pState->Domain->Theater->GetTimePtr();
-	if (safeDeadline > currentTime + 30.0f) safeDeadline = currentTime + 5.0f;
+	g_pSystem->Debug->Log("[DirectorSystem] INFO: Navigating to: %d", targetIdx);
 
-	g_pSystem->Debug->Log("[DirectorSystem] INFO: Navigating to: %d (Deadline: %.2f)", 
-		targetIdx, safeDeadline);
+	auto wallDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
 
 	int maxAttempts = 32;
-	int attempts = 0;
-
-	while (attempts < maxAttempts)
+	for (int attempts = 0; attempts < maxAttempts; attempts++)
 	{
-		attempts++;
-
 		auto currentModule = g_pState->Domain->Theater->GetModuleSnapshot();
-		uint8_t currentIndex = std::to_integer<uint8_t>(currentModule.FollowedPlayerIndex);
+		uint8_t currentIndex = (uint8_t)currentModule.FollowedPlayerIndex;
+		if (currentIndex == targetIdx) break;
 
-		if (currentIndex == targetIdx)
+		if (std::chrono::steady_clock::now() >= wallDeadline)
 		{
-			break;
-		}
-
-		if (*g_pState->Domain->Theater->GetTimePtr() >= nextCommandTimestamp)
-		{
-			g_pSystem->Debug->Log("[DirectorSystem] WARNING: Navigation aborted, time limit reached.");
+			g_pSystem->Debug->Log("[DirectorSystem] WARNING: Navigation aborted, wall time limit reached.");
 			return;
 		}
 
 		int forwardSteps = (targetIdx - currentIndex + 16) % 16;
-		bool movingForward = (forwardSteps > 0 && forwardSteps <= 8);
+		int backwardSteps = 16 - forwardSteps;
+		bool movingForward = forwardSteps <= backwardSteps;
+		int stepsNeeded = movingForward ? forwardSteps : backwardSteps;
+		InputAction action = movingForward ? InputAction::NextPlayer : InputAction::PreviousPlayer;
 
-		InputRequest request{};
-		request.Context = InputContext::Theater;
-		request.Action = movingForward ? InputAction::NextPlayer : InputAction::PreviousPlayer;
-		g_pState->Infrastructure->Input->EnqueueRequest(request, true);
-
-		auto startWait = std::chrono::steady_clock::now();
-		while (!g_pState->Infrastructure->Input->IsProcessing() &&
-			(std::chrono::steady_clock::now() - startWait < 100ms))
+		int inputsToSend = (stepsNeeded > 2) ? 2 : 1;
+		for (int i = 0; i < inputsToSend; i++)
 		{
-			std::this_thread::yield();
+			InputRequest request{};
+			request.Context = InputContext::Theater;
+			request.Action = action;
+			g_pState->Infrastructure->Input->EnqueueRequest(request, true);
 		}
 
 		while (g_pState->Infrastructure->Input->IsProcessing())
+			std::this_thread::yield();
+
+		auto waitStart = std::chrono::steady_clock::now();
+		while (std::chrono::steady_clock::now() - waitStart < std::chrono::milliseconds(200))
 		{
+			auto newModule = g_pState->Domain->Theater->GetModuleSnapshot();
+			if ((uint8_t)newModule.FollowedPlayerIndex != currentIndex) break;
 			std::this_thread::yield();
 		}
 	}
 
-	if (attempts >= maxAttempts) 
-	{
-		g_pSystem->Debug->Log("[DirectorSystem] WARNING: Max navigation attempts reached.");
-	}
-	else 
-	{
+	auto finalModule = g_pState->Domain->Theater->GetModuleSnapshot();
+	if ((uint8_t)finalModule.FollowedPlayerIndex == targetIdx)
 		g_pSystem->Debug->Log("[DirectorSystem] INFO: Navigation successful.");
-	}
+	else
+		g_pSystem->Debug->Log("[DirectorSystem] WARNING: Navigation failed.");
 }
 
 

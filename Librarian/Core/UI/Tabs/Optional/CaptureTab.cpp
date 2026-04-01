@@ -41,7 +41,6 @@ void CaptureTab::Draw()
 
     this->DrawRecordingSettingsPopup(isRecording);
     this->DrawPopups();
-    this->DrawTelemetryPopup();
 }
 
 void CaptureTab::DrawTopBar(bool isRecording)
@@ -182,17 +181,6 @@ void CaptureTab::DrawRecordingControls(bool isRecording, bool isCaptureActive)
         ImGui::SameLine();
         float recordingDuration = g_pSystem->Infrastructure->FFmpeg->GetRecordingDuration();
         ImGui::TextUnformatted(g_pSystem->Infrastructure->Format->ToTimestamp(recordingDuration).c_str());
-
-        ImGui::SameLine(0, 15.0f);
-
-        if (ImGui::Button("Telemetry"))
-        {
-            ImGui::OpenPopup("Telemetry");
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("View real-time pipe latency, queue buffers, and FFmpeg health.");
-        }
     }
 
     ImGui::EndGroup();
@@ -1031,126 +1019,5 @@ void CaptureTab::DrawDeleteVideoPopup()
     if (ImGui::Button("Cancel", ImVec2(buttonWidth, 0)))
     {
         ImGui::CloseCurrentPopup();
-    }
-}
-
-void CaptureTab::DrawTelemetryPopup()
-{
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSizeConstraints(ImVec2(450, 300), ImVec2(800, 800));
-
-    bool open = true;
-    if (ImGui::BeginPopupModal("Telemetry", &open, ImGuiWindowFlags_NoSavedSettings))
-    {
-        if (!open) ImGui::CloseCurrentPopup();
-
-        g_pSystem->Infrastructure->FFmpeg->UpdateQueueTelemetry();
-
-        CaptureTelemetry telemetry = g_pSystem->Infrastructure->FFmpeg->GetTelemetry();
-
-        static double smoothedRatio = 1.0;
-        double rawRatio = g_pThread->Capture->GetSyncRatio();
-        smoothedRatio = 0.05 * rawRatio + 0.95 * smoothedRatio;
-
-        ImGui::TextDisabled("General");
-        ImGui::Separator();
-
-        if (ImGui::BeginTable("##EncoderTable", 2, ImGuiTableFlags_SizingStretchSame))
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0); ImGui::Text("Encoding Speed");
-            ImGui::TableSetColumnIndex(1);
-
-            ImVec4 speedCol = (telemetry.FFmpegSpeed < 0.98f) ? 
-                ImVec4(1, 0.2f, 0.2f, 1) : ImVec4(0, 1, 0, 1);
-
-            ImGui::TextColored(speedCol, "%.2fx", telemetry.FFmpegSpeed);
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0); ImGui::Text("Sync Ratio");
-            ImGui::TableSetColumnIndex(1);
-
-            ImVec4 ratioCol = (smoothedRatio < 0.999) ? 
-                ImVec4(1, 0.2f, 0.2f, 1) : ImVec4(1, 1, 1, 1);
-
-            ImGui::TextColored(ratioCol, "%.3f", smoothedRatio);
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0); ImGui::Text("Bitrate");
-            ImGui::TableSetColumnIndex(1); ImGui::Text("%.0f kbps", telemetry.CurrentBitrateKbps);
-
-            ImGui::EndTable();
-        }
-
-        ImGui::Spacing();
-        ImGui::TextDisabled("Video & Audio Buffers");
-        ImGui::Separator();
-
-        if (ImGui::BeginTable("##QueuesTable", 2, ImGuiTableFlags_SizingStretchSame))
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0); ImGui::Text("Pending Frames");
-            ImGui::TableSetColumnIndex(1);
-
-            float vMaxFrames = 64.0f;
-            float vFill = (std::min)((float)telemetry.VideoPendingQueueSize / vMaxFrames, 1.0f);
-
-            ImVec4 vColor = (vFill > 0.8f) ? ImVec4(1.0f, 0.2f, 0.2f, 1.0f) :
-                (vFill > 0.5f) ? ImVec4(1.0f, 0.6f, 0.0f, 1.0f) : ImVec4(0.2f, 0.7f, 0.2f, 1.0f);
-
-            std::string progressText = std::to_string(telemetry.VideoPendingQueueSize) +
-                (telemetry.VideoPendingQueueSize == 1 ? " frame" : " frames");
-
-            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, vColor);
-            ImGui::ProgressBar(vFill, ImVec2(-FLT_MIN, 0), progressText.c_str());
-            ImGui::PopStyleColor();
-
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0); ImGui::Text("Pending Chunks");
-            ImGui::TableSetColumnIndex(1);
-
-            float aMaxChunks = 500.0f;
-            float aFill = (std::min)((float)telemetry.AudioPendingQueueSize / aMaxChunks, 1.0f);
-
-            ImVec4 aColor = (aFill > 0.8f) ? ImVec4(1.0f, 0.2f, 0.2f, 1.0f) :
-                (aFill > 0.5f) ? ImVec4(1.0f, 0.6f, 0.0f, 1.0f) : ImVec4(0.2f, 0.7f, 0.2f, 1.0f);
-            
-            std::string audioStatus = std::to_string(telemetry.AudioPendingQueueSize) +
-                (telemetry.AudioPendingQueueSize == 1 ? " chunk" : " chunks");
-
-            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, aColor);
-            ImGui::ProgressBar(aFill, ImVec2(-FLT_MIN, 0), audioStatus.c_str());
-            ImGui::PopStyleColor();
-
-            ImGui::EndTable();
-        }
-
-        ImGui::Spacing();
-        ImGui::TextDisabled("Write Latency");
-        ImGui::Separator();
-
-        if (ImGui::BeginTable("##PipesTable", 2, ImGuiTableFlags_SizingStretchSame))
-        {
-            auto DrawLatencyRow = [](const char* label, float current, float peak, float warn, float crit) {
-                ImGui::TableNextRow();
-
-                ImGui::TableSetColumnIndex(0); ImGui::Text("%s", label);
-                ImGui::TableSetColumnIndex(1);
-
-                ImVec4 color = (current > crit) ? ImVec4(1, 0.2f, 0.2f, 1) : (current > warn) ? ImVec4(1, 1, 0, 1) : ImVec4(1, 1, 1, 1);
-
-                ImGui::TextColored(color, "%.1f ms", current);
-                ImGui::SameLine(); 
-                ImGui::TextDisabled("(Peak: %.1f ms)", peak);
-            };
-
-            DrawLatencyRow("Video", telemetry.LastVideoWriteLatencyMs, telemetry.MaxVideoWriteLatencyMs, 15.0f, 50.0f);
-            DrawLatencyRow("Audio", telemetry.LastAudioWriteLatencyMs, telemetry.MaxAudioWriteLatencyMs, 10.0f, 20.0f);
-
-            ImGui::EndTable();
-        }
-
-        ImGui::EndPopup();
     }
 }
