@@ -15,38 +15,37 @@ public:
 	void StartRecording();
 	void StopRecording(bool force = false);
 
-	size_t GetPendingAudioSize();
-	size_t GetPendingVideoSize();
-
-	double GetSyncRatio() const;
+	void Cleanup();
 
 private:
-	void VerifyAndPrepareFFmpeg();
-	bool ReadyToCapture();
+	void VerifyFFmpeg();
+	bool IsReady();
+
+	bool CheckFramerate(int framerate);
 
 	bool VideoQueueOverflow(size_t pendingSize);
 
-	bool CaptureBaselineEstablished(std::deque<AudioChunk>& audioQueue, std::deque<FrameData>& videoQueue);
-	void ProcessSynchronizedStreams(std::deque<AudioChunk>& audioQueue, std::deque<FrameData>& videoQueue, bool forceDrain);
+	bool CaptureBaselineEstablished();
+	void ClearPendingResources();
 
-	void Cleanup();
+	void ProcessSynchronizedStreams(bool forceDrain);
 
-	std::vector<BYTE> m_LastFrameBuffer{ 0 };
 
-	std::atomic<bool> m_SyncTimeInitialized{ false };
-	std::atomic<bool> m_SyncInitialized{ false };
+	std::vector<BYTE> m_LastFrameBuffer{};
+
+	double m_SyncRatio = 0.0;
+	bool m_SyncInitialized = false;
 	std::atomic<bool> m_StopByForce{ false };
+	std::atomic<bool> m_StopInProgress{ false };
 
 	std::deque<AudioChunk> m_PendingAudio{};
 	std::deque<FrameData> m_PendingVideo{};
-	std::mutex m_PendingMutex{};
 
-	std::chrono::steady_clock::time_point m_LastStatLog{};
-	uint64_t m_TotalVideoFramesWritten{ 0 };
-	uint64_t m_TotalAudioSamplesWritten{ 0 };
-	double m_TotalAudioDuration = 0.0;
-	std::atomic<double> m_SyncRatio{ 0.0 };
+	uint64_t m_VideoFramesWritten{ 0 };
+	double m_AudioDuration = 0.0;
 
-	int m_MaxFrames = 0;
-	int m_WriterMaxFrames = 0;
+	size_t m_DiagnosticCounter = 0;
+
+	std::atomic<int> m_CaptureMaxFrames{ 0 };
+	std::atomic<int> m_WriterMaxFrames{ 0 };
 };

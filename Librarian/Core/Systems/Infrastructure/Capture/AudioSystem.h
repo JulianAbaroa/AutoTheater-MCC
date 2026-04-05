@@ -1,20 +1,20 @@
 #pragma once
 
 #include "Core/Common/Types/AudioTypes.h"
-#include <Audioclient.h>
+#include <chrono>
 #include <mutex>
 #include <deque>
 
+using namespace std::chrono_literals;
+
 class AudioSystem {
 public:
-    void* GetRenderClientVTableAddress(int index);
-    void* GetAudioClientVTableAddress(int index);
-
     void StartRecording();
     void StopRecording();
 
-    void Update();
     void WriteAudio(void* instance, BYTE* pData, size_t size, bool isSilent);
+    void Update();
+
     void FlushPendingSamples();
 
     std::deque<AudioChunk> ExtractQueue();
@@ -23,30 +23,36 @@ public:
     void Cleanup();
 
 private:
-    void Mix();
     void Reset();
+
+    void Mix();
     void CleanupInactiveInstances();
-    bool SafeCopy(void* dest, const void* src, size_t size);
     void EmitSilenceChunk(const AudioFormat& fmt, size_t targetSamples);
+
+    bool SafeCopy(void* dest, const void* src, size_t size);
 
     std::deque<AudioChunk> m_AudioQueue;
     std::mutex m_QueueMutex;
 
     std::vector<ActiveInstance> m_ActiveInstances;
-    std::mutex m_InstancesMutex;
-
-    void* m_LastSelectedInstance = nullptr;
+    std::mutex m_ActiveInstancesMutex;
 
     // Mix.
-    uint64_t m_TotalSamplesMixed = 0;
-    std::vector<float> m_MixBuffer;
+    std::vector<float> m_MixBuffer{};
     std::chrono::steady_clock::time_point m_LastMixTime;
-    static constexpr auto m_MixInterval = std::chrono::milliseconds(10);
-    double m_PendingMixInterval = 0.0;
+	std::mutex m_MixMutex;
+
+    std::atomic<uint64_t> m_TotalSamplesMixed{ 0 };
+    std::atomic<double> m_PendingMixInterval{ 0.0 };
+
+    static constexpr auto m_MixInterval = 10ms;
+    static constexpr auto m_InactiveTimeout = 1000ms;
 
     AudioFormat m_LastKnownFormat{};
-    bool m_HasLastKnownFormat = false;
 
-    double m_SilenceFallbackAccumSec = 0.0;
+    std::atomic<bool> m_HasLastKnownFormat{ false };
+    std::atomic<void*> m_LastSelectedInstance{ nullptr };
+
+    std::atomic<double> m_SilenceFallbackAccumSec{ 0.0 };
     static constexpr double k_MaxSilenceFallbackSec = 5.0;
 };

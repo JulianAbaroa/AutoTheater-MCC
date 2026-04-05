@@ -2,6 +2,8 @@
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Capture/AudioState.h"
 #include "Core/States/Infrastructure/Capture/FFmpegState.h"
+#include "Core/States/Infrastructure/Capture/ProcessState.h"
+#include "Core/States/Infrastructure/Capture/PipeState.h"
 #include "Core/States/Infrastructure/Capture/VideoState.h"
 #include "Core/States/Infrastructure/Engine/InputState.h"
 #include "Core/States/Infrastructure/Engine/LifecycleState.h"
@@ -14,6 +16,8 @@
 CoreInfrastructureState::CoreInfrastructureState()
 {
 	FFmpeg = std::make_unique<FFmpegState>();
+	Process = std::make_unique<ProcessState>();
+	Pipe = std::make_unique<PipeState>();
 	Audio = std::make_unique<AudioState>();
 	Video = std::make_unique<VideoState>();
 	Input = std::make_unique<InputState>();

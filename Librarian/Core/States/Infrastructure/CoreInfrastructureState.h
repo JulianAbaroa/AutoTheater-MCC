@@ -4,6 +4,8 @@
 
 // Capture
 class FFmpegState;
+class ProcessState;
+class PipeState;
 class AudioState;
 class VideoState;
 class DownloadState;
@@ -25,6 +27,8 @@ struct CoreInfrastructureState
 	~CoreInfrastructureState();
 
 	std::unique_ptr<FFmpegState> FFmpeg;
+	std::unique_ptr<ProcessState> Process;
+	std::unique_ptr<PipeState> Pipe;
 	std::unique_ptr<AudioState> Audio;
 	std::unique_ptr<VideoState> Video;
 	std::unique_ptr<InputState> Input;

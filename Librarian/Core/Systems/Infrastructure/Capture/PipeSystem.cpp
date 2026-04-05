@@ -5,120 +5,244 @@
 #include "Core/States/Infrastructure/Capture/ProcessState.h"
 #include "Core/States/Infrastructure/Capture/FFmpegState.h"
 #include "Core/Systems/CoreSystem.h"
-#include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/PipeSystem.h"
-#include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
+#include "Core/Threads/CoreThread.h"
+#include "Core/Threads/Infrastructure/CaptureThread.h"
 
-bool PipeSystem::CreateVideoPipe(int width, int height)
+using namespace std::chrono_literals;
+
+bool PipeSystem::CreatePipes(std::string& videoPipeName, 
+	std::string& audioPipeName, int width, int height)
 {
-	SECURITY_ATTRIBUTES sa{};
-	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-	sa.bInheritHandle = TRUE;
-	sa.lpSecurityDescriptor = NULL;
+	DWORD pid = GetCurrentProcessId();
 
-	HANDLE hRead = NULL;
-	HANDLE hWrite = NULL;
+	uint32_t sessionId = g_pState->Infrastructure->Process->GetSessionID();
 
-	DWORD frameSizeBytes = width * height * 4;
-	DWORD videoBufferSize = frameSizeBytes * 10;
+	videoPipeName = "\\\\.\\pipe\\at_v_" + std::to_string(pid) + 
+		std::to_string(sessionId);
 
-	g_pSystem->Debug->Log("[PipeSystem] INFO: Creating anonymous video"
-		" pipe buffer: %lu MB.", videoBufferSize / (1024 * 1024));
+	audioPipeName = "\\\\.\\pipe\\at_a_" + std::to_string(pid) + 
+		std::to_string(sessionId);
 
-	if (!CreatePipe(&hRead, &hWrite, &sa, videoBufferSize))
-	{
-		g_pSystem->Debug->Log("[PipeSystem] ERROR: Failed to create anonymous"
-			" video pipe. WinError: %lu", GetLastError());
+	auto configuration = g_pState->Infrastructure->FFmpeg->GetConfiguration();
 
-		return false;
-	}
-
-	SetHandleInformation(hWrite, HANDLE_FLAG_INHERIT, 0);
-
-	g_pState->Infrastructure->Pipe->SetVideoReadHandle(hRead);
-	g_pState->Infrastructure->Pipe->SetVideoWriteHandle(hWrite);
-
-	return true;
-}
-
-bool PipeSystem::CreateAudioPipe()
-{
-	SECURITY_ATTRIBUTES sa{};
-	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-	sa.bInheritHandle = TRUE;
-	sa.lpSecurityDescriptor = NULL;
-
-	HANDLE hRead = NULL;
-	HANDLE hWrite = NULL;
-
+	DWORD frameSizesBytes = width * height * 4;
+	DWORD videoBufferSize = frameSizesBytes * configuration.MaxBufferedFrames;
 	DWORD audioBufferSize = 64 * 1024 * 1024;
 
-	if (!CreatePipe(&hRead, &hWrite, &sa, audioBufferSize))
-	{
-		g_pSystem->Debug->Log("[PipeSystem] ERROR: Failed to create anonymous"
-			" audio pipe. WinError: %lu", GetLastError());
+	g_pSystem->Debug->Log("[FFmpegSystem] INFO: Requesting video pipe buffer:"
+		" %lu MB (%lu frames x %lu MB/frame)", videoBufferSize / (1024 * 1024),
+		(DWORD)configuration.MaxBufferedFrames, frameSizesBytes / (1024 * 1024));
 
+	auto createPipe = [](const std::string& name, DWORD size) {
+		HANDLE h = CreateNamedPipeA(
+			name.c_str(),
+			PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED | FILE_FLAG_FIRST_PIPE_INSTANCE,
+			PIPE_TYPE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
+			1, size, size, 0, NULL);
+
+		if (h == INVALID_HANDLE_VALUE)
+		{
+			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Failed to create pipe %s. WinError: %lu",
+				name.c_str(), GetLastError());
+			return h;
+		}
+
+		return h;
+	};
+
+	HANDLE hVideo = createPipe(videoPipeName, videoBufferSize);
+	HANDLE hAudio = createPipe(audioPipeName, audioBufferSize);
+
+	if (hVideo == INVALID_HANDLE_VALUE || hAudio == INVALID_HANDLE_VALUE)
+	{
 		return false;
 	}
 
-	SetHandleInformation(hWrite, HANDLE_FLAG_INHERIT, 0);
+	g_pState->Infrastructure->Pipe->SetVideoPipeHandle(hVideo);
+	g_pState->Infrastructure->Pipe->SetAudioPipeHandle(hAudio);
 
-	g_pState->Infrastructure->Pipe->SetAudioReadHandle(hRead);
-	g_pState->Infrastructure->Pipe->SetAudioWriteHandle(hWrite);
+	return true;
+}
+
+bool PipeSystem::WaitForVideoPipe() const
+{
+	auto deadline = std::chrono::steady_clock::now() + 5000ms;
+	while (!g_pState->Infrastructure->Process->IsVideoConnected())
+	{
+		if (std::chrono::steady_clock::now() > deadline)
+		{
+			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Timeout waiting for video pipe.");
+			g_pThread->Capture->StopRecording(true);
+			return false;
+		}
+
+		HANDLE hProcess = g_pState->Infrastructure->Process->GetProcessHandle();
+		if (hProcess != INVALID_HANDLE_VALUE)
+		{
+			DWORD exitCode;
+			if (GetExitCodeProcess(hProcess, &exitCode) && exitCode != STILL_ACTIVE)
+			{
+				g_pSystem->Debug->Log("[FFmpegSystem] ERROR: FFmpeg process died"
+					" before connecting (exit code %lu).", exitCode);
+				g_pThread->Capture->StopRecording(true);
+				return false;
+			}
+		}
+
+		std::this_thread::sleep_for(5ms);
+	}
 
 	return true;
 }
 
 
-WriteResult PipeSystem::TryWriteVideo(void* data, size_t size)
+bool PipeSystem::WriteVideo(void* data, size_t size)
 {
-	if (!g_pState->Infrastructure->FFmpeg->IsRecording() ||
-		g_pState->Infrastructure->Process->HasFatalError())
-		return WriteResult::FatalError;
+	bool isRecording = g_pState->Infrastructure->FFmpeg->IsRecording();
+	bool hasFatalError = g_pState->Infrastructure->Process->HasFatalError();
 
-	HANDLE hPipe = g_pState->Infrastructure->Pipe->GetVideoWriteHandle();
-	if (hPipe == INVALID_HANDLE_VALUE) return WriteResult::FatalError;
+	if (!isRecording || hasFatalError) return false;
 
-	DWORD written = 0;
+	HANDLE hPipe = g_pState->Infrastructure->Pipe->GetVideoPipeHandle();
+	if (hPipe == INVALID_HANDLE_VALUE) return false;
 
-	if (!WriteFile(hPipe, data, (DWORD)size, &written, NULL))
+	auto now = std::chrono::steady_clock::now();
+
+	double maxPipeDeadSeconds = g_pState->Infrastructure->Pipe->GetMaxPipeDeadSeconds();
+
+	if (m_LastVideoWriteTime.time_since_epoch().count() != 0)
 	{
-		DWORD err = GetLastError();
-		g_pSystem->Debug->Log("[PipeSystem] ERROR: TryWriteVideo failed. WinErr=%lu", err);
-		g_pState->Infrastructure->Process->SetFatalError(true);
-		return WriteResult::FatalError;
+		double secSinceLastWrite = std::chrono::duration<double>(now - m_LastVideoWriteTime).count();
+		if (secSinceLastWrite >= maxPipeDeadSeconds)
+		{
+			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Video pipe unresponsive for %.1fs", secSinceLastWrite);
+			g_pState->Infrastructure->Process->SetFatalError(true);
+			return false;
+		}
 	}
 
-	m_LastVideoWriteTime = std::chrono::steady_clock::now();
-	g_pState->Infrastructure->Pipe->ResetConsecutiveWriteFailures();
-	return WriteResult::Success;
+	if (this->WriteWithTimeout(hPipe, data, size, 5000, true))
+	{
+		m_LastVideoWriteTime = std::chrono::steady_clock::now();
+		g_pState->Infrastructure->Pipe->ResetConsecutiveWriteFailures();
+		return true;
+	}
+
+	g_pState->Infrastructure->Pipe->IncrementConsecutiveWriteFailures();
+	g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Video write failed.");
+	return false;
 }
 
 bool PipeSystem::WriteAudio(const void* data, size_t size)
 {
-	if (!g_pState->Infrastructure->FFmpeg->IsRecording() ||
-		g_pState->Infrastructure->Process->HasFatalError())
-	{
-		return false;
-	}
+	bool isRecording = g_pState->Infrastructure->FFmpeg->IsRecording();
+	bool hasFatalError = g_pState->Infrastructure->Process->HasFatalError();
 
-	HANDLE hPipe = g_pState->Infrastructure->Pipe->GetAudioWriteHandle();
+	if (!isRecording || hasFatalError) return false;
+
+	constexpr size_t frameSize = 8 * sizeof(float);
+	size = (size / frameSize) * frameSize;
+	if (size == 0) return true;
+
+	HANDLE hPipe = g_pState->Infrastructure->Pipe->GetAudioPipeHandle();
 	if (hPipe == INVALID_HANDLE_VALUE) return false;
 
-	DWORD written = 0;
+	auto now = std::chrono::steady_clock::now();
 
-	if (!WriteFile(hPipe, data, (DWORD)size, &written, NULL))
+	double maxPipeDeadSeconds = g_pState->Infrastructure->Pipe->GetMaxPipeDeadSeconds();
+
+	if (m_LastAudioWriteTime.time_since_epoch().count() != 0)
 	{
-		g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Audio WriteFile failed."
-			" WinErr=%lu", GetLastError());
+		double secSinceLastWrite = std::chrono::duration<double>(now - m_LastAudioWriteTime).count();
+		if (secSinceLastWrite >= maxPipeDeadSeconds)
+		{
+			g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Audio pipe unresponsive"
+				" for %.1fs", secSinceLastWrite);
 
-		g_pState->Infrastructure->Process->SetFatalError(true);
-		return false;
+			g_pState->Infrastructure->Process->SetFatalError(true);
+			return false;
+		}
 	}
 
-	m_LastAudioWriteTime = std::chrono::steady_clock::now();
-	return true;
+	if (this->WriteWithTimeout(hPipe, data, size, 5000, false))
+	{
+		m_LastAudioWriteTime = now;
+		return true;
+	}
+
+	g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Audio write timeout.");
+	return false;
+}
+
+bool PipeSystem::WriteWithTimeout(HANDLE hPipe, const void* data, size_t size, DWORD timeoutMs, bool isVideo)
+{
+	if (hPipe == INVALID_HANDLE_VALUE) return false;
+
+	OVERLAPPED overlapped = {};
+	overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (!overlapped.hEvent) return false;
+
+	const BYTE* ptr = reinterpret_cast<const BYTE*>(data);
+	size_t remaining = size;
+	bool finalSuccess = true;
+
+	while (remaining > 0)
+	{
+		DWORD toWrite = (DWORD)(std::min)(remaining, (size_t)0xFFFFFFFF);
+		DWORD written = 0;
+
+		if (!WriteFile(hPipe, ptr, toWrite, &written, &overlapped))
+		{
+			DWORD lastError = GetLastError();
+
+			if (lastError == ERROR_PIPE_LISTENING || lastError == 536 || lastError == ERROR_NO_DATA)
+			{
+				finalSuccess = true;
+				break;
+			}
+			else if (lastError == ERROR_IO_PENDING)
+			{
+				DWORD waitResult = WaitForSingleObject(overlapped.hEvent, timeoutMs);
+				if (waitResult == WAIT_OBJECT_0)
+				{
+					if (!GetOverlappedResult(hPipe, &overlapped, &written, FALSE))
+					{
+						DWORD overErr = GetLastError();
+						if (overErr == ERROR_PIPE_LISTENING || overErr == 536 || overErr == ERROR_NO_DATA || overErr == ERROR_BROKEN_PIPE)
+						{
+							finalSuccess = true;
+							break;
+						}
+
+						g_pSystem->Debug->Log("[FFmpegSystem] ERROR: In GetOverlappedResult: %lu", overErr);
+						finalSuccess = false;
+						break;
+					}
+				}
+				else if (waitResult == WAIT_TIMEOUT)
+				{
+					g_pSystem->Debug->Log("[FFmpegSystem] ERROR: Timeout, the disk/FFmpeg did not accept data in %lu ms. (IsVideo: %d)", timeoutMs, isVideo);
+					CancelIo(hPipe);
+					finalSuccess = false;
+					break;
+				}
+			}
+			else
+			{
+				g_pSystem->Debug->Log("[FFmpegSystem] ERROR: WriteFile failed. Error: %lu (IsVideo: %d)", lastError, isVideo);
+				finalSuccess = false;
+				break;
+			}
+		}
+
+		ptr += written;
+		remaining -= written;
+	}
+
+	CloseHandle(overlapped.hEvent);
+	return finalSuccess;
 }
 
 

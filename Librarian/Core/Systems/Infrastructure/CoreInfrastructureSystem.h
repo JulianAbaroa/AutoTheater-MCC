@@ -5,6 +5,8 @@
 class AudioSystem;
 class DownloadSystem;
 class FFmpegSystem;
+class ProcessSystem;
+class PipeSystem;
 class SyncSystem;
 class VideoSystem;
 
@@ -30,6 +32,8 @@ struct CoreInfrastructureSystem
 	std::unique_ptr<AudioSystem> Audio;
 	std::unique_ptr<DownloadSystem> Download;
 	std::unique_ptr<FFmpegSystem> FFmpeg;
+	std::unique_ptr<ProcessSystem> Process;
+	std::unique_ptr<PipeSystem> Pipe;
 	std::unique_ptr<SyncSystem> Sync;
 	std::unique_ptr<VideoSystem> Video;
 

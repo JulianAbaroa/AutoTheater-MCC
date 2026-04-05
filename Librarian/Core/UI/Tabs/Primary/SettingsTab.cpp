@@ -377,13 +377,20 @@ void SettingsTab::DrawHotkeyRow(const char* label, const char* keys, const char*
 void SettingsTab::DrawPathField(const char* label, const std::string& path, float widthOffset)
 {
 	ImGui::TextDisabled("%s", label);
-
 	ImGui::BeginGroup();
 
 	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.12f, 0.12f, 1.0f));
 	ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - widthOffset);
 
-	ImGui::InputText(("##" + std::string(label)).c_str(), (char*)path.c_str(), path.size(), ImGuiInputTextFlags_ReadOnly);
+	std::vector<char> buffer(path.begin(), path.end());
+	buffer.push_back('\0');
+
+	ImGui::InputText(
+		("##" + std::string(label)).c_str(),
+		buffer.data(),
+		buffer.size(),
+		ImGuiInputTextFlags_ReadOnly
+	);
 
 	ImGui::PopStyleColor();
 

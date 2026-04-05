@@ -10,6 +10,7 @@
 #include "Core/Hooks/Data/UpdateTelemetryTimerHook.h"
 #include "Core/Hooks/Input/CoreInputHook.h"
 #include "Core/Hooks/Input/GetButtonStateHook.h"
+#include "Core/Hooks/Lifecycle/DestroySubsystemsHook.h"
 #include "Core/Hooks/Memory/CoreMemoryHook.h"
 #include "Core/Hooks/Memory/TargetFramerateHook.h"
 #include "Core/States/CoreState.h"
@@ -30,7 +31,7 @@
 #include "Core/Systems/Interface/DebugSystem.h"
 #include "Core/Threads/CoreThread.h"
 #include "Core/Threads/Infrastructure/CaptureThread.h"
-#include "Core/Hooks/Lifecycle/DestroySubsystemsHook.h"
+#include "Core/Threads/Infrastructure/WriterThread.h"
 #include "External/minhook/include/MinHook.h"
 
 // This function is triggered when the game engine shuts down the Halo: Reach simulation, 
@@ -70,6 +71,9 @@ void __fastcall DestroySubsystemsHook::HookedDestroySubsystems(void)
 	g_pSystem->Infrastructure->FFmpeg->Cleanup();
 	g_pSystem->Infrastructure->Audio->Cleanup();
 	g_pSystem->Infrastructure->Video->Cleanup();
+
+	g_pThread->Capture->Cleanup();
+	g_pThread->Writer->Cleanup();
 
 	// Cleaning UI.
 	g_pUI->Director->ResetCachedScript();

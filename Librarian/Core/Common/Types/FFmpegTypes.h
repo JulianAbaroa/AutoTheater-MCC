@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <vector>
 #include <string>
 
 // Resolution dimensions in pixels.
@@ -52,7 +54,7 @@ enum class EncoderType
 	NVENC, AMF, QSV, CPU
 };
 
-struct FFmpegEncoderConfig
+struct FFmpegConfiguration
 {
 	int BitrateKbps = 80000;
 	int MaxBufferedFrames = 60;
@@ -84,4 +86,13 @@ struct CaptureTelemetry
 	// FFmpeg states.
 	float FFmpegSpeed = 0.0f;
 	float CurrentBitrateKbps = 0.0f;
+};
+
+enum class ItemType { Video, Audio };
+
+struct Item
+{
+	ItemType Type;
+	std::vector<uint8_t> Data;
+	bool ReturnVideoToPool = false;
 };

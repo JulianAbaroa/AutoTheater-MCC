@@ -84,7 +84,7 @@ std::string PreferencesSystem::GetPreferencesFilePath() const
 
 void PreferencesSystem::SaveFFmpegState(std::ofstream& file)
 {
-	auto encoderOptions = g_pState->Infrastructure->FFmpeg->GetEncoderConfig();
+	auto encoderOptions = g_pState->Infrastructure->FFmpeg->GetConfiguration();
 
 	file << "FFmpeg_ResolutionType=" << static_cast<int>(g_pState->Infrastructure->FFmpeg->GetResolutionType()) << "\n";
 
@@ -142,7 +142,7 @@ void PreferencesSystem::SaveUI(std::ofstream& file)
 
 void PreferencesSystem::LoadFFmpegState(std::string& key, std::string& value)
 {
-	FFmpegEncoderConfig encoderConfig = g_pState->Infrastructure->FFmpeg->GetEncoderConfig();
+	FFmpegConfiguration encoderConfig = g_pState->Infrastructure->FFmpeg->GetConfiguration();
 
 	if (key == "FFmpeg_ResolutionType")
 	{
@@ -226,7 +226,7 @@ void PreferencesSystem::LoadFFmpegState(std::string& key, std::string& value)
 		encoderConfig.EncoderType = static_cast<EncoderType>(std::stoi(value));
 	}
 
-	g_pState->Infrastructure->FFmpeg->UpdateEncoderConfig(encoderConfig);
+	g_pState->Infrastructure->FFmpeg->UpdateConfiguration(encoderConfig);
 }
 
 void PreferencesSystem::LoadLifecycleState(std::string& key, std::string& value)

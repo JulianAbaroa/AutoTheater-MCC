@@ -2,6 +2,8 @@
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
 #include "Core/Systems/Infrastructure/Capture/FFmpegSystem.h"
+#include "Core/Systems/Infrastructure/Capture/ProcessSystem.h"
+#include "Core/Systems/Infrastructure/Capture/PipeSystem.h"
 #include "Core/Systems/Infrastructure/Capture/VideoSystem.h"
 #include "Core/Systems/Infrastructure/Engine/InputSystem.h"
 #include "Core/Systems/Infrastructure/Engine/LifecycleSystem.h"
@@ -21,6 +23,8 @@ CoreInfrastructureSystem::CoreInfrastructureSystem()
 {
 	Audio = std::make_unique<AudioSystem>();
 	FFmpeg = std::make_unique<FFmpegSystem>();
+	Process = std::make_unique<ProcessSystem>();
+	Pipe = std::make_unique<PipeSystem>();
 	Video = std::make_unique<VideoSystem>();
 	Input = std::make_unique<InputSystem>();
 	Lifecycle = std::make_unique<LifecycleSystem>();

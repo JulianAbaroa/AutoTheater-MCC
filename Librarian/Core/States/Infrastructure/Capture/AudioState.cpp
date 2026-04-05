@@ -2,7 +2,10 @@
 #include "Core/States/Infrastructure/Capture/AudioState.h"
 
 bool AudioState::IsRecording() const { return m_IsRecording.load(); }
+void AudioState::SetRecording(bool value) { m_IsRecording.store(value); }
+
 bool AudioState::IsMuted() const { return m_IsMuted.load(); }
+void AudioState::SetMuted(bool value) { m_IsMuted.store(value); }
 
 AudioFormat AudioState::GetAudioInstance(void* instance) const
 {
@@ -23,9 +26,13 @@ std::map<void*, AudioFormat> AudioState::GetAllAudioInstances() const
     return m_AudioInstances;
 }
 
-void AudioState::SetMuted(bool value) { m_IsMuted.store(value); }
-void AudioState::SetRecording(bool value) { m_IsRecording.store(value); }
-
+void AudioState::ClearAudioInstances()
+{
+    std::lock_guard<std::mutex> lock(m_Mutex);
+    m_AudioInstances.clear();
+    m_InstanceBuffers.clear();
+    m_WasCleared.store(true);
+}
 
 BYTE* AudioState::GetBufferForInstance(void* instance)
 {
@@ -48,8 +55,8 @@ void AudioState::SetBufferForInstance(void* instance, BYTE* buffer)
 }
 
 
-void AudioState::RegisterAudioInstance(
-    void* instance, WORD channels, DWORD samplesPerSec, WORD bytesPerFrame)
+void AudioState::RegisterAudioInstance(void* instance, 
+    WORD channels, DWORD samplesPerSec, WORD bytesPerFrame)
 {
     std::lock_guard<std::mutex> lock(m_Mutex);
     m_AudioInstances[instance] = { channels, samplesPerSec, bytesPerFrame };
@@ -64,9 +71,9 @@ void AudioState::UnregisterAudioInstance(void* instance)
 
 void AudioState::Cleanup()
 {
+    m_IsRecording.store(false);
+
     std::lock_guard<std::mutex> lock(m_Mutex);
     m_AudioInstances.clear();
     m_InstanceBuffers.clear();
-
-    m_IsRecording.store(false);
 }

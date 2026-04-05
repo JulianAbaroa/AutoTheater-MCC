@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Common/Types/FFmpegTypes.h"
 #include <condition_variable>
 #include <cstdint>
 #include <vector>
@@ -16,26 +17,21 @@ public:
 
 	void EnqueueVideo(std::vector<uint8_t>&& buffer, bool returnToPool = true);
 	void EnqueueAudio(std::vector<uint8_t>&& buffer);
-
-	size_t GetPendingSize() const;
+	void Flush();
 
 	void DropOldestVideo();
 
+	void Cleanup();
+
 private:
-	enum class ItemType { Video, Audio };
-
-	struct Item
-	{
-		ItemType Type;
-		std::vector<uint8_t> Data;
-		bool ReturnVideoToPool = false;
-	};
-
 	std::deque<Item> m_Queue;
 	mutable std::mutex m_Mutex;
+
 	std::condition_variable m_CV;
+	std::condition_variable m_CV_Flush;
 
 	std::atomic<bool> m_Running{ true };
 	std::atomic<bool> m_Recording{ false };
-	std::atomic<bool> m_StopByForce{ false };
+	std::atomic<bool> m_IsProcessing{ false };
+
 };

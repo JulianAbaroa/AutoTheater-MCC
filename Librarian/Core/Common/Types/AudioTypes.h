@@ -21,7 +21,8 @@ struct AudioFormat
     WORD BytesPerFrame;
 };
 
-struct ActiveInstance {
+struct ActiveInstance 
+{
     void* Instance = nullptr;
     AudioFormat Format{};
     std::chrono::steady_clock::time_point LastDataTime{};

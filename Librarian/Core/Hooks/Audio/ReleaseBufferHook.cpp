@@ -8,6 +8,9 @@
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
+#include "Core/Hooks/CoreHook.h"
+#include "Core/Hooks/Audio/CoreAudioHook.h"
+#include "Core/Hooks/Audio/AudioVTableResolver.h"
 #include "Core/Hooks/Audio/ReleaseBufferHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -40,7 +43,7 @@ void ReleaseBufferHook::Install()
 {
     if (m_IsHookInstalled.load()) return;
 
-    void* functionAddress = g_pSystem->Infrastructure->Audio->GetRenderClientVTableAddress(4);
+    void* functionAddress = g_pHook->Audio->Resolver->GetRenderClientAddress(4);
     if (!functionAddress)
     {
         g_pSystem->Debug->Log("[ReleaseBuffer] ERROR: Failed to obtain the function address.");

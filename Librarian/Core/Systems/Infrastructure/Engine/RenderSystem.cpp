@@ -262,7 +262,6 @@ void RenderSystem::CaptureFrame(IDXGISwapChain* pSwapChain)
         double currentRealTime = elapsed.count();
 
         g_pSystem->Infrastructure->Video->PushFrame((uint8_t*)mapped.pData, desc.Width, desc.Height, mapped.RowPitch, currentRealTime);
-        
         context->Unmap(m_pStagingTextures[prevIndex], 0);
     }
 

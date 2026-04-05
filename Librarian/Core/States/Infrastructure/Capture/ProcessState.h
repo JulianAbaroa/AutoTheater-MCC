@@ -1,47 +1,44 @@
 #pragma once
 
-#include "Core/Common/Types/FFmpegTypes.h"
-#include "Windows.h"
-#include <cstdint>
 #include <atomic>
-#include <mutex>
 
 class ProcessState
 {
 public:
-	HANDLE GetProcessHandle() const;
-	void SetProcessHandle(HANDLE h);
-
 	uint32_t GetSessionID() const;
 	void IncrementSessionID();
 
-	std::atomic<bool>& GetVideoConnected();
-	std::atomic<bool>& GetAudioConnected();
+	HANDLE GetProcessHandle() const;
+	void SetProcessHandle(HANDLE h);
 
-	void SetLogReadHandle(HANDLE handle);
+	HANDLE GetLogReadHandle() const;
+	void SetLogReadHandle(HANDLE h);
 
-	// TODO: Possibly make a GetTelemetryCopy() for UI.
-	CaptureTelemetry& GetTelemetry();
-	void UpdateLatency(bool isVideo, float latencyMs);
-	void UpdateSpeed(float speed);
-	void UpdateBitrate(std::string bitrateStr);
+	HANDLE GetLogWriteHandle() const;
+	void SetLogWriteHandle(HANDLE h);
+
+	bool IsVideoConnected() const;
+	void SetVideoConnected(bool connected);
+	std::atomic<bool>* GetVideoConnectedFlag();
+
+	bool IsAudioConnected() const;
+	void SetAudioConnected(bool connected);
+	std::atomic<bool>* GetAudioConnectedFlag();
 
 	bool HasFatalError() const;
-	void SetFatalError(bool value);
+	void SetFatalError(bool hasError);
 
 	void Cleanup();
 
 private:
+	uint32_t m_SessionID = 0;
+
 	std::atomic<HANDLE> m_hProcess{ INVALID_HANDLE_VALUE };
 	std::atomic<HANDLE> m_hLogRead{ INVALID_HANDLE_VALUE };
-
-	uint32_t m_SessionID = 0;
+	std::atomic<HANDLE> m_hLogWrite{ INVALID_HANDLE_VALUE };
 
 	std::atomic<bool> m_VideoConnected{ false };
 	std::atomic<bool> m_AudioConnected{ false };
-
-	CaptureTelemetry m_Telemetry;
-	mutable std::mutex m_TelemetryMutex;
 
 	std::atomic<bool> m_FFmpegReportedError{ false };
 };

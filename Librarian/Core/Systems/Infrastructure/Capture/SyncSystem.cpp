@@ -9,7 +9,7 @@
 
 void SyncSystem::InitializeBaseline(double targetFramerate) {
     std::lock_guard<std::mutex> lock(m_Mutex);
-    
+
     m_TargetFramerate = targetFramerate;
     m_FrameDuration = 1.0 / targetFramerate;
 
@@ -67,7 +67,7 @@ SyncDecision SyncSystem::DecideNext(const FrameData* videoFront, const AudioChun
     }
 
     if (videoFront == nullptr) {
-        if (m_AudioWritesSinceLastVideo < 5) 
+        if (m_AudioWritesSinceLastVideo < 5)
         {
             m_AudioWritesSinceLastVideo++;
             return SyncDecision::WriteAudio;
@@ -87,7 +87,7 @@ SyncDecision SyncSystem::DecideNext(const FrameData* videoFront, const AudioChun
     }
     else {
         m_LastDecision = DecideVideoInternal(videoFront, nextFrameTargetTime, elapsedRealTime);
-        
+
         if (m_LastDecision == SyncDecision::WriteVideo) {
             m_AudioWritesSinceLastVideo = 0;
         }

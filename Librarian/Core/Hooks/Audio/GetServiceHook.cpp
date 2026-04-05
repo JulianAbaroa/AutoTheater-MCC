@@ -8,6 +8,9 @@
 #include "Core/Systems/Infrastructure/CoreInfrastructureSystem.h"
 #include "Core/Systems/Infrastructure/Capture/AudioSystem.h"
 #include "Core/Systems/Interface/DebugSystem.h"
+#include "Core/Hooks/CoreHook.h"
+#include "Core/Hooks/Audio/CoreAudioHook.h"
+#include "Core/Hooks/Audio/AudioVTableResolver.h"
 #include "Core/Hooks/Audio/GetServiceHook.h"
 #include "External/minhook/include/MinHook.h"
 
@@ -44,7 +47,7 @@ void GetServiceHook::Install()
 {
 	if (m_IsHookInstalled.load()) return;
 
-	void* functionAddress = g_pSystem->Infrastructure->Audio->GetAudioClientVTableAddress(14);
+	void* functionAddress = g_pHook->Audio->Resolver->GetAudioClientAddress(14);
 	if (!functionAddress)
 	{
 		g_pSystem->Debug->Log("[GetService] ERROR: Failed to obtain the function address.");
