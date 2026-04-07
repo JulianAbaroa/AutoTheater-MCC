@@ -216,7 +216,7 @@ void DirectorTab::DrawDirectorProgress(bool& autoScroll)
 	size_t totalCommands = g_pState->Domain->Director->GetScriptSize();
 
 	ImGui::AlignTextToFramePadding();
-	ImGui::Text("Playback Time: %s", g_pSystem->Infrastructure->Format->ToTimestamp(lastTime).c_str());
+	ImGui::Text("Time: %s", g_pSystem->Infrastructure->Format->ToTimestamp(lastTime).c_str());
 
 	ImGui::SameLine(0.0f, 40.0f);
 

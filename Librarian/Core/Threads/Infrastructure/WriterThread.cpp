@@ -160,8 +160,3 @@ void WriterThread::DropOldestVideo()
 		}
 	}
 }
-
-void WriterThread::Cleanup()
-{
-	// TODO: Implement.
-}

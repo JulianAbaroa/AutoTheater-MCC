@@ -135,7 +135,7 @@ void TimelineTab::DrawTimelineControls(bool& autoScroll)
 
 			if (!isReplaySaved)
 			{
-				ImGui::BulletText("Timeline doesn't have a binded replay saved in AppData. Save the timeline replay to the Library first.");
+				ImGui::BulletText("Timeline doesn't have a binded replay saved in AppData. Save the replay to the Library first.");
 			}
 
 			ImGui::EndTooltip();

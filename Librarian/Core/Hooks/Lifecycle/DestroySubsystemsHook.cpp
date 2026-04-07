@@ -73,7 +73,6 @@ void __fastcall DestroySubsystemsHook::HookedDestroySubsystems(void)
 	g_pSystem->Infrastructure->Video->Cleanup();
 
 	g_pThread->Capture->Cleanup();
-	g_pThread->Writer->Cleanup();
 
 	// Cleaning UI.
 	g_pUI->Director->ResetCachedScript();

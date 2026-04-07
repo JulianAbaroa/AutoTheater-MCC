@@ -46,7 +46,7 @@ void __fastcall SpectatorHandleInputHook::HookedSpectatorHandleInput(
 				if (g_pSystem->Domain->Theater->TryGetPlayerName(followedPlayerIdx, nameBuffer, 32))
 				{
 					std::string sName = g_pSystem->Infrastructure->Format->WStringToString(nameBuffer);
-					g_pSystem->Debug->Log("[SpectatorHandleInput] INFO: Changed to: [%d] %s", followedPlayerIdx, sName);
+					g_pSystem->Debug->Log("[SpectatorHandleInput] INFO: Changed to: [%d] %s", followedPlayerIdx, sName.c_str());
 				}
 			}
 		}

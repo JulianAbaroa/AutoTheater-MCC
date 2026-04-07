@@ -28,16 +28,25 @@ void ProcessSystem::InitializeDependencies()
 		return GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES;
 	};
 
-	bool isValid = fileExists(exePath) && this->VerifyExecutable(exePath);
-	if (!isValid)
+	if (fileExists(exePath))
 	{
-		DeleteFileA(exePath.c_str());
+		if (this->VerifyExecutable(exePath))
+		{
+			g_pState->Infrastructure->Download->SetFFmpegInstalled(true);
+		}
+		else
+		{
+			g_pState->Infrastructure->Download->SetFFmpegInstalled(false);
 
-		g_pSystem->Debug->Log("[FFmpegSystem] WARNING: Incomplete ffmpeg.exe"
-			" found and removed.");
+			DeleteFileA(exePath.c_str());
+			g_pSystem->Debug->Log("[FFmpegSystem] WARNING: Incomplete ffmpeg.exe"
+				" found and removed.");
+		}
 	}
-
-	g_pState->Infrastructure->Download->SetFFmpegInstalled(isValid);
+	else
+	{
+		g_pState->Infrastructure->Download->SetFFmpegInstalled(false);
+	}
 
 	// Set default videos output path.
 	if (g_pState->Infrastructure->FFmpeg->GetOutputPath().empty())
@@ -104,7 +113,7 @@ std::string ProcessSystem::BuildFFmpegCommand(
 
 	cmd += "\"" + ffmpegExe + "\" -y -loglevel info ";
 
-	cmd += "-probesize 32M -analyzeduration 32M ";
+	cmd += "-probesize 100K -analyzeduration 100K ";
 
 	int outWidth = g_pState->Infrastructure->FFmpeg->GetTargetWidth();
 	int outHeight = g_pState->Infrastructure->FFmpeg->GetTargetHeight();

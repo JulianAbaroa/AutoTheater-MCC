@@ -21,7 +21,7 @@ public:
 	void Cleanup();
 
 private:
-	void HandleEndOfScript(float currentTime);
+	void HandleEndOfScript();
 
 	void PrioritizeEvents(std::vector<GameEvent> timeline);
 	void RemoveDuplicates(std::vector<GameEvent> timeline);

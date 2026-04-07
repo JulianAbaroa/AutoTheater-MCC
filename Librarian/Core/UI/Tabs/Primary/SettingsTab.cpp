@@ -2,6 +2,7 @@
 #include "Core/States/CoreState.h"
 #include "Core/States/Infrastructure/CoreInfrastructureState.h"
 #include "Core/States/Infrastructure/Engine/RenderState.h"
+#include "Core/States/Infrastructure/Capture/DownloadState.h"
 #include "Core/States/Infrastructure/Persistence/SettingsState.h"
 #include "Core/States/Infrastructure/Persistence/ReplayState.h"
 #include "Core/Systems/CoreSystem.h"
@@ -296,7 +297,9 @@ void SettingsTab::DrawDataPersistence()
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
 
 	if (ImGui::Button("Delete Data", ImVec2(130, 0)))
+	{
 		openDeletePopup = true;
+	}
 
 	ImGui::PopStyleColor(2);
 	ImGui::EndGroup();
@@ -494,6 +497,7 @@ void SettingsTab::DrawDeleteAllAppData()
 		g_pSystem->Infrastructure->Settings->DeleteAppData();
 		g_pState->Infrastructure->Replay->SetRefreshReplayList(true);
 		g_pState->Infrastructure->Settings->SetUseAppData(false);
+		g_pState->Infrastructure->Download->SetFFmpegInstalled(false);
 		ImGui::CloseCurrentPopup();
 	}
 

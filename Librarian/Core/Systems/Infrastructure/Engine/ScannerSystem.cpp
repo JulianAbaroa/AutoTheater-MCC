@@ -7,10 +7,10 @@
 
 uintptr_t ScannerSystem::FindPattern(const Signature& sig, const wchar_t* moduleName)
 {
-    return FindPattern(sig.pattern, moduleName);
+    return FindPattern(sig.pattern, moduleName, sig.name);
 }
 
-uintptr_t ScannerSystem::FindPattern(const char* pattern, const wchar_t* moduleName)
+uintptr_t ScannerSystem::FindPattern(const char* pattern, const wchar_t* moduleName, const char* name)
 {
     HMODULE hModule = GetModuleHandle(moduleName);
 
@@ -22,11 +22,11 @@ uintptr_t ScannerSystem::FindPattern(const char* pattern, const wchar_t* moduleN
         return 0;
     }
 
-    return Scan((uintptr_t)modInfo.lpBaseOfDll, modInfo.SizeOfImage, pattern);
+    return Scan((uintptr_t)modInfo.lpBaseOfDll, modInfo.SizeOfImage, pattern, name);
 }
 
 
-uintptr_t ScannerSystem::Scan(uintptr_t base, size_t size, const char* pattern)
+uintptr_t ScannerSystem::Scan(uintptr_t base, size_t size, const char* pattern, const char* name)
 {
     auto patternToByte = [](const char* pattern)
         {

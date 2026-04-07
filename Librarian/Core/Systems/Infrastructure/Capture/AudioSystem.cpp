@@ -241,10 +241,11 @@ void AudioSystem::Mix()
 
         for (auto& activeInstance : m_ActiveInstances)
         {
-            if (activeInstance.PendingSamples.size() < targetSamples) continue;
+            if (activeInstance.PendingSamples.empty()) continue;
 
+            size_t checkSamples = (std::min)(activeInstance.PendingSamples.size(), targetSamples);
             float rms = 0.0f;
-            size_t check = (std::min)(targetSamples, (size_t)480);
+            size_t check = (std::min)(checkSamples, (size_t)480);
 
             for (size_t i = 0; i < check; ++i)
             {
@@ -252,11 +253,10 @@ void AudioSystem::Mix()
             }
 
             rms = std::sqrt(rms / check);
-
-            if (rms > selectedRMS)
-            {
-                selectedRMS = rms;
-                currentInstance = &activeInstance;
+            if (rms > selectedRMS) 
+            { 
+                selectedRMS = rms; 
+                currentInstance = &activeInstance; 
             }
         }
     }
@@ -310,9 +310,14 @@ void AudioSystem::Mix()
         m_MixBuffer.assign(targetSamples, 0.0f);
         const float* src = currentInstance->PendingSamples.data();
 
-        for (size_t i = 0; i < targetSamples; ++i)
+        size_t available = (std::min)(currentInstance->PendingSamples.size(), targetSamples);
+        for (size_t i = 0; i < available; ++i)
         {
             m_MixBuffer[i] = src[i];
+        }
+        for (size_t i = available; i < targetSamples; ++i)
+        {
+            m_MixBuffer[i] = 0.0f;
         }
 
         float maxSample = 0.0f;

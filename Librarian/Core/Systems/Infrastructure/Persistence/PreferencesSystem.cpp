@@ -43,7 +43,7 @@ void PreferencesSystem::LoadPreferences()
 	std::ifstream file(this->GetPreferencesFilePath());
 	if (!file.is_open())
 	{
-		g_pSystem->Debug->Log("[PreferencesSystem] WARNING: No user preferences file found, using defaults.");
+		g_pSystem->Debug->Log("[PreferencesSystem] INFO: No user preferences file found, using defaults.");
 		return;
 	}
 

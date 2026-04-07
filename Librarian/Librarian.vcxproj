@@ -153,6 +153,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)/External/imgui;$(ProjectDir)/External/minhook;$(ProjectDir)/External/stb</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp23</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

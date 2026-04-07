@@ -22,6 +22,8 @@
 #include <chrono>
 #pragma comment(lib, "shlwapi.lib")
 
+// TODO: Add spanish version of game events.
+
 using namespace std::chrono_literals;
 
 AppLoader g_DllInstance;

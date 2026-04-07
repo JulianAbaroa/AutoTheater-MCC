@@ -45,7 +45,7 @@ void BlamOpenFileHook::HookedBlamOpenFile(
 				g_pState->Domain->Timeline->SetAssociatedReplayHash(currentFileHash);
 				g_pSystem->Debug->Log("[BlamOpenFile] INFO: Timeline bound to Replay Hash: %s", currentFileHash.substr(0, 8).c_str());
 
-				g_pSystem->Debug->Log("[BlamOpenFile] INFO: Recorded by: %s", replay.ReplayMetadata.Author);
+				g_pSystem->Debug->Log("[BlamOpenFile] INFO: Recorded by: %s", replay.ReplayMetadata.Author.c_str());
 
 				if (!replay.ReplayMetadata.Info.empty())
 				{

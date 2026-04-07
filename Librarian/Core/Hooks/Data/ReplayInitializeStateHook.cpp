@@ -52,7 +52,7 @@ void ReplayInitializeStateHook::HookedReplayInitializeState(uint64_t sessionCont
 		
 				firstPlayerList[i] = info;
 		
-				g_pSystem->Debug->Log("[ReplayInitializeState] INFO: Player [%d]: %s [%s].", i, finalName, tag);
+				g_pSystem->Debug->Log("[ReplayInitializeState] INFO: Player [%d]: %s [%s].", i, finalName.c_str(), tag.c_str());
 			}
 			else
 			{

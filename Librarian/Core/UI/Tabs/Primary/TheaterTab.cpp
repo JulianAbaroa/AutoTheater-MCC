@@ -146,12 +146,16 @@ void TheaterTab::DrawPlaybackControls(bool& autoScroll)
 		ImGui::SameLine();
 
 		ImGui::PushItemWidth(70.0f);
-		if (ImGui::InputFloat("##InputSpeed", &tempSpeed, 0.0f, 0.0f, "%.3fx"))
+
+		ImGui::InputFloat("##InputSpeed", &tempSpeed, 0.0f, 0.0f, "%.3fx");
+
+		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
 			float finalValue = std::clamp(tempSpeed, 0.0f, 24.0f);
 			g_pSystem->Domain->Theater->SetReplaySpeed(finalValue);
 			tempSpeed = finalValue;
 		}
+
 		ImGui::PopItemWidth();
 
 		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Type value and press ENTER");

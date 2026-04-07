@@ -21,8 +21,6 @@ public:
 
 	void DropOldestVideo();
 
-	void Cleanup();
-
 private:
 	std::deque<Item> m_Queue;
 	mutable std::mutex m_Mutex;

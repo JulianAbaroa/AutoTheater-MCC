@@ -29,6 +29,7 @@ private:
 	void ClearPendingResources();
 
 	void ProcessSynchronizedStreams(bool forceDrain);
+	void FlushPendingSilence();
 
 
 	std::vector<BYTE> m_LastFrameBuffer{};

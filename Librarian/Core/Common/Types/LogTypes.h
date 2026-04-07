@@ -18,5 +18,5 @@ struct LogEntry
 	std::string Tag;
 	std::string MessagePrefix;
 	std::string Message;
-	LogLevel Level;
+	LogLevel Level{};
 };

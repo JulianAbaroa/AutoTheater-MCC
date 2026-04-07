@@ -69,6 +69,17 @@ SyncDecision SyncSystem::DecideNext(const FrameData* videoFront, const AudioChun
     if (videoFront == nullptr) {
         if (m_AudioWritesSinceLastVideo < 5)
         {
+            if (audioFront != nullptr && audioFront->IsSilent)
+            {
+                if (m_AudioWritesSinceLastVideo < 1)
+                {
+                    m_AudioWritesSinceLastVideo++;
+                    return SyncDecision::WriteAudio;
+                }
+
+                return SyncDecision::None;
+            }
+
             m_AudioWritesSinceLastVideo++;
             return SyncDecision::WriteAudio;
         }

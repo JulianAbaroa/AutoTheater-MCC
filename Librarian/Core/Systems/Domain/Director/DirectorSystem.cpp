@@ -108,7 +108,7 @@ void DirectorSystem::Update()
 
 	if (currentIndex >= scriptSize)
 	{
-		this->HandleEndOfScript(currentTime);
+		this->HandleEndOfScript();
 		return;
 	}
 
@@ -172,7 +172,7 @@ void DirectorSystem::Cleanup()
 }
 
 
-void DirectorSystem::HandleEndOfScript(float currentTime)
+void DirectorSystem::HandleEndOfScript()
 {
 	bool isRecording = g_pState->Infrastructure->FFmpeg->IsRecording();
 	bool stopOnLastEvent = g_pState->Infrastructure->FFmpeg->StopOnLastEvent();
@@ -181,13 +181,17 @@ void DirectorSystem::HandleEndOfScript(float currentTime)
 	{
 		float stopDelayDuration = g_pState->Infrastructure->FFmpeg->GetStopDelayDuration();
 
+		auto now = std::chrono::steady_clock::now();
+
+		float currentRealTime = std::chrono::duration<float>(now.time_since_epoch()).count();
+
 		if (m_StopDelayStartTime == 0.0f)
 		{
-			m_StopDelayStartTime = currentTime;
-			g_pSystem->Debug->Log("[DirectorSystem] INFO: Script finished. Waiting %.2fs buffer.", stopDelayDuration);
+			m_StopDelayStartTime = currentRealTime;
+			g_pSystem->Debug->Log("[DirectorSystem] INFO: Script finished. Waiting %.2fs buffer (Real Time).", stopDelayDuration);
 		}
 
-		if (currentTime - m_StopDelayStartTime >= stopDelayDuration)
+		if (currentRealTime - m_StopDelayStartTime >= stopDelayDuration)
 		{
 			g_pSystem->Debug->Log("[DirectorSystem] WARNING: Final delay reached. Stopping FFmpeg.");
 
